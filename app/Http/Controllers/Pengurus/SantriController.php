@@ -1,0 +1,141 @@
+<?php
+
+namespace App\Http\Controllers\Pengurus;
+
+use App\Http\Controllers\Controller;
+use App\Models\Santri;
+use App\Models\OrangTua;
+use App\Models\Kelas;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
+
+class SantriController extends Controller
+{
+    private function getPondokId()
+    {
+        return Auth::user()->pondokStaff->pondok_id;
+    }
+
+    public function index(Request $request)
+    {
+        $pondokId = $this->getPondokId();
+
+        $query = Santri::where('pondok_id', $pondokId)
+            ->with(['kelas', 'orangTua'])
+            ->latest();
+
+        // Fitur Pencarian
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                  ->orWhere('nis', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter Status
+        if ($request->has('status') && $request->status != '') {
+            $query->where('status', $request->status);
+        }
+
+        $santris = $query->paginate(15)->withQueryString();
+
+        return view('pengurus.santri.index', compact('santris'));
+    }
+
+    public function create()
+    {
+        $pondokId = $this->getPondokId();
+        $orangTuas = OrangTua::where('pondok_id', $pondokId)->orderBy('name')->get();
+        $kelas = Kelas::where('pondok_id', $pondokId)->orderBy('nama_kelas')->get();
+
+        return view('pengurus.santri.create', compact('orangTuas', 'kelas'));
+    }
+
+    public function store(Request $request)
+    {
+        $pondokId = $this->getPondokId();
+
+        $validated = $request->validate([
+            'nis' => ['required', Rule::unique('santris')->where('pondok_id', $pondokId)],
+            'rfid_uid' => ['nullable', 'string', Rule::unique('santris')->where('pondok_id', $pondokId)], // Validasi RFID unik
+            'full_name' => 'required|string|max:255',
+            'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
+            'tempat_lahir' => 'nullable|string',
+            'tanggal_lahir' => 'nullable|date',
+            'golongan_darah' => 'nullable|in:A,B,AB,O',
+            'riwayat_penyakit' => 'nullable|string',
+            'kelas_id' => 'nullable|exists:kelas,id',
+            'orang_tua_id' => 'required|exists:orang_tuas,id',
+            'status' => 'required|in:active,graduated,moved',
+        ]);
+
+        $validated['pondok_id'] = $pondokId;
+        
+        // OTOMATIS GENERATE QR CODE SAAT BUAT BARU
+        // Format: SANTRI-TIMESTAMP-RANDOM (agar unik)
+        $validated['qrcode_token'] = 'S-' . time() . '-' . Str::random(8);
+
+        Santri::create($validated);
+
+        return redirect()->route('pengurus.santri.index')->with('success', 'Data santri berhasil ditambahkan.');
+    }
+
+    public function show(Santri $santri)
+    {
+        if ($santri->pondok_id != $this->getPondokId()) abort(404);
+        return view('pengurus.santri.show', compact('santri'));
+    }
+
+    public function edit(Santri $santri)
+    {
+        if ($santri->pondok_id != $this->getPondokId()) abort(404);
+
+        $pondokId = $this->getPondokId();
+        $orangTuas = OrangTua::where('pondok_id', $pondokId)->orderBy('name')->get();
+        $kelas = Kelas::where('pondok_id', $pondokId)->orderBy('nama_kelas')->get();
+
+        return view('pengurus.santri.edit', compact('santri', 'orangTuas', 'kelas'));
+    }
+
+    public function update(Request $request, Santri $santri)
+    {
+        if ($santri->pondok_id != $this->getPondokId()) abort(404);
+        $pondokId = $this->getPondokId();
+
+        $validated = $request->validate([
+            'nis' => ['required', Rule::unique('santris')->where('pondok_id', $pondokId)->ignore($santri->id)],
+            'rfid_uid' => ['nullable', 'string', Rule::unique('santris')->where('pondok_id', $pondokId)->ignore($santri->id)], // Validasi RFID
+            'full_name' => 'required|string|max:255',
+            'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
+            'tempat_lahir' => 'nullable|string',
+            'tanggal_lahir' => 'nullable|date',
+            'golongan_darah' => 'nullable|in:A,B,AB,O',
+            'riwayat_penyakit' => 'nullable|string',
+            'kelas_id' => 'nullable|exists:kelas,id',
+            'orang_tua_id' => 'required|exists:orang_tuas,id',
+            'status' => 'required|in:active,graduated,moved',
+        ]);
+
+        $santri->update($validated);
+
+        return redirect()->route('pengurus.santri.index')->with('success', 'Data santri berhasil diperbarui.');
+    }
+
+    /**
+     * Generate ulang QR Code jika kartu hilang/rusak.
+     */
+    public function regenerateQR(Santri $santri)
+    {
+        if ($santri->pondok_id != $this->getPondokId()) abort(404);
+
+        // Buat token baru
+        $newToken = 'S-' . time() . '-' . Str::random(8);
+        
+        $santri->update(['qrcode_token' => $newToken]);
+
+        return back()->with('success', 'QR Code berhasil digenerate ulang.');
+    }
+}

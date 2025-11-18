@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* File CSS Anda (misalnya app.css) */
+
+.pin-masking {
+  /* Properti standar Chrome/Safari/Edge/Opera */
+  -webkit-text-security: disc; 
+  
+  /* Properti non-standar, untuk browser lain (meskipun jarang didukung) */
+  text-security: disc;
+  
+  /* Atur jarak antar karakter agar terlihat rapi seperti di gambar Anda */
+  letter-spacing: 1.5em; /* Perbesar letter-spacing agar angka 767676 terlihat terpisah */
+}
