@@ -65,6 +65,7 @@ use App\Http\Controllers\Sekolah\Guru\AbsensiSiswaController;
 use App\Http\Controllers\Sekolah\Guru\NilaiController;
 use App\Http\Controllers\Sekolah\Guru\IzinController;
 use App\Http\Controllers\Sekolah\Admin\PersetujuanIzinController;
+use App\Http\Controllers\Sekolah\Admin\LaporanNilaiController;
 // --- AKHIR TAMBAHAN ---
 
 
@@ -590,7 +591,22 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-sekolah'])
         // CRUD Jadwal Pelajaran
         Route::resource('jadwal-pelajaran', JadwalPelajaranController::class);
         // CRUD Jadwal Ujian
-        Route::resource('kegiatan-akademik', KegiatanAkademikController::class);
+        Route::resource('kegiatan-akademik', KegiatanAkademikController::class)->except(['show']);
+
+        // --- TAMBAHAN BARU: JALUR KELOLA NILAI ---
+        Route::prefix('kegiatan-akademik/{kegiatan}')->name('kegiatan-akademik.')->group(function () {
+            // Tampilan 1: Daftar Kelas (setelah klik 'Kelola')
+            Route::get('kelola', [LaporanNilaiController::class, 'showKelas'])->name('kelola.kelas');
+            
+            // Tampilan 2: Daftar Mapel (setelah klik Kelas)
+            Route::get('kelas/{kelas}/mapel', [LaporanNilaiController::class, 'showMapel'])->name('kelola.mapel');
+            
+            // Tampilan 3: Tabel Nilai (setelah klik Mapel)
+            Route::get('kelas/{kelas}/mapel/{mapel}/nilai', [LaporanNilaiController::class, 'showNilaiTable'])->name('kelola.nilai');
+            
+            // Rute Cetak PDF
+            Route::get('pdf/kelas/{kelas}/mapel/{mapel}', [LaporanNilaiController::class, 'cetakLedgerNilai'])->name('cetak.nilai');
+        });
 
         Route::resource('kelas', \App\Http\Controllers\Sekolah\Admin\KelasController::class);
 
@@ -599,6 +615,9 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-sekolah'])
 
         Route::get('kinerja/guru', [App\Http\Controllers\Sekolah\Admin\KinerjaGuruController::class, 'index'])->name('kinerja.guru');
         Route::get('kinerja/siswa', [App\Http\Controllers\Sekolah\Admin\KinerjaSiswaController::class, 'index'])->name('kinerja.siswa');
+
+        Route::get('laporan', [App\Http\Controllers\Sekolah\Admin\LaporanController::class, 'index'])->name('laporan.index');
+        Route::post('laporan/cetak', [App\Http\Controllers\Sekolah\Admin\LaporanController::class, 'cetak'])->name('laporan.cetak');
         
         // Fitur Naik Kelas
         Route::get('naik-kelas', [\App\Http\Controllers\Sekolah\Admin\KelasController::class, 'naikKelasView'])->name('kelas.naikKelas.view');
@@ -667,10 +686,10 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:guru'])
         Route::post('absensi-siswa', [AbsensiSiswaController::class, 'store'])->name('absensi.siswa.store');
 
         // Input Nilai
-        Route::get('input-nilai', [NilaiController::class, 'index'])->name('nilai.index');
-        // PERBAIKAN: {kelas_id} -> {kelas} dan {mapel_id} -> {mata_pelajaran}
-        Route::get('input-nilai/{kelas}/{mata_pelajaran}', [NilaiController::class, 'showForm'])->name('nilai.form');
-        Route::post('input-nilai', [NilaiController::class, 'store'])->name('nilai.store');
+        Route::get('input-nilai', [App\Http\Controllers\Sekolah\Guru\NilaiController::class, 'index'])->name('nilai.index');
+        Route::get('input-nilai/{kegiatan}/kelas', [App\Http\Controllers\Sekolah\Guru\NilaiController::class, 'showKelas'])->name('nilai.kelas');
+        Route::get('input-nilai/{kegiatan}/kelas/{kelasId}/mapel/{mapelId}', [App\Http\Controllers\Sekolah\Guru\NilaiController::class, 'formNilai'])->name('nilai.form');
+        Route::post('input-nilai/{kegiatan}/store', [App\Http\Controllers\Sekolah\Guru\NilaiController::class, 'store'])->name('nilai.store');
         Route::get('izin', [IzinController::class, 'index'])->name('izin.index');
         Route::get('izin/create', [IzinController::class, 'create'])->name('izin.create');
         Route::post('izin', [IzinController::class, 'store'])->name('izin.store');

@@ -43,3 +43,8 @@
                  :active="request()->routeIs('sekolah.admin.guru-pengganti.*')">
     {{ __('Manajemen Guru Pengganti') }}
 </x-dropdown-link>
+
+<x-dropdown-link :href="route('sekolah.admin.laporan.index')" 
+                 :active="request()->routeIs('sekolah.admin.laporan.*')">
+    {{ __('Laporan & Ledger') }}
+</x-dropdown-link>

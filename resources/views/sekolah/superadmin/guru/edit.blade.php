@@ -63,6 +63,14 @@
                         </div>
 
                         <div class="mt-4">
+    <x-input-label for="tipe_jam_kerja" :value="__('Tipe Jam Kerja')" />
+    <select name="tipe_jam_kerja" id="tipe_jam_kerja" class="block mt-1 w-full border-gray-300 rounded-md shadow-sm">
+        <option value="full_time" @selected(old('tipe_jam_kerja', $user->guru->tipe_jam_kerja ?? 'full_time') == 'full_time')>Full-Time (Ikut Jam Masuk/Pulang Sekolah)</option>
+        <option value="flexi" @selected(old('tipe_jam_kerja', $user->guru->tipe_jam_kerja ?? 'full_time') == 'flexi')>Flexi (Sesuai Jadwal Mengajar)</option>
+    </select>
+</div>
+
+                        <div class="mt-4">
                             <x-input-label :value="__('Tugaskan ke Unit Sekolah')" />
                             @php
                                 // Ambil ID sekolah yang sudah ter-assign ke guru ini

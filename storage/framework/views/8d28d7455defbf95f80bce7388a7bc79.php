@@ -453,6 +453,33 @@
                         </div>
 
                         <div class="mt-4">
+    <?php if (isset($component)) { $__componentOriginale3da9d84bb64e4bc2eeebaafabfb2581 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginale3da9d84bb64e4bc2eeebaafabfb2581 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.input-label','data' => ['for' => 'tipe_jam_kerja','value' => __('Tipe Jam Kerja')]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('input-label'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['for' => 'tipe_jam_kerja','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(__('Tipe Jam Kerja'))]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginale3da9d84bb64e4bc2eeebaafabfb2581)): ?>
+<?php $attributes = $__attributesOriginale3da9d84bb64e4bc2eeebaafabfb2581; ?>
+<?php unset($__attributesOriginale3da9d84bb64e4bc2eeebaafabfb2581); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginale3da9d84bb64e4bc2eeebaafabfb2581)): ?>
+<?php $component = $__componentOriginale3da9d84bb64e4bc2eeebaafabfb2581; ?>
+<?php unset($__componentOriginale3da9d84bb64e4bc2eeebaafabfb2581); ?>
+<?php endif; ?>
+    <select name="tipe_jam_kerja" id="tipe_jam_kerja" class="block mt-1 w-full border-gray-300 rounded-md shadow-sm">
+        <option value="full_time" <?php if(old('tipe_jam_kerja', $user->guru->tipe_jam_kerja ?? 'full_time') == 'full_time'): echo 'selected'; endif; ?>>Full-Time (Ikut Jam Masuk/Pulang Sekolah)</option>
+        <option value="flexi" <?php if(old('tipe_jam_kerja', $user->guru->tipe_jam_kerja ?? 'full_time') == 'flexi'): echo 'selected'; endif; ?>>Flexi (Sesuai Jadwal Mengajar)</option>
+    </select>
+</div>
+
+                        <div class="mt-4">
                             <?php if (isset($component)) { $__componentOriginale3da9d84bb64e4bc2eeebaafabfb2581 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginale3da9d84bb64e4bc2eeebaafabfb2581 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.input-label','data' => ['value' => __('Tugaskan ke Unit Sekolah')]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>

@@ -1,9 +1,15 @@
+<?php
+// Pastikan Carbon sudah di-use di layout atau file utama jika menggunakan Blade di luar Laravel
+use Carbon\Carbon;
+Carbon::setLocale('id'); 
+?>
+
 <x-app-layout hide-nav>
     <x-slot name="header"></x-slot>
 
     <div class="min-h-screen bg-gray-50 pb-24">
         
-        {{-- 1. MOBILE HEADER (Gaya Konsisten Dashboard) --}}
+        {{-- 1. HEADER (Gaya Mobile Dashboard Guru) --}}
         <div class="bg-emerald-600 px-5 pt-8 pb-24 shadow-md rounded-b-[30px] relative overflow-hidden">
             {{-- Dekorasi Background --}}
             <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
@@ -13,7 +19,7 @@
                 <a href="{{ route('sekolah.guru.dashboard') }}" class="text-white hover:bg-emerald-700/50 p-2 rounded-full transition">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
                 </a>
-                <h1 class="text-lg font-bold text-white">Jadwal Mengajar</h1>
+                <h1 class="text-lg font-bold text-white">Jadwal Mengajar Saya</h1>
             </div>
         </div>
 
@@ -37,53 +43,63 @@
                     <div class="space-y-3">
                         @foreach ($jadwalGroup as $jadwal)
                             {{-- Card Item Jadwal --}}
-                            <a href="{{ route('sekolah.guru.jadwal.show', $jadwal->id) }}" class="block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden relative group active:scale-[0.98] transition-transform">
+                            <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center relative overflow-hidden group active:scale-[0.99] transition-transform">
                                 
-                                {{-- Garis Indikator --}}
-                                <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500"></div>
+                                @php
+                                    // Logika Waktu
+                                    $hariSekarang = Carbon::now()->locale('id_ID')->isoFormat('dddd');
+                                    // Karena data hari di DB mungkin "Senin" dan di Carbon "Senin", kita pastikan formatnya sama
+                                    $isHariIni = strtolower($hariSekarang) == strtolower($jadwal->hari);
+                                    
+                                    $waktuMulai = Carbon::parse($jadwal->jam_mulai);
+                                    $waktuBuka = $waktuMulai->copy()->subMinutes(15);
+                                    $sekarang = Carbon::now();
 
-                                <div class="p-4 pl-5 flex justify-between items-center">
-                                    <div>
-                                        {{-- Baris Atas: Hari & Jam --}}
-                                        <div class="flex items-center gap-2 mb-1.5">
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-600 border border-gray-200">
-                                                {{ $jadwal->hari }}
-                                            </span>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                {{ \Carbon\Carbon::parse($jadwal->jam_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($jadwal->jam_selesai)->format('H:i') }}
-                                            </span>
-                                        </div>
+                                    // Aktif jika: HARI INI dan SUDAH WAKTUNYA
+                                    $isActive = $isHariIni && $sekarang->greaterThanOrEqualTo($waktuBuka);
+                                    
+                                    // Visual Styling
+                                    $garisWarna = $isActive ? 'bg-indigo-500' : ($isHariIni ? 'bg-yellow-500' : 'bg-gray-300');
+                                @endphp
 
-                                        {{-- Judul Mapel --}}
-                                        <h4 class="text-sm font-bold text-gray-800 leading-tight mb-0.5">
-                                            {{ $jadwal->mataPelajaran->nama_mapel }}
-                                        </h4>
+                                {{-- Garis Dekorasi Kiri --}}
+                                <div class="absolute left-0 top-0 bottom-0 w-1.5 {{ $garisWarna }}"></div>
 
-                                        {{-- Kelas --}}
-                                        <p class="text-xs text-gray-500 font-medium flex items-center gap-1">
-                                            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                                            {{ $jadwal->kelas->nama_kelas }}
-                                        </p>
+                                <div class="pl-3 flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                                            {{ $jadwal->hari }}
+                                        </span>
+                                        <span class="text-[10px] text-gray-400 uppercase font-bold">{{ $jadwal->kelas->nama_kelas }}</span>
                                     </div>
-
-                                    {{-- Panah Kanan --}}
-                                    <div class="text-gray-300 group-hover:text-emerald-500 transition-colors pl-2">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                    </div>
+                                    <h4 class="text-gray-800 font-bold text-sm truncate">{{ $jadwal->mataPelajaran->nama_mapel }}</h4>
+                                    <p class="text-[10px] text-gray-500 mt-0.5">{{ $jadwal->jam_mulai }} - {{ $jadwal->jam_selesai }}</p>
                                 </div>
-                            </a>
+
+                                {{-- AKSI (MODIFIKASI Sesuai Permintaan User) --}}
+                                <div>
+                                    @if($isActive)
+                                        <a href="{{ route('sekolah.guru.jadwal.show', $jadwal->id) }}" class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 active:bg-indigo-700 shadow-md">
+                                            Mulai
+                                        </a>
+                                    @else
+                                        <span class="text-gray-400 text-xs font-semibold cursor-not-allowed px-3 py-2" 
+                                              title="{{ $isHariIni ? 'Dibuka jam ' . $waktuBuka->format('H:i') : 'Bukan jadwal hari ini' }}">
+                                            @if($isHariIni)
+                                                Dibuka {{ $waktuBuka->format('H:i') }}
+                                            @else
+                                                <span class="text-red-500">Bukan Hari Ini</span>
+                                            @endif
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
                         @endforeach
                     </div>
                 </div>
             @empty
-                {{-- State Kosong --}}
-                <div class="bg-white rounded-2xl shadow-sm border border-dashed border-gray-300 p-8 text-center mt-4">
-                    <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-300">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    </div>
-                    <h3 class="text-sm font-bold text-gray-800">Belum Ada Jadwal</h3>
-                    <p class="text-xs text-gray-500 mt-1">Anda belum memiliki jadwal mengajar yang ditugaskan.</p>
+                <div class="bg-white rounded-2xl shadow-sm border border-dashed border-gray-300 p-10 text-center">
+                    <p class="text-gray-500 text-sm font-medium">Anda belum memiliki jadwal mengajar.</p>
                 </div>
             @endforelse
 

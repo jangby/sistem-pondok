@@ -25,8 +25,8 @@ class KinerjaSiswaController extends Controller
         $pondokId = $this->getPondokId();
         
         // Filter Bulan
-        $bulan = $request->input('bulan', now()->month);
-        $tahun = $request->input('tahun', now()->year);
+        $bulan = (int) $request->input('bulan', now()->month);
+        $tahun = (int) $request->input('tahun', now()->year);
         $startDate = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 

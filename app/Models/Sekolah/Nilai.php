@@ -17,8 +17,13 @@ class Nilai extends Model
     ];
 
     public function tahunAjaran() { return $this->belongsTo(TahunAjaran::class); }
-    public function santri() { return $this->belongsTo(Santri::class); }
+    //public function santri() { return $this->belongsTo(Santri::class); }
     public function mataPelajaran() { return $this->belongsTo(MataPelajaran::class); }
     public function guru() { return $this->belongsTo(User::class, 'guru_user_id'); }
     public function kegiatanAkademik() { return $this->belongsTo(KegiatanAkademik::class); }
+
+    public function santri()
+    {
+        return $this->belongsTo(\App\Models\Santri::class, 'santri_id');
+    }
 }

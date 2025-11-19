@@ -15,7 +15,7 @@ class Guru extends Model
     use HasFactory, BelongsToPondok, Notifiable; // <-- 2. TAMBAHKAN 'Notifiable'
 
     protected $fillable = [
-        'user_id', 'pondok_id', 'nip', 'telepon', 'alamat',
+        'user_id', 'pondok_id', 'nip', 'telepon', 'alamat', 'tipe_jam_kerja',
     ];
 
     /**

@@ -1,9 +1,10 @@
 <?php
+
 namespace App\Http\Controllers\Sekolah\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sekolah\Sekolah;
-use App\Models\Sekolah\Guru; // <-- Model Profil Guru
+use App\Models\Sekolah\Guru; // Model Profil Guru
 use App\Models\User;
 use App\Models\PondokStaff;
 use Illuminate\Http\Request;
@@ -16,24 +17,32 @@ use Illuminate\Support\Facades\Log;
 
 class GuruController extends Controller
 {
-    // Helper untuk mengambil Pondok ID
+    // === HELPER FUNCTIONS ===
+
+    /**
+     * Mengambil ID Pondok dari user yang sedang login (Super Admin Sekolah)
+     */
     private function getPondokId()
     {
-        return Auth::user()->pondokStaff->pondok_id; //
+        return Auth::user()->pondokStaff->pondok_id;
     }
     
-    // Helper untuk Keamanan
+    /**
+     * Memastikan user yang diedit/dihapus adalah guru milik pondok ini
+     */
     private function checkOwnership(User $user)
     {
         $isMyStaff = $user->pondokStaff()
                             ->where('pondok_id', $this->getPondokId())
-                            ->exists(); //
+                            ->exists();
 
         // Pastikan user ini adalah milik pondok saya DAN rolenya 'guru'
         if (!$isMyStaff || !$user->hasRole('guru')) {
             abort(404, 'Data Guru tidak ditemukan');
         }
     }
+
+    // === CRUD METHODS ===
 
     /**
      * Tampilkan daftar Akun Guru
@@ -43,10 +52,10 @@ class GuruController extends Controller
         $pondokId = $this->getPondokId();
         
         // Ambil user dengan role 'guru' di pondok ini
-        // Eager load relasi 'guru' (profil) dan 'sekolahs' (penugasan)
+        // Eager load relasi 'guru' (profil) dan 'sekolahs' (penugasan unit)
         $users = User::role('guru')
-            ->whereHas('pondokStaff', fn($q) => $q->where('pondok_id', $pondokId)) //
-            ->with(['guru', 'sekolahs']) //
+            ->whereHas('pondokStaff', fn($q) => $q->where('pondok_id', $pondokId))
+            ->with(['guru', 'sekolahs'])
             ->latest()
             ->paginate(10);
             
@@ -58,7 +67,7 @@ class GuruController extends Controller
      */
     public function create()
     {
-        $sekolahs = Sekolah::where('pondok_id', $this->getPondokId())->get(); //
+        $sekolahs = Sekolah::where('pondok_id', $this->getPondokId())->get();
         
         if ($sekolahs->isEmpty()) {
             return redirect()->route('sekolah.superadmin.sekolah.index')
@@ -83,11 +92,12 @@ class GuruController extends Controller
             
             // Validasi Profil Guru
             'nip' => ['nullable', 'string', 'max:255', Rule::unique('gurus')->where(fn ($q) => $q->where('pondok_id', $pondokId))],
-            'telepon' => 'required|numeric|min:10',
+            'telepon' => 'required|numeric|min:10', // <-- Wajib Numeric
             'alamat' => 'nullable|string',
+            'tipe_jam_kerja' => 'required|in:full_time,flexi', // <-- Validasi Tipe Jam Kerja
 
-            // Validasi Penugasan
-            'sekolah_ids' => 'required|array|min:1', // Harus array dan minimal pilih 1
+            // Validasi Penugasan (Multi-Select)
+            'sekolah_ids' => 'required|array|min:1',
             'sekolah_ids.*' => 'exists:sekolahs,id',
         ]);
 
@@ -95,32 +105,33 @@ class GuruController extends Controller
         DB::beginTransaction();
         try {
             // 1. Buat User baru
-            $user = User::create([ //
+            $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
             ]);
 
             // 2. Beri role 'guru'
-            $user->assignRole('guru'); //
+            $user->assignRole('guru');
 
             // 3. Tautkan ke pondok_staff (manual)
-            PondokStaff::create([ //
+            PondokStaff::create([
                 'user_id' => $user->id,
                 'pondok_id' => $pondokId,
             ]);
 
             // 4. Buat Profil Guru (tabel gurus)
-            Guru::create([ //
+            Guru::create([
                 'user_id' => $user->id,
                 'pondok_id' => $pondokId,
                 'nip' => $request->nip,
                 'telepon' => $request->telepon,
                 'alamat' => $request->alamat,
+                'tipe_jam_kerja' => $request->tipe_jam_kerja, // <-- Simpan Tipe Jam Kerja
             ]);
 
             // 5. Tautkan ke unit sekolah (pivot 'sekolah_user')
-            $user->sekolahs()->attach($validated['sekolah_ids']); //
+            $user->sekolahs()->attach($validated['sekolah_ids']);
 
             DB::commit();
 
@@ -144,10 +155,10 @@ class GuruController extends Controller
         $this->checkOwnership($user); // Keamanan
 
         // Ambil data untuk dropdown
-        $sekolahs = Sekolah::where('pondok_id', $this->getPondokId())->get(); //
+        $sekolahs = Sekolah::where('pondok_id', $this->getPondokId())->get();
         
         // Load relasi profil guru & penugasan sekolah
-        $user->load(['guru', 'sekolahs']); //
+        $user->load(['guru', 'sekolahs']);
 
         return view('sekolah.superadmin.guru.edit', compact('user', 'sekolahs'));
     }
@@ -168,11 +179,12 @@ class GuruController extends Controller
             
             // Validasi Profil Guru
             'nip' => ['nullable', 'string', 'max:255', Rule::unique('gurus')->where(fn ($q) => $q->where('pondok_id', $pondokId))->ignore($user->guru->id ?? null)],
-            'telepon' => 'required|numeric|min:10',
+            'telepon' => 'required|numeric|min:10', // <-- Wajib Numeric
             'alamat' => 'nullable|string',
+            'tipe_jam_kerja' => 'required|in:full_time,flexi', // <-- Validasi Tipe Jam Kerja
 
-            // Validasi Penugasan (sekarang bisa array)
-            'sekolah_ids' => 'required|array',
+            // Validasi Penugasan (Multi-Select)
+            'sekolah_ids' => 'required|array|min:1',
             'sekolah_ids.*' => 'exists:sekolahs,id',
         ]);
 
@@ -184,21 +196,22 @@ class GuruController extends Controller
             if ($request->filled('password')) {
                 $user->password = Hash::make($validated['password']);
             }
-            $user->save(); //
+            $user->save();
 
             // 2. Update atau Buat Profil Guru
-            Guru::updateOrCreate( //
+            Guru::updateOrCreate(
                 ['user_id' => $user->id], // Cari berdasarkan user_id
                 [ // Update/Buat dengan data ini
                     'pondok_id' => $pondokId,
                     'nip' => $request->nip,
                     'telepon' => $request->telepon,
                     'alamat' => $request->alamat,
+                    'tipe_jam_kerja' => $request->tipe_jam_kerja, // <-- Update Tipe Jam Kerja
                 ]
             );
 
             // 3. Update penugasan sekolah (Sync)
-            $user->sekolahs()->sync($validated['sekolah_ids']); //
+            $user->sekolahs()->sync($validated['sekolah_ids']);
 
             DB::commit();
 
@@ -225,7 +238,7 @@ class GuruController extends Controller
             // 1. Relasi pondok_staff (via cascade)
             // 2. Profil guru (via cascade)
             // 3. Relasi sekolah_user (via cascade)
-            $user->delete(); //
+            $user->delete();
 
             return redirect()->route('sekolah.superadmin.guru.index')
                              ->with('success', 'Akun Guru berhasil dihapus.');

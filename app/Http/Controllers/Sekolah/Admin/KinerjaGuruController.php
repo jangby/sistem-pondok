@@ -23,8 +23,8 @@ class KinerjaGuruController extends Controller
         $sekolah = $this->getSekolah();
         
         // Filter Bulan (Default: Bulan Ini)
-        $bulan = $request->input('bulan', now()->month);
-        $tahun = $request->input('tahun', now()->year);
+        $bulan = (int) $request->input('bulan', now()->month);
+        $tahun = (int) $request->input('tahun', now()->year);
         
         $startDate = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();

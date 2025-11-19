@@ -9,3 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('gate:check')->everyMinute();
+Schedule::command('absensi:check-guru-notifications')->everyMinute();
+Schedule::command('nilai:check-completion')->hourly();

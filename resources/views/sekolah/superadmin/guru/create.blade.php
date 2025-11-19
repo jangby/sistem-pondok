@@ -62,6 +62,15 @@
                         </div>
 
                         <div class="mt-4">
+    <x-input-label for="tipe_jam_kerja" :value="__('Tipe Jam Kerja')" />
+    <select name="tipe_jam_kerja" id="tipe_jam_kerja" class="block mt-1 w-full border-gray-300 rounded-md shadow-sm">
+        <option value="full_time">Full-Time (Ikut Jam Masuk/Pulang Sekolah)</option>
+        <option value="flexi">Flexi (Sesuai Jadwal Mengajar)</option>
+    </select>
+    <p class="text-xs text-gray-500 mt-1">Pilih 'Flexi' untuk guru yang boleh datang siang atau pulang lebih awal sesuai jadwal mengajarnya.</p>
+</div>
+
+                        <div class="mt-4">
                             <x-input-label :value="__('Tugaskan ke Unit Sekolah (Bisa pilih lebih dari satu)')" />
                             <div class="space-y-2 mt-2">
                                 @foreach($sekolahs as $sekolah)

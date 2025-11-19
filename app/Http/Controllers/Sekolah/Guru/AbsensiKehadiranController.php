@@ -134,65 +134,92 @@ class AbsensiKehadiranController extends Controller
             return back()->with('error', 'Gagal: Anda berada di luar radius absensi sekolah.');
         }
 
-        // 5. Proses Tipe Absen
+        // Default: Gunakan Global Settings (Full-time)
+        $targetMasukAwal = $settings->jam_masuk;
+        $targetBatasTelat = $settings->batas_telat;
+        $targetPulangAwal = $settings->jam_pulang_awal;
+        $targetPulangAkhir = $settings->jam_pulang_akhir;
+
+        // Override jika Tipe Guru adalah FLEXI
+        if ($guruProfile && $guruProfile->tipe_jam_kerja == 'flexi') {
+            // Cari jadwal mengajar guru HARI INI
+            $jadwals = \App\Models\Sekolah\JadwalPelajaran::where('guru_user_id', $guruUser->id)
+                        ->where('hari', $namaHariIni)
+                        ->orderBy('jam_mulai') // Urutkan dari pagi
+                        ->get();
+
+            if ($jadwals->isEmpty()) {
+                // Kasus: Guru Flexi tapi TIDAK ADA jadwal hari ini
+                return back()->with('error', 'Anda berstatus Flexi dan tidak memiliki jadwal mengajar hari ini, jadi tidak perlu absen.');
+            }
+
+            $jadwalPertama = $jadwals->first();
+            $jadwalTerakhir = $jadwals->last();
+
+            // Aturan Flexi:
+            // Masuk: Boleh absen 60 menit sebelum jam pertama dimulai
+            $targetMasukAwal = \Carbon\Carbon::parse($jadwalPertama->jam_mulai)->subMinutes(60)->format('H:i:s');
+            
+            // Telat: Jika lewat dari jam mulai pelajaran pertama
+            $targetBatasTelat = $jadwalPertama->jam_mulai;
+
+            // Pulang: Boleh pulang segera setelah jam terakhir selesai
+            $targetPulangAwal = $jadwalTerakhir->jam_selesai;
+            
+            // Pulang Akhir: Sampai jam 23:59 (bebas)
+            $targetPulangAkhir = '23:59:00';
+        }
+
+        // === PROSES SIMPAN ABSENSI ===
+        
         $absensiHariIni = AbsensiGuru::firstOrNew(
-            [
-                'guru_user_id' => $guruUser->id,
-                'tanggal' => $now->format('Y-m-d')
-            ],
+            ['guru_user_id' => $guruUser->id, 'tanggal' => $now->format('Y-m-d')],
             ['sekolah_id' => $sekolah->id]
         );
         
         $pesanSukses = '';
         
         if ($validated['tipe_absen'] == 'masuk') {
-            // ... (logika validasi jam masuk) ...
-            if ($absensiHariIni->jam_masuk) return back()->with('error', 'Anda sudah melakukan absen masuk hari ini.');
-            if ($waktuSekarang > $settings->batas_telat) return back()->with('error', 'Gagal: Anda sudah melewati batas jam absen masuk.');
-            if ($waktuSekarang < $settings->jam_masuk) return back()->with('error', 'Gagal: Belum waktunya absen masuk.');
+            if ($absensiHariIni->jam_masuk) return back()->with('error', 'Anda sudah melakukan absen masuk.');
+            
+            // Validasi Jam Dinamis
+            if ($waktuSekarang < $targetMasukAwal) {
+                 return back()->with('error', 'Belum waktunya absen masuk. (Jadwal Anda mulai: ' . ($guruProfile->tipe_jam_kerja == 'flexi' ? $targetBatasTelat : $targetMasukAwal) . ')');
+            }
+            if ($waktuSekarang > $targetBatasTelat) {
+                 return back()->with('error', 'Anda terlambat. Batas waktu adalah ' . $targetBatasTelat);
+            }
             
             $absensiHariIni->jam_masuk = $waktuSekarang;
             $absensiHariIni->status = 'hadir';
             $absensiHariIni->verifikasi_masuk = "GPS+KODE: " . $namaLokasiValid;
-            $pesanSukses = 'Absen Masuk berhasil dicatat pada jam ' . $waktuSekarang;
+            $pesanSukses = 'Absen Masuk berhasil (' . ($guruProfile->tipe_jam_kerja == 'flexi' ? 'Flexi' : 'Full-Time') . ')';
 
         } elseif ($validated['tipe_absen'] == 'pulang') {
-            // ... (logika validasi jam pulang) ...
-            if (!$absensiHariIni->jam_masuk) return back()->with('error', 'Gagal: Anda belum melakukan absen masuk.');
-            if ($absensiHariIni->jam_pulang) return back()->with('error', 'Anda sudah melakukan absen pulang hari ini.');
-            if ($waktuSekarang < $settings->jam_pulang_awal) return back()->with('error', 'Gagal: Belum waktunya absen pulang.');
-            if ($waktuSekarang > $settings->jam_pulang_akhir) return back()->with('error', 'Gagal: Anda sudah melewati batas jam absen pulang.');
+            if (!$absensiHariIni->jam_masuk) return back()->with('error', 'Anda belum melakukan absen masuk.');
+            if ($absensiHariIni->jam_pulang) return back()->with('error', 'Anda sudah melakukan absen pulang.');
+            
+            // Validasi Jam Dinamis
+            if ($waktuSekarang < $targetPulangAwal) {
+                return back()->with('error', 'Belum waktunya pulang. (Waktu pulang Anda: ' . $targetPulangAwal . ')');
+            }
+            if ($waktuSekarang > $targetPulangAkhir) {
+                return back()->with('error', 'Melewati batas waktu sistem.');
+            }
 
             $absensiHariIni->jam_pulang = $waktuSekarang;
             $absensiHariIni->verifikasi_pulang = "GPS+KODE: " . $namaLokasiValid;
-            $pesanSukses = 'Absen Pulang berhasil dicatat pada jam ' . $waktuSekarang;
+            $pesanSukses = 'Absen Pulang berhasil.';
         }
 
         $absensiHariIni->save();
 
-        /*
-        |--------------------------------------------------------------------------
-        | 6. PERUBAHAN BARU: Kirim Notifikasi WAHA
-        |--------------------------------------------------------------------------
-        */
+        // Kirim Notifikasi WA (Sama seperti sebelumnya)
         try {
-            // Ambil profil guru dari user yang login
-            $guruProfile = $guruUser->guru; //
-            
             if ($guruProfile) {
-                // Kirim notifikasi ke profil guru (yang punya nomor WA)
-                // Kita tunda 5 detik agar pesan WA tidak terlalu instan
-                $guruProfile->notify((new GuruAbsensiNotification($absensiHariIni, $pesanSukses))->delay(now()->addSeconds(5)));
+                $guruProfile->notify((new \App\Notifications\GuruAbsensiNotification($absensiHariIni, $pesanSukses))->delay(now()->addSeconds(5)));
             }
-        } catch (\Exception $e) {
-            // Jika notif gagal, jangan batalkan absensi. Cukup catat error.
-            Log::error('Gagal mengirim Notifikasi WA Absensi Guru: ' . $e->getMessage());
-        }
-        /*
-        |--------------------------------------------------------------------------
-        | AKHIR PERUBAHAN
-        |--------------------------------------------------------------------------
-        */
+        } catch (\Exception $e) {}
 
         return redirect()->route('sekolah.guru.absensi.kehadiran.index')
                          ->with('success', $pesanSukses);

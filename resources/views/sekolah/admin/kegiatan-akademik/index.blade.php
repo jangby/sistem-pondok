@@ -66,6 +66,7 @@
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <a href="{{ route('sekolah.admin.kegiatan-akademik.kelola.kelas', $kegiatan->id) }}" class="text-blue-600 hover:text-blue-900 mr-2">Kelola Nilai</a>
                                             <a href="{{ route('sekolah.admin.kegiatan-akademik.edit', $kegiatan->id) }}" class="text-indigo-600 hover:text-indigo-900">Edit</a>
                                             
                                             <form action="{{ route('sekolah.admin.kegiatan-akademik.destroy', $kegiatan->id) }}" method="POST" class="inline-block ml-2" onsubmit="return confirm('Anda yakin ingin menghapus jadwal kegiatan ini?');">

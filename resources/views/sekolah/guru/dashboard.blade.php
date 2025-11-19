@@ -1,3 +1,10 @@
+<?php
+// Pastikan Carbon sudah di-use di layout atau file utama jika menggunakan Blade di luar Laravel
+use Carbon\Carbon;
+// Set locale ke Indonesia (jika belum diatur global)
+Carbon::setLocale('id'); 
+?>
+
 <x-app-layout hide-nav>
     <x-slot name="header"></x-slot>
 
@@ -71,7 +78,7 @@
                     </a>
 
                     {{-- Izin --}}
-                    <a href="{{ route('sekolah.guru.izin.index') }}" class="flex flex-col items-center gap-2 group">
+                    <a href="#" class="flex flex-col items-center gap-2 group">
                         <div class="w-14 h-14 bg-orange-50 rounded-2xl border border-orange-100 flex items-center justify-center text-orange-600 group-active:scale-95 transition-all duration-200 shadow-sm group-hover:bg-orange-100">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </div>
@@ -89,7 +96,7 @@
                     Jadwal Hari Ini
                 </h3>
                 <p class="text-[10px] text-gray-400 uppercase font-bold tracking-wider bg-white px-2 py-1 rounded shadow-sm">
-                    {{ now()->locale('id_ID')->isoFormat('dddd, D MMM') }}
+                    {{ Carbon::now()->isoFormat('dddd, D MMM') }}
                 </p>
             </div>
 
@@ -97,8 +104,26 @@
                 @forelse ($jadwalHariIni as $jadwal)
                     {{-- Card Jadwal Item --}}
                     <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center relative overflow-hidden group active:scale-[0.99] transition-transform">
+                        
+                        @php
+                            // Hitung waktu mulai (dikurangi 15 menit)
+                            $waktuMulai = Carbon::parse($jadwal->jam_mulai);
+                            $waktuBuka = $waktuMulai->copy()->subMinutes(15);
+                            $waktuSelesai = Carbon::parse($jadwal->jam_selesai);
+                            $sekarang = Carbon::now();
+
+                            // Cek apakah tombol boleh aktif: Sekarang >= 15 menit sebelum mulai
+                            $isButtonActive = $sekarang->greaterThanOrEqualTo($waktuBuka) && $sekarang->lessThanOrEqualTo($waktuSelesai);
+                            
+                            // Tentukan warna garis dekorasi
+                            $garisWarna = $isButtonActive ? 'bg-indigo-500' : 'bg-gray-300';
+                            
+                            // Tentukan apakah jadwal sudah lewat
+                            $isJadwalLewat = $sekarang->greaterThan($waktuSelesai);
+                        @endphp
+
                         {{-- Garis Dekorasi Kiri --}}
-                        <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500"></div>
+                        <div class="absolute left-0 top-0 bottom-0 w-1.5 {{ $isJadwalLewat ? 'bg-red-500' : $garisWarna }}"></div>
 
                         <div class="pl-3">
                             <div class="flex items-center gap-2 mb-1">
@@ -110,9 +135,22 @@
                             <h4 class="text-gray-800 font-bold text-sm">{{ $jadwal->mataPelajaran->nama_mapel }}</h4>
                         </div>
 
-                        <a href="{{ route('sekolah.guru.jadwal.show', $jadwal->id) }}" class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-emerald-600 hover:text-white transition-colors shadow-sm">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                        </a>
+                        {{-- Tombol Aksi (MODIFIKASI) --}}
+                        <div>
+                            @if($isJadwalLewat)
+                                <span class="inline-flex items-center px-3 py-2 bg-red-100 text-red-600 border border-red-200 rounded-md font-bold text-xs uppercase tracking-widest cursor-not-allowed">
+                                    Lewat
+                                </span>
+                            @elseif($isButtonActive)
+                                <a href="{{ route('sekolah.guru.jadwal.show', $jadwal->id) }}" class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 active:bg-indigo-700 shadow-md">
+                                    Mulai
+                                </a>
+                            @else
+                                <button disabled class="inline-flex items-center px-3 py-2 bg-gray-200 border border-gray-300 rounded-md font-semibold text-xs text-gray-600 uppercase tracking-widest cursor-not-allowed" title="Bisa dibuka mulai {{ $waktuBuka->format('H:i') }}">
+                                    Belum Waktunya
+                                </button>
+                            @endif
+                        </div>
                     </div>
                 @empty
                     <div class="text-center py-10 bg-white rounded-2xl border border-dashed border-gray-200">
