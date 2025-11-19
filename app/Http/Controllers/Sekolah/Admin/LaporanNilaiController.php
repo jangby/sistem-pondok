@@ -153,4 +153,41 @@ class LaporanNilaiController extends Controller
 
         return $pdf->stream('Ledger_Nilai_' . $mapel->kode_mapel . '_' . $kelas->nama_kelas . '.pdf');
     }
+
+    /**
+     * Cetak Format Nilai Kosong (Untuk pegangan Guru)
+     */
+    public function cetakFormatNilai(KegiatanAkademik $kegiatan, Kelas $kelas, MataPelajaran $mapel)
+    {
+        $this->checkOwnership($kegiatan);
+        
+        // Ambil santri aktif, urutkan nama
+        $santris = $kelas->santris()->where('status', 'active')->orderBy('full_name')->get();
+
+        $judul = "FORMAT NILAI - {$mapel->nama_mapel} ({$kelas->nama_kelas})";
+        
+        $pdf = PDF::loadView('sekolah.admin.laporan-nilai.pdf.format-nilai', compact(
+            'judul', 'kegiatan', 'kelas', 'mapel', 'santris'
+        ))->setPaper('a4', 'portrait');
+
+        return $pdf->stream('Format_Nilai_' . $mapel->kode_mapel . '.pdf');
+    }
+
+    /**
+     * Cetak Daftar Hadir Ujian
+     */
+    public function cetakDaftarHadir(KegiatanAkademik $kegiatan, Kelas $kelas, MataPelajaran $mapel)
+    {
+        $this->checkOwnership($kegiatan);
+        
+        $santris = $kelas->santris()->where('status', 'active')->orderBy('full_name')->get();
+
+        $judul = "DAFTAR HADIR - {$mapel->nama_mapel} ({$kelas->nama_kelas})";
+        
+        $pdf = PDF::loadView('sekolah.admin.laporan-nilai.pdf.daftar-hadir', compact(
+            'judul', 'kegiatan', 'kelas', 'mapel', 'santris'
+        ))->setPaper('a4', 'portrait');
+
+        return $pdf->stream('Daftar_Hadir_' . $mapel->kode_mapel . '.pdf');
+    }
 }

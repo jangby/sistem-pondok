@@ -606,6 +606,11 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-sekolah'])
             
             // Rute Cetak PDF
             Route::get('pdf/kelas/{kelas}/mapel/{mapel}', [LaporanNilaiController::class, 'cetakLedgerNilai'])->name('cetak.nilai');
+
+            Route::get('pdf/kelas/{kelas}/mapel/{mapel}/format', [LaporanNilaiController::class, 'cetakFormatNilai'])->name('cetak.format-nilai');
+            
+            // Cetak Daftar Hadir Ujian
+            Route::get('pdf/kelas/{kelas}/mapel/{mapel}/hadir', [LaporanNilaiController::class, 'cetakDaftarHadir'])->name('cetak.daftar-hadir');
         });
 
         Route::resource('kelas', \App\Http\Controllers\Sekolah\Admin\KelasController::class);
