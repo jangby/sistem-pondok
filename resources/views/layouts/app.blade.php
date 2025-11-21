@@ -51,6 +51,9 @@
                 @elseif(Auth::user()->hasRole('orang-tua'))
                     {{-- Orang tua biasanya punya layout sendiri, tapi jika pakai app.blade: --}}
                     @include('layouts.navigation') 
+
+                @elseif (Auth::user()->hasRole('admin-pendidikan'))
+                    @include('layouts.pendidikan-admin-nav')
                 
                 @else
                     @include('layouts.navigation')

@@ -9,21 +9,24 @@ class PondokStaff extends Model
 {
     use HasFactory;
 
-    // Tentukan nama tabelnya secara eksplisit
-    protected $table = 'pondok_staff';
+    // 1. Definisikan Nama Tabel secara Eksplisit
+    // (Penting: karena migrasi Anda bernama 'pondok_staff' tapi Laravel mencari 'pondok_staffs')
+    protected $table = 'pondok_staff'; 
 
-    // Tentukan kolom yang boleh diisi
+    // 2. Izinkan Pengisian Kolom (Mass Assignment)
     protected $fillable = [
         'user_id',
         'pondok_id',
+        'role', // Jika ada kolom role di tabel ini
     ];
 
-    // Definisikan relasi (ini akan sangat berguna)
+    // Relasi balik ke User
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
+    // Relasi ke Pondok
     public function pondok()
     {
         return $this->belongsTo(Pondok::class);

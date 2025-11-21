@@ -21,6 +21,7 @@ class Santri extends Model
         'golongan_darah',
         'riwayat_penyakit',
         'kelas_id',
+        'mustawa_id',
         'status',
         'orang_tua_id',
         'pondok_id',
@@ -150,5 +151,37 @@ public function dompet()
     public function absensiPelajarans(): HasMany
     {
         return $this->hasMany(\App\Models\Sekolah\AbsensiSiswaPelajaran::class);
+    }
+
+    // Relasi ke Absensi Pesantren
+public function absensiDiniyah()
+{
+    return $this->hasMany(AbsensiDiniyah::class);
+}
+
+// Relasi ke Nilai Rapor Pesantren
+public function nilaiPesantren()
+{
+    return $this->hasMany(NilaiPesantren::class);
+}
+
+// Relasi ke Program Unggulan (Many-to-Many)
+public function programUnggulan()
+{
+    return $this->belongsToMany(ProgramUnggulan::class, 'program_unggulan_members')
+                ->withPivot('joined_at')
+                ->withTimestamps();
+}
+
+// Relasi ke Jurnal (Hafalan/Catatan)
+public function jurnalPendidikan()
+{
+    return $this->hasMany(JurnalPendidikan::class);
+}
+
+// Tambahkan Relasi ini
+    public function mustawa()
+    {
+        return $this->belongsTo(Mustawa::class);
     }
 }

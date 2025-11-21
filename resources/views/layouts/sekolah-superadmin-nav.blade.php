@@ -56,6 +56,9 @@
             <x-dropdown-link :href="route('sekolah.superadmin.admin-sekolah.index')">
                 {{ __('Manajemen Admin Sekolah') }}
             </x-dropdown-link>
+            <x-nav-link :href="route('sekolah.superadmin.admin-pendidikan.index')" :active="request()->routeIs('sekolah.superadmin.admin-pendidikan.*')">
+    {{ __('Admin Pendidikan (Madin)') }}
+</x-nav-link>
         </x-slot>
     </x-dropdown>
 </div>

@@ -21,6 +21,8 @@ class RoleAndAdminSeeder extends Seeder
         Role::firstOrCreate(['name' => 'admin_uang_jajan']);
         Role::firstOrCreate(['name' => 'pos_warung']);
         Role::firstOrCreate(['name' => 'pengurus_pondok']);
+        Role::firstOrCreate(['name' => 'admin-pendidikan']); // Kepala Madin
+        Role::firstOrCreate(['name' => 'ustadz']);
         // -----------------------------------------
 
         Role::firstOrCreate(['name' => 'super-admin-sekolah']);

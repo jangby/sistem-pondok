@@ -120,6 +120,16 @@ Route::get('/dashboard', function () {
         return redirect()->route('orangtua.dashboard');
     }
 
+    // Peran Admin Pendidikan (Tambahan Baru)
+    if ($user->hasRole('admin-pendidikan')) {
+        return redirect()->route('pendidikan.admin.dashboard');
+    }
+
+    // Peran Ustadz (Tambahan Baru)
+    if ($user->hasRole('ustadz')) {
+        return redirect()->route('ustadz.dashboard');
+    }
+
     // Fallback: Jika tidak ada role spesifik (Misal: role 'user' default atau ada role baru)
     // Biarkan tetap menampilkan view 'dashboard' default jika diperlukan.
     return view('dashboard');
@@ -569,6 +579,7 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:super-admin-sekol
         // CRUD Tahun Ajaran (Ini aman, karena akan menggunakan {tahun_ajaran})
         // CRUD Tahun Ajaran
         Route::resource('tahun-ajaran', SuperAdminTahunAjaranController::class)->except(['show']);
+        Route::resource('admin-pendidikan', \App\Http\Controllers\Sekolah\SuperAdmin\AdminPendidikanController::class);
         
         // Rute khusus untuk tombol "Jadikan Aktif"
         Route::post('tahun-ajaran/{tahunAjaran}/activate', [SuperAdminTahunAjaranController::class, 'activate'])
@@ -698,4 +709,98 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:guru'])
         Route::get('izin', [IzinController::class, 'index'])->name('izin.index');
         Route::get('izin/create', [IzinController::class, 'create'])->name('izin.create');
         Route::post('izin', [IzinController::class, 'store'])->name('izin.store');
+    });
+
+    // ==========================================================
+// MODUL PENDIDIKAN PESANTREN (MADIN/DINIYAH)
+// ==========================================================
+
+// 1. AREA ADMIN PENDIDIKAN (Pengelola Data)
+// Diakses via Laptop/PC
+Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-pendidikan'])
+    ->prefix('pendidikan-admin')
+    ->name('pendidikan.admin.')
+    ->group(function () {
+        
+        // Dashboard
+        Route::get('/dashboard', [App\Http\Controllers\Pendidikan\DashboardController::class, 'index'])->name('dashboard');
+
+        // Master Data
+        Route::resource('mustawa', App\Http\Controllers\Pendidikan\MustawaController::class);
+        Route::resource('mapel', App\Http\Controllers\Pendidikan\MapelDiniyahController::class);
+        Route::resource('ustadz', App\Http\Controllers\Pendidikan\UstadzController::class);
+
+        // Akademik & Jadwal
+        Route::resource('jadwal', App\Http\Controllers\Pendidikan\JadwalDiniyahController::class);
+
+        // Manajemen Anggota Kelas
+Route::get('anggota-kelas', [App\Http\Controllers\Pendidikan\AnggotaKelasController::class, 'index'])->name('anggota-kelas.index');
+Route::get('anggota-kelas/{mustawa}', [App\Http\Controllers\Pendidikan\AnggotaKelasController::class, 'show'])->name('anggota-kelas.show');
+Route::post('anggota-kelas/{mustawa}/add', [App\Http\Controllers\Pendidikan\AnggotaKelasController::class, 'store'])->name('anggota-kelas.store');
+Route::delete('anggota-kelas/{mustawa}/remove/{santri}', [App\Http\Controllers\Pendidikan\AnggotaKelasController::class, 'destroy'])->name('anggota-kelas.destroy');
+
+// Kenaikan Kelas
+Route::get('kenaikan-kelas', [App\Http\Controllers\Pendidikan\AnggotaKelasController::class, 'promotionIndex'])->name('kenaikan-kelas.index');
+Route::get('kenaikan-kelas/check', [App\Http\Controllers\Pendidikan\AnggotaKelasController::class, 'promotionCheck'])->name('kenaikan-kelas.check');
+Route::post('kenaikan-kelas/process', [App\Http\Controllers\Pendidikan\AnggotaKelasController::class, 'promotionStore'])->name('kenaikan-kelas.store');
+
+// Jadwal Ujian
+Route::resource('ujian', App\Http\Controllers\Pendidikan\JadwalUjianController::class);
+// Detail Aksi Jadwal Ujian
+Route::get('ujian/{ujian}/kelola', [App\Http\Controllers\Pendidikan\JadwalUjianController::class, 'show'])->name('ujian.show');
+Route::post('ujian/{ujian}/attendance', [App\Http\Controllers\Pendidikan\JadwalUjianController::class, 'storeAttendance'])->name('ujian.attendance');
+Route::post('ujian/{ujian}/grades', [App\Http\Controllers\Pendidikan\JadwalUjianController::class, 'storeGrades'])->name('ujian.grades');
+Route::get('ujian/{ujian}/pdf', [App\Http\Controllers\Pendidikan\JadwalUjianController::class, 'exportPdf'])->name('ujian.pdf');
+Route::get('ujian/{ujian}/excel', [App\Http\Controllers\Pendidikan\JadwalUjianController::class, 'exportExcel'])->name('ujian.excel');
+        
+        // Monitoring & Laporan
+        Route::get('absensi/rekap', [App\Http\Controllers\Pendidikan\AbsensiController::class, 'rekap'])->name('absensi.rekap');
+        Route::get('rapor', [App\Http\Controllers\Pendidikan\RaporController::class, 'index'])->name('rapor.index');
+        Route::post('rapor/generate', [App\Http\Controllers\Pendidikan\RaporController::class, 'generate'])->name('rapor.generate');
+    });
+
+// 2. AREA USTADZ (Mobile Interface)
+// Diakses via HP (Tampilan Simpel)
+Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:ustadz'])
+    ->prefix('ustadz-area')
+    ->name('ustadz.')
+    ->group(function () {
+        
+        Route::get('/dashboard', [App\Http\Controllers\Ustadz\DashboardController::class, 'index'])->name('dashboard');
+        
+        // Menu Jadwal Mengajar & Absensi
+        Route::get('/jadwal', [App\Http\Controllers\Ustadz\JadwalController::class, 'index'])->name('jadwal.index');
+        Route::get('/jadwal/{jadwal}/absen', [App\Http\Controllers\Ustadz\AbsensiController::class, 'create'])->name('absensi.create'); // Halaman Scan/Input
+        Route::post('/jadwal/{jadwal}/absen', [App\Http\Controllers\Ustadz\AbsensiController::class, 'store'])->name('absensi.store'); // Proses Simpan
+        
+        // Menu Jurnal & Penilaian
+        Route::resource('jurnal', App\Http\Controllers\Ustadz\JurnalController::class);
+
+        // Menu Sesi (Grid)
+Route::get('/jadwal/{jadwal}/menu', [App\Http\Controllers\Ustadz\AbsensiController::class, 'showMenu'])
+    ->name('absensi.menu');
+
+// Halaman Absensi (Create & Store)
+Route::get('/jadwal/{jadwal}/absensi', [App\Http\Controllers\Ustadz\AbsensiController::class, 'create'])
+    ->name('absensi.create');
+Route::post('/jadwal/{jadwal}/absensi', [App\Http\Controllers\Ustadz\AbsensiController::class, 'store'])
+    ->name('absensi.store');
+
+Route::get('/jadwal/{jadwal}/jurnal-kelas', [App\Http\Controllers\Ustadz\JurnalMengajarController::class, 'create'])
+    ->name('jurnal-kelas.create');
+Route::post('/jadwal/{jadwal}/jurnal-kelas', [App\Http\Controllers\Ustadz\JurnalMengajarController::class, 'store'])
+    ->name('jurnal-kelas.store');
+// Riwayat Absensi
+Route::get('/jadwal/{jadwal}/riwayat', [App\Http\Controllers\Ustadz\AbsensiController::class, 'history'])
+    ->name('absensi.history');
+Route::get('/jadwal/{jadwal}/riwayat/{tanggal}', [App\Http\Controllers\Ustadz\AbsensiController::class, 'historyDetail'])
+    ->name('absensi.history.detail');
+        
+// Menu Ujian (Pengawas)
+Route::get('ujian', [App\Http\Controllers\Ustadz\UjianController::class, 'index'])->name('ujian.index');
+Route::get('ujian/{id}', [App\Http\Controllers\Ustadz\UjianController::class, 'show'])->name('ujian.show');
+Route::post('ujian/{id}/absensi', [App\Http\Controllers\Ustadz\UjianController::class, 'storeAbsensi'])->name('ujian.absensi');
+Route::post('ujian/{id}/nilai', [App\Http\Controllers\Ustadz\UjianController::class, 'storeNilai'])->name('ujian.nilai');
+        // Profil Ustadz
+        Route::get('/profil', [App\Http\Controllers\Ustadz\DashboardController::class, 'profil'])->name('profil');
     });

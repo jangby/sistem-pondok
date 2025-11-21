@@ -97,4 +97,9 @@ public function guru(): HasOne
     {
         return $this->belongsToMany(\App\Models\Sekolah\Sekolah::class, 'sekolah_user');
     }
+
+    public function ustadz()
+{
+    return $this->hasOne(Ustadz::class);
+}
 }

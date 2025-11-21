@@ -51,6 +51,9 @@
                 <?php elseif(Auth::user()->hasRole('orang-tua')): ?>
                     
                     <?php echo $__env->make('layouts.navigation', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?> 
+
+                <?php elseif(Auth::user()->hasRole('admin-pendidikan')): ?>
+                    <?php echo $__env->make('layouts.pendidikan-admin-nav', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                 
                 <?php else: ?>
                     <?php echo $__env->make('layouts.navigation', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
