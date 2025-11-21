@@ -1,123 +1,97 @@
 <?php
+
 namespace App\Http\Controllers\Sekolah\SuperAdmin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Sekolah\Sekolah; // <-- Gunakan Model yang sudah kita buat
+use App\Models\Sekolah\Sekolah;
+use App\Models\User;
+use App\Models\Santri;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class SekolahController extends Controller
 {
-    // Helper untuk mengambil Pondok ID
     private function getPondokId()
     {
-        // Ambil pondok_id dari Super Admin Sekolah yang sedang login
-        return Auth::user()->pondokStaff->pondok_id; //
-    }
-    
-    // Helper untuk Keamanan
-    private function checkOwnership(Sekolah $sekolah)
-    {
-        if ($sekolah->pondok_id != $this->getPondokId()) {
-            abort(404);
-        }
+        return Auth::user()->pondokStaff->pondok_id;
     }
 
-    /**
-     * Tampilkan daftar unit sekolah
-     */
-    public function index()
+    public function index(Request $request)
     {
-        // Trait BelongsToPondok di model Sekolah
-        // akan otomatis memfilter data berdasarkan pondok_id super admin sekolah.
-        $sekolahs = Sekolah::latest()->paginate(10);
+        $pondokId = $this->getPondokId();
         
+        $query = Sekolah::where('pondok_id', $pondokId);
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nama_sekolah', 'like', "%{$search}%")
+                  ->orWhere('kepala_sekolah', 'like', "%{$search}%") // Tambah pencarian kepala sekolah
+                  ->orWhere('tingkat', 'like', "%{$search}%");
+            });
+        }
+
+        $sekolahs = $query->orderBy('tingkat')->paginate(10)->withQueryString();
+
+        $sekolahs->getCollection()->transform(function ($sekolah) use ($pondokId) {
+            $sekolah->guru_count = User::role('guru')
+                ->whereHas('sekolahs', fn($q) => $q->where('sekolahs.id', $sekolah->id))
+                ->count();
+            
+            $sekolah->siswa_count = Santri::where('pondok_id', $pondokId)
+                ->where('status', 'active')
+                ->whereHas('kelas', fn($q) => $q->where('tingkat', $sekolah->tingkat))
+                ->count();
+                
+            return $sekolah;
+        });
+
         return view('sekolah.superadmin.sekolah.index', compact('sekolahs'));
     }
 
-    /**
-     * Tampilkan form tambah unit sekolah
-     */
-    public function create()
-    {
-        return view('sekolah.superadmin.sekolah.create');
-    }
-
-    /**
-     * Simpan unit sekolah baru
-     */
     public function store(Request $request)
     {
         $pondokId = $this->getPondokId();
 
         $validated = $request->validate([
-            'nama_sekolah' => [
-                'required', 'string', 'max:255',
-                // Pastikan nama sekolah unik per pondok
-                Rule::unique('sekolahs')->where(fn ($q) => $q->where('pondok_id', $pondokId)),
-            ],
-            'tingkat' => 'required|string|max:50',
-            'kepala_sekolah' => 'nullable|string|max:255',
+            'nama_sekolah'   => 'required|string|max:255',
+            'tingkat'        => 'required|in:SD,MI,SMP,MTS,SMA,MA,SMK,Pondok',
+            'kepala_sekolah' => 'nullable|string|max:255', // <-- Dikembalikan
+            'alamat'         => 'nullable|string|max:500',
+            'email'          => 'nullable|email|max:255',
+            'no_telp'        => 'nullable|string|max:20',
         ]);
 
-        // Tambahkan pondok_id dan simpan
-        // Model Sekolah menggunakan trait BelongsToPondok,
-        // jadi pondok_id akan terisi otomatis.
-        // Siapkan data untuk disimpan
-        $dataToSave = $validated;
-        
-        // AMBIL PONDOK ID SECARA MANUAL DARI HELPER KITA
-        $dataToSave['pondok_id'] = $this->getPondokId(); //
+        $validated['pondok_id'] = $pondokId;
 
-        // Simpan data
-        Sekolah::create($dataToSave); //
+        Sekolah::create($validated);
 
         return redirect()->route('sekolah.superadmin.sekolah.index')
                          ->with('success', 'Unit Sekolah berhasil ditambahkan.');
     }
 
-    /**
-     * Tampilkan form edit
-     */
-    public function edit(Sekolah $sekolah)
-    {
-        $this->checkOwnership($sekolah); // Keamanan
-        return view('sekolah.superadmin.sekolah.edit', compact('sekolah'));
-    }
-
-    /**
-     * Update data unit sekolah
-     */
     public function update(Request $request, Sekolah $sekolah)
     {
-        $this->checkOwnership($sekolah); // Keamanan
-        $pondokId = $this->getPondokId();
+        if ($sekolah->pondok_id != $this->getPondokId()) abort(403);
 
         $validated = $request->validate([
-            'nama_sekolah' => [
-                'required', 'string', 'max:255',
-                Rule::unique('sekolahs')->where(fn ($q) => $q->where('pondok_id', $pondokId))->ignore($sekolah->id),
-            ],
-            'tingkat' => 'required|string|max:50',
-            'kepala_sekolah' => 'nullable|string|max:255',
+            'nama_sekolah'   => 'required|string|max:255',
+            'tingkat'        => 'required|in:SD,MI,SMP,MTS,SMA,MA,SMK,Pondok',
+            'kepala_sekolah' => 'nullable|string|max:255', // <-- Dikembalikan
+            'alamat'         => 'nullable|string|max:500',
+            'email'          => 'nullable|email|max:255',
+            'no_telp'        => 'nullable|string|max:20',
         ]);
 
         $sekolah->update($validated);
 
         return redirect()->route('sekolah.superadmin.sekolah.index')
-                         ->with('success', 'Unit Sekolah berhasil diperbarui.');
+                         ->with('success', 'Data Sekolah berhasil diperbarui.');
     }
 
-    /**
-     * Hapus data unit sekolah
-     */
     public function destroy(Sekolah $sekolah)
     {
-        $this->checkOwnership($sekolah); // Keamanan
-        
-        // TODO: Nanti tambahkan pengecekan jika sekolah masih punya data (guru, jadwal, dll)
-        
+        if ($sekolah->pondok_id != $this->getPondokId()) abort(403);
         $sekolah->delete();
 
         return redirect()->route('sekolah.superadmin.sekolah.index')

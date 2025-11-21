@@ -6,35 +6,51 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Sekolah\Sekolah;
 use App\Models\User;
+use App\Models\Santri;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        // 1. Ambil ID pondok dari Super Admin Sekolah yang sedang login
         $user = Auth::user();
-        $pondokId = $user->pondokStaff->pondok_id; //
+        $pondokId = $user->pondokStaff->pondok_id;
 
-        // 2. Hitung statistik
-        
-        // Hitung jumlah unit sekolah (MTS, MA, dll) di pondok ini
-        $jumlahSekolah = Sekolah::where('pondok_id', $pondokId)->count(); //
+        // 1. Statistik Utama
+        $jumlahSekolah = Sekolah::where('pondok_id', $pondokId)->count();
 
-        // Hitung jumlah user dengan role 'admin-sekolah' di pondok ini
         $jumlahAdminSekolah = User::role('admin-sekolah')
-            ->whereHas('pondokStaff', fn($q) => $q->where('pondok_id', $pondokId)) //
+            ->whereHas('pondokStaff', fn($q) => $q->where('pondok_id', $pondokId))
             ->count();
 
-        // Hitung jumlah user dengan role 'guru' di pondok ini
         $jumlahGuru = User::role('guru')
-            ->whereHas('pondokStaff', fn($q) => $q->where('pondok_id', $pondokId)) //
+            ->whereHas('pondokStaff', fn($q) => $q->where('pondok_id', $pondokId))
             ->count();
 
-        // 3. Kirim data ke view
+        // 2. Ambil Daftar Sekolah & Hitung Statistik Per Sekolah
+        // (Agar dashboard lebih informatif, kita tampilkan detail per unit)
+        $sekolahList = Sekolah::where('pondok_id', $pondokId)
+            ->orderBy('tingkat') // Urutkan misal: SD, SMP, SMA (tergantung value tingkat)
+            ->get()
+            ->map(function($sekolah) use ($pondokId) {
+                // Hitung Guru per Sekolah
+                $sekolah->guru_count = User::role('guru')
+                    ->whereHas('sekolahs', fn($q) => $q->where('sekolahs.id', $sekolah->id))
+                    ->count();
+                
+                // Hitung Siswa per Sekolah (Berdasarkan Tingkat Kelas)
+                $sekolah->siswa_count = Santri::where('pondok_id', $pondokId)
+                    ->where('status', 'active')
+                    ->whereHas('kelas', fn($q) => $q->where('tingkat', $sekolah->tingkat))
+                    ->count();
+                
+                return $sekolah;
+            });
+
         return view('sekolah.superadmin.dashboard', compact(
             'jumlahSekolah',
             'jumlahAdminSekolah',
-            'jumlahGuru'
+            'jumlahGuru',
+            'sekolahList'
         ));
     }
 }

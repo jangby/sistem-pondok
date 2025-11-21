@@ -2,90 +2,75 @@
 namespace App\Http\Controllers\Sekolah\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Sekolah\KegiatanAkademik; // <-- Model baru kita
+use App\Models\Sekolah\KegiatanAkademik;
 use App\Models\Sekolah\TahunAjaran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class KegiatanAkademikController extends Controller
 {
-    // === HELPER FUNCTIONS ===
     private function getSekolah()
     {
         $adminUser = Auth::user();
-        $sekolah = $adminUser->sekolahs()->first(); //
-        if (!$sekolah) {
-            abort(403, 'Akun Anda tidak ditugaskan ke unit sekolah manapun.');
-        }
+        $sekolah = $adminUser->sekolahs()->first();
+        if (!$sekolah) abort(403, 'Akun tidak terhubung sekolah.');
         return $sekolah;
     }
     
     private function getPondokId()
     {
-        return Auth::user()->pondokStaff->pondok_id; //
+        return Auth::user()->pondokStaff->pondok_id;
     }
     
     private function checkOwnership(KegiatanAkademik $kegiatanAkademik)
     {
-        if ($kegiatanAkademik->sekolah_id != $this->getSekolah()->id) {
-            abort(404);
-        }
+        if ($kegiatanAkademik->sekolah_id != $this->getSekolah()->id) abort(404);
     }
     
     private function getTahunAjaranAktif()
     {
         return TahunAjaran::where('pondok_id', $this->getPondokId())
                             ->where('is_active', true)
-                            ->first(); //
+                            ->first();
     }
 
-    /**
-     * Tampilkan daftar Kegiatan Akademik
-     */
-    public function index()
+    public function index(Request $request)
     {
         $sekolah = $this->getSekolah();
         $tahunAjaranAktif = $this->getTahunAjaranAktif();
         
-        $kegiatanQuery = KegiatanAkademik::where('sekolah_id', $sekolah->id); //
+        $kegiatanQuery = KegiatanAkademik::where('sekolah_id', $sekolah->id);
         
-        // Hanya tampilkan data untuk tahun ajaran aktif
         if ($tahunAjaranAktif) {
              $kegiatanQuery->where('tahun_ajaran_id', $tahunAjaranAktif->id);
         } else {
-            $kegiatanQuery->where('tahun_ajaran_id', -1); // Trik agar query kosong
+            $kegiatanQuery->where('id', -1); 
+        }
+
+        // [BARU] Fitur Pencarian
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $kegiatanQuery->where(function($q) use ($search) {
+                $q->where('nama_kegiatan', 'like', "%{$search}%")
+                  ->orWhere('tipe', 'like', "%{$search}%")
+                  ->orWhere('keterangan', 'like', "%{$search}%");
+            });
         }
            
-        $kegiatans = $kegiatanQuery->orderBy('tanggal_mulai', 'desc')->paginate(10);
+        $kegiatans = $kegiatanQuery->orderBy('tanggal_mulai', 'desc')
+                                   ->paginate(10)
+                                   ->withQueryString();
             
         return view('sekolah.admin.kegiatan-akademik.index', compact('kegiatans', 'tahunAjaranAktif'));
     }
 
-    /**
-     * Tampilkan form tambah
-     */
-    public function create()
-    {
-        $tahunAjaranAktif = $this->getTahunAjaranAktif();
-        if (!$tahunAjaranAktif) {
-            return redirect()->route('sekolah.admin.kegiatan-akademik.index')
-                             ->with('error', 'Tidak bisa menambah jadwal. Belum ada Tahun Ajaran yang aktif.');
-        }
-        
-        return view('sekolah.admin.kegiatan-akademik.create', compact('tahunAjaranAktif'));
-    }
-
-    /**
-     * Simpan Kegiatan Akademik baru
-     */
     public function store(Request $request)
     {
         $sekolah = $this->getSekolah();
         $tahunAjaranAktif = $this->getTahunAjaranAktif();
 
         if (!$tahunAjaranAktif) {
-            return back()->with('error', 'Sesi Tahun Ajaran Aktif berakhir. Gagal menyimpan.');
+            return back()->withErrors(['msg' => 'Sesi Tahun Ajaran Aktif berakhir.']);
         }
 
         $validated = $request->validate([
@@ -96,32 +81,18 @@ class KegiatanAkademikController extends Controller
             'keterangan' => 'nullable|string',
         ]);
         
-        // Tambahkan data otomatis
         $validated['sekolah_id'] = $sekolah->id;
         $validated['tahun_ajaran_id'] = $tahunAjaranAktif->id;
         
-        KegiatanAkademik::create($validated); //
+        KegiatanAkademik::create($validated);
 
         return redirect()->route('sekolah.admin.kegiatan-akademik.index')
-                         ->with('success', 'Jadwal Kegiatan Akademik berhasil ditambahkan.');
+                         ->with('success', 'Jadwal Kegiatan berhasil ditambahkan.');
     }
 
-    /**
-     * Tampilkan form edit
-     */
-    public function edit(KegiatanAkademik $kegiatanAkademik)
-    {
-        $this->checkOwnership($kegiatanAkademik); // Keamanan
-        $kegiatanAkademik->load('tahunAjaran'); //
-        return view('sekolah.admin.kegiatan-akademik.edit', compact('kegiatanAkademik'));
-    }
-
-    /**
-     * Update data Kegiatan Akademik
-     */
     public function update(Request $request, KegiatanAkademik $kegiatanAkademik)
     {
-        $this->checkOwnership($kegiatanAkademik); // Keamanan
+        $this->checkOwnership($kegiatanAkademik);
 
         $validated = $request->validate([
             'nama_kegiatan' => 'required|string|max:255',
@@ -131,24 +102,18 @@ class KegiatanAkademikController extends Controller
             'keterangan' => 'nullable|string',
         ]);
         
-        $kegiatanAkademik->update($validated); //
+        $kegiatanAkademik->update($validated);
 
         return redirect()->route('sekolah.admin.kegiatan-akademik.index')
-                         ->with('success', 'Jadwal Kegiatan Akademik berhasil diperbarui.');
+                         ->with('success', 'Jadwal Kegiatan berhasil diperbarui.');
     }
 
-    /**
-     * Hapus data Kegiatan Akademik
-     */
     public function destroy(KegiatanAkademik $kegiatanAkademik)
     {
-        $this->checkOwnership($kegiatanAkademik); // Keamanan
-        
-        // TODO: Nanti tambahkan pengecekan jika kegiatan sudah dipakai di nilai
-        
-        $kegiatanAkademik->delete(); //
+        $this->checkOwnership($kegiatanAkademik);
+        $kegiatanAkademik->delete();
 
         return redirect()->route('sekolah.admin.kegiatan-akademik.index')
-                         ->with('success', 'Jadwal Kegiatan Akademik berhasil dihapus.');
+                         ->with('success', 'Jadwal Kegiatan berhasil dihapus.');
     }
 }

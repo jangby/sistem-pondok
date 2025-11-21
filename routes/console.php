@@ -11,3 +11,4 @@ Artisan::command('inspire', function () {
 Schedule::command('gate:check')->everyMinute();
 Schedule::command('absensi:check-guru-notifications')->everyMinute();
 Schedule::command('nilai:check-completion')->hourly();
+Schedule::command('absensi:auto-alpa')->dailyAt('23:30');

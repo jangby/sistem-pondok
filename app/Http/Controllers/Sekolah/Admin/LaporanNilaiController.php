@@ -70,17 +70,28 @@ class LaporanNilaiController extends Controller
     /**
      * Tampilan 1: Daftar Kelas
      */
-    public function showKelas(KegiatanAkademik $kegiatan)
+    /**
+     * Tampilan 1: Daftar Kelas (Updated dengan Search)
+     */
+    public function showKelas(Request $request, KegiatanAkademik $kegiatan)
     {
         $this->checkOwnership($kegiatan);
         
         $sekolah = $this->getSekolah();
         
-        $kelases = Kelas::where('pondok_id', $this->getPondokId())
-                        ->where('tingkat', $sekolah->tingkat)
-                        ->orderBy('nama_kelas')
-                        ->get();
+        // 1. Query Dasar
+        $query = Kelas::where('pondok_id', $this->getPondokId())
+                      ->where('tingkat', $sekolah->tingkat);
 
+        // 2. Fitur Pencarian (Jika ada input search)
+        if ($request->has('search') && $request->search != '') {
+            $query->where('nama_kelas', 'like', '%' . $request->search . '%');
+        }
+
+        // 3. Ambil Data
+        $kelases = $query->orderBy('nama_kelas')->get();
+
+        // 4. Hitung Progress (Mapping)
         $kelasList = $kelases->map(function ($kelas) use ($kegiatan) {
             $completion = $this->calculateCompletion($kelas->id, $kegiatan->id);
             $kelas->completion = $completion;
@@ -91,16 +102,27 @@ class LaporanNilaiController extends Controller
     }
 
     /**
-     * Tampilan 2: Daftar Mata Pelajaran
+     * Tampilan 2: Daftar Mata Pelajaran (Updated dengan Search)
      */
-    public function showMapel(KegiatanAkademik $kegiatan, Kelas $kelas)
+    public function showMapel(Request $request, KegiatanAkademik $kegiatan, Kelas $kelas)
     {
         $this->checkOwnership($kegiatan);
         
-        $mapels = MataPelajaran::where('sekolah_id', $kegiatan->sekolah_id)
-                            ->orderBy('nama_mapel')
-                            ->get();
+        // 1. Query Dasar Mapel Sekolah Ini
+        $query = MataPelajaran::where('sekolah_id', $kegiatan->sekolah_id);
 
+        // 2. Fitur Pencarian (Jika ada input search)
+        if ($request->has('search') && $request->search != '') {
+            $query->where(function($q) use ($request) {
+                $q->where('nama_mapel', 'like', '%' . $request->search . '%')
+                  ->orWhere('kode_mapel', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        // 3. Ambil Data
+        $mapels = $query->orderBy('nama_mapel')->get();
+
+        // 4. Hitung Progress Per Mapel
         $mapelList = $mapels->map(function ($mapel) use ($kegiatan, $kelas) {
             $completion = $this->calculateCompletion($kelas->id, $kegiatan->id, $mapel->id);
             $mapel->completion = $completion;
@@ -111,14 +133,26 @@ class LaporanNilaiController extends Controller
     }
 
     /**
-     * Tampilan 3: Tabel Nilai
+     * Tampilan 3: Tabel Nilai (Updated)
      */
-    public function showNilaiTable(KegiatanAkademik $kegiatan, Kelas $kelas, MataPelajaran $mapel)
+    public function showNilaiTable(Request $request, KegiatanAkademik $kegiatan, Kelas $kelas, MataPelajaran $mapel)
     {
         $this->checkOwnership($kegiatan);
         
-        $santris = $kelas->santris()->where('status', 'active')->orderBy('full_name')->get();
+        // 1. Query Santri
+        $query = $kelas->santris()->where('status', 'active');
 
+        // 2. Pencarian
+        if ($request->has('search') && $request->search != '') {
+            $query->where(function($q) use ($request) {
+                $q->where('full_name', 'like', '%' . $request->search . '%')
+                  ->orWhere('nis', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        $santris = $query->orderBy('full_name')->get();
+
+        // 3. Ambil Nilai
         $existingNilai = Nilai::where('kegiatan_akademik_id', $kegiatan->id)
                             ->where('mata_pelajaran_id', $mapel->id)
                             ->whereHas('santri', function ($q) use ($kelas) {

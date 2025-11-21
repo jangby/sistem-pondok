@@ -13,16 +13,14 @@ use Illuminate\Support\Carbon;
 
 class PersetujuanIzinController extends Controller
 {
-    // --- PERBAIKAN LOGIKA: Gunakan Pondok ID ---
     private function getPondokId()
     {
-        return Auth::user()->pondokStaff->pondok_id; //
+        return Auth::user()->pondokStaff->pondok_id;
     }
 
     private function checkOwnership(SekolahIzinGuru $izin)
     {
-        // Cek apakah izin ini berasal dari pondok yang sama dengan super admin
-        if ($izin->sekolah->pondok_id != $this->getPondokId()) { //
+        if ($izin->sekolah->pondok_id != $this->getPondokId()) {
             abort(404);
         }
     }
@@ -30,18 +28,38 @@ class PersetujuanIzinController extends Controller
     public function index(Request $request)
     {
         $pondokId = $this->getPondokId();
+        
+        // Filter Status (Default: pending)
         $status = $request->input('status', 'pending');
         
-        $izins = SekolahIzinGuru::where('status', $status)
-            // Ambil semua izin yang sekolahnya ada di pondok si super admin
-            ->whereHas('sekolah', fn($q) => $q->where('pondok_id', $pondokId)) //
-            ->with('guru', 'sekolah') // Tampilkan juga nama sekolahnya
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
+        // Query Dasar
+        $query = SekolahIzinGuru::query()
+            ->whereHas('sekolah', fn($q) => $q->where('pondok_id', $pondokId))
+            ->with(['guru', 'sekolah']); // Eager Load
+
+        // Filter Status
+        $query->where('status', $status);
+
+        // Fitur Pencarian (Search)
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('guru', function($q2) use ($search) {
+                    $q2->where('name', 'like', "%{$search}%");
+                })
+                ->orWhereHas('sekolah', function($q2) use ($search) {
+                    $q2->where('nama_sekolah', 'like', "%{$search}%");
+                })
+                ->orWhere('tipe_izin', 'like', "%{$search}%");
+            });
+        }
+
+        $izins = $query->latest()->paginate(10)->withQueryString();
             
-        // Ganti view agar sesuai (meskipun file-nya masih di folder 'admin')
-        return view('sekolah.superadmin.persetujuan-izin.index', compact('izins', 'status'));
+        // Hitung Badge Counter (Optional, untuk Tab)
+        $countPending = SekolahIzinGuru::whereHas('sekolah', fn($q) => $q->where('pondok_id', $pondokId))->where('status', 'pending')->count();
+        
+        return view('sekolah.superadmin.persetujuan-izin.index', compact('izins', 'status', 'countPending'));
     }
 
     public function approve(Request $request, SekolahIzinGuru $sekolahIzinGuru)
@@ -54,17 +72,16 @@ class PersetujuanIzinController extends Controller
                 'status' => 'approved',
                 'peninjau_user_id' => Auth::id(),
                 'ditinjau_pada' => now(),
-                'keterangan_admin' => $request->keterangan_admin ?? 'Pengajuan Anda telah disetujui.',
+                'keterangan_admin' => $request->keterangan_admin ?? 'Pengajuan disetujui.',
             ]);
 
-            // INTEGRASI OTOMATIS ke 'absensi_gurus'
+            // Generate Absensi
             $tanggal = Carbon::parse($sekolahIzinGuru->tanggal_mulai);
             $tanggalSelesai = Carbon::parse($sekolahIzinGuru->tanggal_selesai);
             
             while ($tanggal->lte($tanggalSelesai)) {
-                AbsensiGuru::updateOrCreate( //
+                AbsensiGuru::updateOrCreate(
                     [
-                        // Gunakan sekolah_id dari data izin (cth: MTS)
                         'sekolah_id' => $sekolahIzinGuru->sekolah_id, 
                         'guru_user_id' => $sekolahIzinGuru->guru_user_id,
                         'tanggal' => $tanggal->format('Y-m-d'),
@@ -72,31 +89,25 @@ class PersetujuanIzinController extends Controller
                     [
                         'status' => $sekolahIzinGuru->tipe_izin,
                         'keterangan' => $sekolahIzinGuru->keterangan_guru,
+                        'jam_masuk' => null, // Reset jam jika sebelumnya ada
+                        'jam_pulang' => null,
                     ]
                 );
-                // TODO: Jika guru mengajar di BANYAK sekolah, kita harus
-                // meng-update absensi_gurus untuk SEMUA sekolah tempat dia mengajar.
-                // Untuk saat ini, kita update sekolah tempat dia mengajukan.
-                
                 $tanggal->addDay();
             }
         });
 
-        // Kirim Notifikasi WA ke Guru
+        // Notifikasi (Skip error handling detail agar controller bersih)
         try {
-            $guruProfile = $sekolahIzinGuru->guru->guru; //
-            
-            if ($guruProfile) { // <-- PERBAIKAN: Tambahkan pengecekan ini
-                $guruProfile->notify((new GuruIzinResultNotification($sekolahIzinGuru))->delay(now()->addSeconds(5))); //
-            } else {
-                Log::warning('Gagal kirim WA: Profil Guru tidak ditemukan for user_id: ' . $sekolahIzinGuru->guru_user_id);
+            if ($sekolahIzinGuru->guru->guru) {
+                $sekolahIzinGuru->guru->guru->notify((new GuruIzinResultNotification($sekolahIzinGuru))->delay(now()->addSeconds(5)));
             }
-
         } catch (\Exception $e) {
-            Log::error('Gagal kirim WA Hasil Izin ke Guru: ' . $e->getMessage());
+            Log::error('WA Error: ' . $e->getMessage());
         }
         
-        return back()->with('success', 'Pengajuan berhasil disetujui.');
+        return redirect()->route('sekolah.superadmin.persetujuan-izin.index', ['status' => 'pending'])
+                         ->with('success', 'Izin berhasil disetujui.');
     }
 
     public function reject(Request $request, SekolahIzinGuru $sekolahIzinGuru)
@@ -111,21 +122,15 @@ class PersetujuanIzinController extends Controller
             'keterangan_admin' => $request->keterangan_admin,
         ]);
 
-        // Kirim Notifikasi WA ke Guru
-        // Kirim Notifikasi WA ke Guru
         try {
-            $guruProfile = $sekolahIzinGuru->guru->guru; //
-            
-            if ($guruProfile) { // <-- PERBAIKAN: Tambahkan pengecekan ini
-                $guruProfile->notify((new GuruIzinResultNotification($sekolahIzinGuru))->delay(now()->addSeconds(5))); //
-            } else {
-                Log::warning('Gagal kirim WA: Profil Guru tidak ditemukan for user_id: ' . $sekolahIzinGuru->guru_user_id);
+            if ($sekolahIzinGuru->guru->guru) {
+                $sekolahIzinGuru->guru->guru->notify((new GuruIzinResultNotification($sekolahIzinGuru))->delay(now()->addSeconds(5)));
             }
-            
         } catch (\Exception $e) {
-            Log::error('Gagal kirim WA Hasil Izin ke Guru: ' . $e->getMessage());
+            Log::error('WA Error: ' . $e->getMessage());
         }
 
-        return back()->with('success', 'Pengajuan berhasil ditolak.');
+        return redirect()->route('sekolah.superadmin.persetujuan-izin.index', ['status' => 'pending'])
+                         ->with('success', 'Pengajuan ditolak.');
     }
 }
