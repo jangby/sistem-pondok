@@ -86,33 +86,82 @@
 
             
             <div x-show="tab === 'nilai'" class="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-gray-100 p-6" style="display: none;">
-                <div class="mb-4 bg-blue-50 p-3 rounded-lg text-blue-700 text-xs flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    Anda sedang menginput nilai untuk kategori: <strong><?php echo e(strtoupper($jadwal->kategori_tes)); ?></strong>.
+                <div class="mb-6 bg-blue-50 p-4 rounded-lg text-blue-800 text-sm border border-blue-100 flex items-start gap-3">
+                    <svg class="w-5 h-5 mt-0.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <div>
+                        <p class="font-bold">Input Nilai: Kategori <?php echo e(strtoupper($jadwal->kategori_tes)); ?></p>
+                        <p class="opacity-80 mt-1">Nilai Kehadiran (Kolom Hijau) terisi otomatis berdasarkan statistik absensi harian, namun Anda dapat mengubahnya secara manual.</p>
+                    </div>
                 </div>
 
                 <form action="<?php echo e(route('pendidikan.admin.ujian.grades', $jadwal->id)); ?>" method="POST">
                     <?php echo csrf_field(); ?>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    
+                    <div class="flex justify-between items-center px-4 mb-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        <span class="w-1/2">Identitas Santri</span>
+                        <div class="flex gap-4 w-1/2 justify-end">
+                            <span class="w-32 text-center">Nilai <?php echo e(ucfirst($jadwal->kategori_tes)); ?></span>
+                            <span class="w-32 text-center text-emerald-600">Nilai Kehadiran</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
                         <?php $__currentLoopData = $santris; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $santri): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <?php 
                                 $record = $nilaiData[$santri->id] ?? null;
+                                
+                                // 1. Nilai Ujian Utama
                                 $nilaiAwal = 0;
                                 if($record) {
                                     if($jadwal->kategori_tes == 'tulis') $nilaiAwal = $record->nilai_tulis;
                                     elseif($jadwal->kategori_tes == 'lisan') $nilaiAwal = $record->nilai_lisan;
                                     elseif($jadwal->kategori_tes == 'praktek') $nilaiAwal = $record->nilai_praktek;
                                 }
+                                $nilaiAwal = $nilaiAwal == 0 ? '' : $nilaiAwal;
+
+                                // 2. Nilai Kehadiran (Auto vs DB)
+                                $valHadir = 0;
+                                if($record && $record->nilai_kehadiran > 0) {
+                                    $valHadir = $record->nilai_kehadiran; // Pakai DB jika sudah pernah disimpan
+                                } else {
+                                    $valHadir = $statistikKehadiran[$santri->id] ?? 100; // Default Auto Calculate
+                                }
                             ?>
-                            <div class="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
-                                <label class="text-sm font-bold text-gray-700 w-2/3"><?php echo e($santri->full_name); ?></label>
-                                <input type="number" name="grades[<?php echo e($santri->id); ?>]" value="<?php echo e($nilaiAwal); ?>" min="0" max="100" step="0.01"
-                                    class="w-24 rounded-md border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 text-right font-mono font-bold">
+
+                            <div class="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-white hover:border-emerald-300 transition shadow-sm">
+                                
+                                <div class="w-1/2 pr-4">
+                                    <div class="font-bold text-gray-800"><?php echo e($santri->full_name); ?></div>
+                                    <div class="text-xs text-gray-500 mt-0.5">NIS: <?php echo e($santri->nis); ?></div>
+                                </div>
+
+                                
+                                <div class="flex gap-4 w-1/2 justify-end">
+                                    
+                                    <div class="w-32">
+                                        <input type="number" name="grades[<?php echo e($santri->id); ?>]" value="<?php echo e($nilaiAwal); ?>" min="0" max="100" step="0.01"
+                                            class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-center font-bold text-gray-700 bg-gray-50 py-2"
+                                            placeholder="0">
+                                    </div>
+
+                                    
+                                    <div class="w-32 relative">
+                                        <input type="number" name="attendance_score[<?php echo e($santri->id); ?>]" value="<?php echo e($valHadir); ?>" min="0" max="100"
+                                            class="w-full rounded-lg border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500 text-center font-bold text-emerald-700 bg-emerald-50 py-2"
+                                            placeholder="0">
+                                        <div class="absolute right-2 top-2.5 text-[10px] text-emerald-400 pointer-events-none">%</div>
+                                    </div>
+                                </div>
                             </div>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </div>
-                    <div class="flex justify-end mt-6">
-                        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition">Simpan Nilai</button>
+
+                    <div class="flex justify-end mt-8 border-t border-gray-100 pt-6">
+                        <button type="submit" class="bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                            Simpan Semua Nilai
+                        </button>
                     </div>
                 </form>
             </div>

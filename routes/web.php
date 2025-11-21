@@ -99,6 +99,10 @@ Route::get('/dashboard', function () {
         return redirect()->route('sekolah.guru.dashboard');
     }
 
+    if ($user->hasRole('pengurus_pondok')) {
+        return redirect()->route('pengurus.dashboard');
+    }
+
     // Peran Admin Uang Jajan
     if ($user->hasRole('admin_uang_jajan')) {
         return redirect()->route('uuj-admin.dashboard');
