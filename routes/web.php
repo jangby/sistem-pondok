@@ -582,6 +582,8 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:super-admin-sekol
             'admin-sekolah' => 'user' // Ini akan mengubah {admin_sekolah} menjadi {user}
         ]);
 
+        Route::resource('rapor-template', App\Http\Controllers\Pendidikan\RaporTemplateController::class);
+
         Route::get('persetujuan-izin', [PersetujuanIzinController::class, 'index'])->name('persetujuan-izin.index');
         Route::post('persetujuan-izin/{sekolahIzinGuru}/approve', [PersetujuanIzinController::class, 'approve'])->name('persetujuan-izin.approve');
         Route::post('persetujuan-izin/{sekolahIzinGuru}/reject', [PersetujuanIzinController::class, 'reject'])->name('persetujuan-izin.reject');
@@ -744,6 +746,12 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-pendidikan'
         Route::resource('mapel', App\Http\Controllers\Pendidikan\MapelDiniyahController::class);
         Route::resource('ustadz', App\Http\Controllers\Pendidikan\UstadzController::class);
 
+        Route::resource('rapor-template', App\Http\Controllers\Pendidikan\RaporTemplateController::class);
+        
+        // Route untuk Generate Rapor (Yang tadi kita buat di RaporController)
+        Route::get('rapor', [App\Http\Controllers\Pendidikan\RaporController::class, 'index'])->name('rapor.index');
+        Route::post('rapor/generate', [App\Http\Controllers\Pendidikan\RaporController::class, 'generate'])->name('rapor.generate');
+
         // Akademik & Jadwal
         Route::resource('jadwal', App\Http\Controllers\Pendidikan\JadwalDiniyahController::class);
 
@@ -769,8 +777,8 @@ Route::get('ujian/{ujian}/excel', [App\Http\Controllers\Pendidikan\JadwalUjianCo
         
         // Monitoring & Laporan
         Route::get('absensi/rekap', [App\Http\Controllers\Pendidikan\AbsensiController::class, 'rekap'])->name('absensi.rekap');
-        Route::get('rapor', [App\Http\Controllers\Pendidikan\RaporController::class, 'index'])->name('rapor.index');
-        Route::post('rapor/generate', [App\Http\Controllers\Pendidikan\RaporController::class, 'generate'])->name('rapor.generate');
+        //Route::get('rapor', [App\Http\Controllers\Pendidikan\RaporController::class, 'index'])->name('rapor.index');
+        //Route::post('rapor/generate', [App\Http\Controllers\Pendidikan\RaporController::class, 'generate'])->name('rapor.generate');
     });
 
 // 2. AREA USTADZ (Mobile Interface)
