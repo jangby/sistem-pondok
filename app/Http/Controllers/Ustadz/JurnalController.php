@@ -12,93 +12,83 @@ use Illuminate\Support\Facades\Auth;
 
 class JurnalController extends Controller
 {
-    /**
-     * Halaman Utama Jurnal (Dashboard Kecil)
-     */
     public function index()
     {
-        // Ambil ID Ustadz yang sedang login
-        $ustadzId = Auth::user()->ustadz->id ?? 0;
+        $ustadz = Auth::user()->ustadz;
+        
+        // Cek jika akun belum terhubung data ustadz
+        if (!$ustadz) {
+            return redirect()->route('dashboard')->with('error', 'Profil Ustadz tidak ditemukan.');
+        }
 
-        // Ambil riwayat setoran hari ini
-        $hariIni = JurnalPendidikan::where('ustadz_id', $ustadzId)
+        // Ambil riwayat setoran hari ini milik ustadz tersebut
+        $hariIni = JurnalPendidikan::where('ustadz_id', $ustadz->id)
             ->whereDate('tanggal', Carbon::today())
-            ->with('santri', 'santri.mustawa')
+            ->with(['santri', 'santri.mustawa']) // Eager load mustawa agar tidak N+1 query
             ->latest()
             ->get();
 
-        // Hitung total hari ini
         $totalHariIni = $hariIni->count();
 
         return view('pendidikan.ustadz.jurnal.index', compact('hariIni', 'totalHariIni'));
     }
 
-    /**
-     * Form Input Hafalan Baru
-     */
     public function create(Request $request)
     {
         $user = Auth::user();
-        $pondokId = $user->pondok_id;
+        // PERBAIKAN: Ambil pondok_id dari relasi ustadz, bukan langsung dari user
+        $pondokId = $user->ustadz->pondok_id ?? null; 
 
-        // 1. Ambil Daftar Kelas (Mustawa) untuk Dropdown
+        if (!$pondokId) {
+             return redirect()->back()->with('error', 'Data Pondok tidak ditemukan.');
+        }
+
         $mustawas = Mustawa::where('pondok_id', $pondokId)
             ->where('is_active', true)
             ->orderBy('tingkat')
             ->get();
 
-        // 2. Logika Filter Santri berdasarkan Kelas yang dipilih
-        $santris = collect(); // Kosong defaultnya
+        $santris = collect();
         $selectedMustawaId = $request->query('mustawa_id');
 
         if ($selectedMustawaId) {
             $santris = Santri::where('mustawa_id', $selectedMustawaId)
-                ->where('status', 'active')
-                ->orderBy('full_name')
+                ->where('status', 'active') // Pastikan status santri aktif sesuai enum di database Anda
+                ->orderBy('full_name') // Sesuaikan column nama di tabel santris (biasanya 'nama' atau 'nama_lengkap')
                 ->get();
         }
 
         return view('pendidikan.ustadz.jurnal.create', compact('mustawas', 'santris', 'selectedMustawaId'));
     }
 
-    /**
-     * Proses Simpan Data
-     */
     public function store(Request $request)
     {
         $request->validate([
             'santri_id' => 'required|exists:santris,id',
-            'kategori_hafalan' => 'required', // quran, hadits, dll
-            'jenis_setoran' => 'required', // ziyadah/murojaah
-            'materi' => 'required|string', // Nama Surat/Kitab
-            'predikat' => 'required', // A, B, C
+            'kategori_hafalan' => 'required|in:quran,hadits,kitab,doa',
+            'jenis_setoran' => 'required|in:ziyadah,murojaah',
+            'materi' => 'required|string|max:255',
+            'start_at' => 'nullable|string|max:50',
+            'end_at' => 'nullable|string|max:50',
+            'predikat' => 'required|string',
             'tanggal' => 'required|date',
+            'catatan' => 'nullable|string',
         ]);
 
-        // Simpan ke Database
         JurnalPendidikan::create([
             'santri_id' => $request->santri_id,
             'ustadz_id' => Auth::user()->ustadz->id,
-            'jenis' => 'hafalan', // Hardcode karena ini modul khusus hafalan
+            'jenis' => 'hafalan',
             'kategori_hafalan' => $request->kategori_hafalan,
             'jenis_setoran' => $request->jenis_setoran,
-            'materi' => $request->materi, // Misal: Al-Mulk
-            'start_at' => $request->start_at, // Ayat 1
-            'end_at' => $request->end_at,     // Ayat 5
+            'materi' => $request->materi,
+            'start_at' => $request->start_at,
+            'end_at' => $request->end_at,
             'predikat' => $request->predikat,
             'catatan' => $request->catatan,
             'tanggal' => $request->tanggal,
         ]);
 
-        return redirect()->route('ustadz.jurnal.index')->with('success', 'Setoran berhasil dicatat!');
-    }
-
-    /**
-     * Lihat Detail/Riwayat (Opsional)
-     */
-    public function show($id)
-    {
-        $jurnal = JurnalPendidikan::with('santri')->findOrFail($id);
-        return view('pendidikan.ustadz.jurnal.show', compact('jurnal'));
+        return redirect()->route('ustadz.jurnal.index')->with('success', 'Alhamdulillah, setoran berhasil dicatat!');
     }
 }

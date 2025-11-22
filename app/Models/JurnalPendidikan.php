@@ -9,43 +9,38 @@ class JurnalPendidikan extends Model
 {
     use HasFactory;
 
-    // Menghubungkan ke tabel yang benar
     protected $table = 'jurnal_pendidikans';
-
     protected $guarded = ['id'];
 
     protected $casts = [
         'tanggal' => 'date',
     ];
 
-    /**
-     * Relasi ke Santri
-     */
     public function santri()
     {
         return $this->belongsTo(Santri::class);
     }
 
     /**
-     * Relasi ke Ustadz (Penyimak)
+     * PERBAIKAN: Hapus prefix 'Pendidikan\' karena model ada di App\Models
      */
     public function ustadz()
     {
-        return $this->belongsTo(Pendidikan\Ustadz::class, 'ustadz_id');
+        // SEBELUMNYA (Error): return $this->belongsTo(Pendidikan\Ustadz::class, 'ustadz_id');
+        // SEKARANG (Benar):
+        return $this->belongsTo(Ustadz::class, 'ustadz_id');
     }
 
     /**
-     * Relasi ke Mapel (Opsional, misal hafalan kitab apa)
+     * PERBAIKAN: Hapus prefix 'Pendidikan\' untuk Mapel juga
      */
     public function mapel()
     {
-        return $this->belongsTo(Pendidikan\MapelDiniyah::class, 'mapel_diniyah_id');
+        // SEBELUMNYA (Mungkin Error juga): return $this->belongsTo(Pendidikan\MapelDiniyah::class, ...);
+        // SEKARANG (Benar):
+        return $this->belongsTo(MapelDiniyah::class, 'mapel_diniyah_id');
     }
 
-    /**
-     * Helper untuk menampilkan teks rentang hafalan
-     * Contoh output: "Al-Mulk: 1 - 5"
-     */
     public function getRentangAttribute()
     {
         if ($this->start_at && $this->end_at) {

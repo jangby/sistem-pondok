@@ -81,10 +81,30 @@
                         </x-dropdown>
                     </div>
 
-                    {{-- 5. MONITORING --}}
-                    <x-nav-link :href="route('pendidikan.admin.absensi.rekap')" :active="request()->routeIs('pendidikan.admin.absensi.*')" class="text-white hover:text-emerald-100 hover:border-emerald-200 focus:text-emerald-100 focus:border-emerald-200">
-                        {{ __('Monitoring Absensi') }}
-                    </x-nav-link>
+                    {{-- 5. MONITORING (Dropdown) --}}
+<div class="hidden sm:flex sm:items-center sm:ms-2">
+    <x-dropdown align="right" width="48">
+        <x-slot name="trigger">
+            <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-transparent hover:text-emerald-100 focus:outline-none transition ease-in-out duration-150">
+                <div>Monitoring</div>
+                <div class="ms-1">
+                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </button>
+        </x-slot>
+        <x-slot name="content">
+            <div class="px-4 py-2 text-xs text-gray-400 uppercase border-b border-gray-100">Jurnal</div>
+            <x-dropdown-link :href="route('pendidikan.admin.monitoring.jurnal')">Jurnal Mengajar (Kelas)</x-dropdown-link>
+            <x-dropdown-link :href="route('pendidikan.admin.monitoring.hafalan')">Jurnal Hafalan (Santri)</x-dropdown-link>
+            
+            <div class="border-t border-gray-100"></div>
+            <div class="px-4 py-2 text-xs text-gray-400 uppercase border-b border-gray-100">Kehadiran</div>
+            <x-dropdown-link :href="route('pendidikan.admin.absensi.rekap')">Rekap Absensi</x-dropdown-link>
+        </x-slot>
+    </x-dropdown>
+</div>
 
                 </div>
             </div>

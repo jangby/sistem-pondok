@@ -322,6 +322,8 @@ Route::prefix('monitoring')->name('monitoring.')->group(function () {
         Route::get('/{id}/izin', [App\Http\Controllers\OrangTua\MonitoringController::class, 'izin'])->name('izin');
         Route::get('/{id}/gerbang', [App\Http\Controllers\OrangTua\MonitoringController::class, 'gerbang'])->name('gerbang');
         Route::get('/{id}/absensi', [App\Http\Controllers\OrangTua\MonitoringController::class, 'absensi'])->name('absensi');
+        Route::get('/{id}/diniyah', [App\Http\Controllers\OrangTua\MonitoringController::class, 'diniyah'])->name('diniyah');
+        Route::get('/{id}/hafalan', [App\Http\Controllers\OrangTua\MonitoringController::class, 'hafalan'])->name('hafalan');
     });
 });
 
@@ -746,6 +748,12 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-pendidikan'
         Route::resource('mapel', App\Http\Controllers\Pendidikan\MapelDiniyahController::class);
         Route::resource('ustadz', App\Http\Controllers\Pendidikan\UstadzController::class);
 
+        // Menu Monitoring Jurnal
+Route::get('monitoring-jurnal', [\App\Http\Controllers\Pendidikan\JurnalMonitoringController::class, 'index'])
+    ->name('monitoring.jurnal');
+Route::get('monitoring-hafalan', [\App\Http\Controllers\Pendidikan\JurnalHafalanMonitoringController::class, 'index'])
+    ->name('monitoring.hafalan');
+
         Route::resource('rapor-template', App\Http\Controllers\Pendidikan\RaporTemplateController::class);
         // Menu Kartu Ujian
 Route::resource('kartu-template', App\Http\Controllers\Pendidikan\KartuUjianTemplateController::class);
@@ -802,6 +810,8 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:ustadz'])
         // Menu Jurnal & Penilaian
         Route::resource('jurnal', App\Http\Controllers\Ustadz\JurnalController::class);
 
+
+
         // Menu Sesi (Grid)
 Route::get('/jadwal/{jadwal}/menu', [App\Http\Controllers\Ustadz\AbsensiController::class, 'showMenu'])
     ->name('absensi.menu');
@@ -829,4 +839,5 @@ Route::post('ujian/{id}/absensi', [App\Http\Controllers\Ustadz\UjianController::
 Route::post('ujian/{id}/nilai', [App\Http\Controllers\Ustadz\UjianController::class, 'storeNilai'])->name('ujian.nilai');
         // Profil Ustadz
         Route::get('/profil', [App\Http\Controllers\Ustadz\DashboardController::class, 'profil'])->name('profil');
+        Route::put('/profil', [App\Http\Controllers\Ustadz\DashboardController::class, 'updateProfil'])->name('profil.update'); // <--- TAMBAHKAN INI
     });
