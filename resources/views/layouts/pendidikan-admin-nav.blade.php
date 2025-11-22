@@ -34,7 +34,7 @@
                                 <x-dropdown-link :href="route('pendidikan.admin.mapel.index')">Data Kitab (Mapel)</x-dropdown-link>
                                 <div class="border-t border-gray-100"></div>
                                 <x-dropdown-link :href="route('pendidikan.admin.rapor-template.index')">Desain Template Rapor</x-dropdown-link>
-                            </x-slot>
+                                <x-dropdown-link :href="route('pendidikan.admin.kartu-template.index')">Desain Kartu Ujian</x-dropdown-link> </x-slot>
                         </x-dropdown>
                     </div>
 
@@ -75,6 +75,7 @@
                             </x-slot>
                             <x-slot name="content">
                                 <x-dropdown-link :href="route('pendidikan.admin.ujian.index')">Jadwal Ujian</x-dropdown-link>
+                                <x-dropdown-link :href="route('pendidikan.admin.kartu.index')">Cetak Kartu Ujian</x-dropdown-link> <div class="border-t border-gray-100"></div>
                                 <x-dropdown-link :href="route('pendidikan.admin.rapor.index')">Cetak Rapor & Ledger</x-dropdown-link>
                             </x-slot>
                         </x-dropdown>
@@ -144,6 +145,7 @@
             <x-responsive-nav-link :href="route('pendidikan.admin.mustawa.index')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Data Mustawa') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('pendidikan.admin.mapel.index')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Data Kitab') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('pendidikan.admin.rapor-template.index')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Template Rapor') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('pendidikan.admin.kartu-template.index')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Template Kartu Ujian') }}</x-responsive-nav-link>
 
             <div class="pt-2 pb-1 border-t border-emerald-500">
                 <div class="px-4 text-xs font-semibold text-emerald-200 uppercase">Akademik</div>
@@ -156,6 +158,7 @@
                 <div class="px-4 text-xs font-semibold text-emerald-200 uppercase">Ujian & Nilai</div>
             </div>
             <x-responsive-nav-link :href="route('pendidikan.admin.ujian.index')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Jadwal Ujian') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('pendidikan.admin.kartu.index')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Cetak Kartu Ujian') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('pendidikan.admin.rapor.index')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Cetak Rapor') }}</x-responsive-nav-link>
 
             <div class="pt-2 pb-1 border-t border-emerald-500">
@@ -177,7 +180,6 @@
 
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-
                     <x-responsive-nav-link :href="route('logout')" class="text-emerald-100 hover:bg-emerald-600"
                             onclick="event.preventDefault();
                                         this.closest('form').submit();">

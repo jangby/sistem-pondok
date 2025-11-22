@@ -747,6 +747,10 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-pendidikan'
         Route::resource('ustadz', App\Http\Controllers\Pendidikan\UstadzController::class);
 
         Route::resource('rapor-template', App\Http\Controllers\Pendidikan\RaporTemplateController::class);
+        // Menu Kartu Ujian
+Route::resource('kartu-template', App\Http\Controllers\Pendidikan\KartuUjianTemplateController::class);
+Route::get('kartu-ujian', [App\Http\Controllers\Pendidikan\KartuUjianController::class, 'index'])->name('kartu.index');
+Route::post('kartu-ujian/generate', [App\Http\Controllers\Pendidikan\KartuUjianController::class, 'generate'])->name('kartu.generate');
         
         // Route untuk Generate Rapor (Yang tadi kita buat di RaporController)
         Route::get('rapor', [App\Http\Controllers\Pendidikan\RaporController::class, 'index'])->name('rapor.index');

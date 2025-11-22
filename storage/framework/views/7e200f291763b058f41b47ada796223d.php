@@ -153,7 +153,25 @@
 <?php $component = $__componentOriginal68cb1971a2b92c9735f83359058f7108; ?>
 <?php unset($__componentOriginal68cb1971a2b92c9735f83359058f7108); ?>
 <?php endif; ?>
-                             <?php $__env->endSlot(); ?>
+                                <?php if (isset($component)) { $__componentOriginal68cb1971a2b92c9735f83359058f7108 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal68cb1971a2b92c9735f83359058f7108 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.dropdown-link','data' => ['href' => route('pendidikan.admin.kartu-template.index')]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('dropdown-link'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('pendidikan.admin.kartu-template.index'))]); ?>Desain Kartu Ujian <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal68cb1971a2b92c9735f83359058f7108)): ?>
+<?php $attributes = $__attributesOriginal68cb1971a2b92c9735f83359058f7108; ?>
+<?php unset($__attributesOriginal68cb1971a2b92c9735f83359058f7108); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal68cb1971a2b92c9735f83359058f7108)): ?>
+<?php $component = $__componentOriginal68cb1971a2b92c9735f83359058f7108; ?>
+<?php unset($__componentOriginal68cb1971a2b92c9735f83359058f7108); ?>
+<?php endif; ?>  <?php $__env->endSlot(); ?>
                          <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginaldf8083d4a852c446488d8d384bbc7cbe)): ?>
@@ -302,6 +320,25 @@
 <?php $component = $__componentOriginal68cb1971a2b92c9735f83359058f7108; ?>
 <?php unset($__componentOriginal68cb1971a2b92c9735f83359058f7108); ?>
 <?php endif; ?>
+                                <?php if (isset($component)) { $__componentOriginal68cb1971a2b92c9735f83359058f7108 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal68cb1971a2b92c9735f83359058f7108 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.dropdown-link','data' => ['href' => route('pendidikan.admin.kartu.index')]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('dropdown-link'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('pendidikan.admin.kartu.index'))]); ?>Cetak Kartu Ujian <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal68cb1971a2b92c9735f83359058f7108)): ?>
+<?php $attributes = $__attributesOriginal68cb1971a2b92c9735f83359058f7108; ?>
+<?php unset($__attributesOriginal68cb1971a2b92c9735f83359058f7108); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal68cb1971a2b92c9735f83359058f7108)): ?>
+<?php $component = $__componentOriginal68cb1971a2b92c9735f83359058f7108; ?>
+<?php unset($__componentOriginal68cb1971a2b92c9735f83359058f7108); ?>
+<?php endif; ?> <div class="border-t border-gray-100"></div>
                                 <?php if (isset($component)) { $__componentOriginal68cb1971a2b92c9735f83359058f7108 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal68cb1971a2b92c9735f83359058f7108 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.dropdown-link','data' => ['href' => route('pendidikan.admin.rapor.index')]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
@@ -564,6 +601,25 @@
 <?php $component = $__componentOriginald69b52d99510f1e7cd3d80070b28ca18; ?>
 <?php unset($__componentOriginald69b52d99510f1e7cd3d80070b28ca18); ?>
 <?php endif; ?>
+            <?php if (isset($component)) { $__componentOriginald69b52d99510f1e7cd3d80070b28ca18 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald69b52d99510f1e7cd3d80070b28ca18 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.responsive-nav-link','data' => ['href' => route('pendidikan.admin.kartu-template.index'),'class' => 'text-emerald-100 border-transparent hover:bg-emerald-600']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('responsive-nav-link'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('pendidikan.admin.kartu-template.index')),'class' => 'text-emerald-100 border-transparent hover:bg-emerald-600']); ?><?php echo e(__('Template Kartu Ujian')); ?> <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald69b52d99510f1e7cd3d80070b28ca18)): ?>
+<?php $attributes = $__attributesOriginald69b52d99510f1e7cd3d80070b28ca18; ?>
+<?php unset($__attributesOriginald69b52d99510f1e7cd3d80070b28ca18); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald69b52d99510f1e7cd3d80070b28ca18)): ?>
+<?php $component = $__componentOriginald69b52d99510f1e7cd3d80070b28ca18; ?>
+<?php unset($__componentOriginald69b52d99510f1e7cd3d80070b28ca18); ?>
+<?php endif; ?>
 
             <div class="pt-2 pb-1 border-t border-emerald-500">
                 <div class="px-4 text-xs font-semibold text-emerald-200 uppercase">Akademik</div>
@@ -650,6 +706,25 @@
 <?php endif; ?>
             <?php if (isset($component)) { $__componentOriginald69b52d99510f1e7cd3d80070b28ca18 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginald69b52d99510f1e7cd3d80070b28ca18 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.responsive-nav-link','data' => ['href' => route('pendidikan.admin.kartu.index'),'class' => 'text-emerald-100 border-transparent hover:bg-emerald-600']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('responsive-nav-link'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('pendidikan.admin.kartu.index')),'class' => 'text-emerald-100 border-transparent hover:bg-emerald-600']); ?><?php echo e(__('Cetak Kartu Ujian')); ?> <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald69b52d99510f1e7cd3d80070b28ca18)): ?>
+<?php $attributes = $__attributesOriginald69b52d99510f1e7cd3d80070b28ca18; ?>
+<?php unset($__attributesOriginald69b52d99510f1e7cd3d80070b28ca18); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald69b52d99510f1e7cd3d80070b28ca18)): ?>
+<?php $component = $__componentOriginald69b52d99510f1e7cd3d80070b28ca18; ?>
+<?php unset($__componentOriginald69b52d99510f1e7cd3d80070b28ca18); ?>
+<?php endif; ?>
+            <?php if (isset($component)) { $__componentOriginald69b52d99510f1e7cd3d80070b28ca18 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald69b52d99510f1e7cd3d80070b28ca18 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.responsive-nav-link','data' => ['href' => route('pendidikan.admin.rapor.index'),'class' => 'text-emerald-100 border-transparent hover:bg-emerald-600']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('responsive-nav-link'); ?>
 <?php if ($component->shouldRender()): ?>
@@ -724,7 +799,6 @@
 
                 <form method="POST" action="<?php echo e(route('logout')); ?>">
                     <?php echo csrf_field(); ?>
-
                     <?php if (isset($component)) { $__componentOriginald69b52d99510f1e7cd3d80070b28ca18 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginald69b52d99510f1e7cd3d80070b28ca18 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.responsive-nav-link','data' => ['href' => route('logout'),'class' => 'text-emerald-100 hover:bg-emerald-600','onclick' => 'event.preventDefault();
