@@ -42,11 +42,11 @@ public function pondok()
     return $this->belongsTo(Pondok::class);
 }
 
-// Relasi ke orang tuanya
-public function orangTua()
-{
-    return $this->belongsTo(OrangTua::class);
-}
+// PERBAIKAN UTAMA: Relasi Orang Tua diperjelas key-nya
+    public function orangTua()
+    {
+        return $this->belongsTo(OrangTua::class, 'orang_tua_id', 'id');
+    }
 
 // Relasi ke semua tagihannya
 public function tagihans()

@@ -182,103 +182,17 @@
     </style>
 
     <script>
-        // Konfigurasi Ukuran Kertas (dalam mm)
-        const paperSizes = {
-            'A4': { width: 210, height: 297 },
-            'F4': { width: 215, height: 330 }, // Ukuran F4/Folio Indonesia umumnya 21.5 x 33 cm
-            'A5': { width: 148, height: 210 }
-        };
-
-        function getPaperStyle() {
-            // Ambil nilai dari form input
-            let sizeKey = document.querySelector('select[name="ukuran_kertas"]').value || 'A4';
-            let orientation = document.querySelector('select[name="orientasi"]').value || 'portrait';
-            
-            // Ambil margin
-            let mt = document.querySelector('input[name="margin_top"]').value || 10;
-            let mb = document.querySelector('input[name="margin_bottom"]').value || 10;
-            let ml = document.querySelector('input[name="margin_left"]').value || 15;
-            let mr = document.querySelector('input[name="margin_right"]').value || 10;
-
-            let width = paperSizes[sizeKey].width;
-            let height = paperSizes[sizeKey].height;
-
-            // Jika landscape, tukar width & height
-            if (orientation === 'landscape') {
-                let temp = width;
-                width = height;
-                height = temp;
-            }
-
-            // CSS untuk mensimulasikan kertas MS Word
-            return `
-                body { 
-                    font-family: 'Times New Roman', Helvetica, Arial, sans-serif; 
-                    font-size: 12pt; 
-                    background-color: #fff;
-                    width: ${width}mm; 
-                    min-height: ${height}mm;
-                    padding: ${mt}mm ${mr}mm ${mb}mm ${ml}mm !important; /* Margin visual */
-                    margin: 20px auto; 
-                    box-shadow: 0 0 10px rgba(0,0,0,0.2); /* Efek bayangan kertas */
-                    box-sizing: border-box;
-                }
-                html {
-                    background-color: #555; /* Latar belakang gelap seperti Word */
-                    padding: 20px 0;
-                    display: flex;
-                    justify-content: center;
-                }
-                /* Tampilan Page Break */
-                .mce-pagebreak {
-                    border: 0;
-                    border-top: 2px dashed #888;
-                    height: 20px;
-                    background: #ddd;
-                    margin: 20px -${mr}mm 20px -${ml}mm; /* Melebar ke pinggir */
-                    text-align: center;
-                    content: "--- BATAS HALAMAN (PAGE BREAK) ---";
-                    color: #555;
-                    font-size: 10px;
-                    display: block;
-                    page-break-before: always;
-                }
-                table { width: 100%; border-collapse: collapse; } 
-                table td, table th { border: 1px solid black; padding: 4px; }
-            `;
-        }
-
-        // Inisialisasi TinyMCE
         tinymce.init({
             selector: '#my-editor',
             plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
             menubar: 'file edit view insert format tools table help',
-            // Menambahkan tombol 'pagebreak' ke toolbar
-            toolbar: 'undo redo | fontfamily fontsize | bold italic underline | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist | table pagebreak | fullscreen preview save',
+            toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen  preview save print | insertfile image media template link anchor codesample | ltr rtl',
             toolbar_sticky: true,
             height: 800,
-            
-            // PENTING: Memuat CSS dinamis saat editor start
-            content_style: getPaperStyle(),
-            
-            // Agar tombol pagebreak berfungsi memasukkan elemen pemisah halaman
-            pagebreak_separator: "", 
-            pagebreak_split_block: true,
-
-            setup: function(editor) {
-                // Listener: Jika user mengubah ukuran kertas/margin di form, update tampilan editor
-                const inputs = document.querySelectorAll('select[name="ukuran_kertas"], select[name="orientasi"], input[name^="margin_"]');
-                inputs.forEach(input => {
-                    input.addEventListener('change', function() {
-                        // Update CSS editor secara realtime
-                        let newStyle = getPaperStyle();
-                        editor.dom.doc.querySelector('style').innerHTML = newStyle;
-                    });
-                });
-            }
+            content_style: 'body { font-family:Times New Roman,Helvetica,Arial,sans-serif; font-size:12pt; padding: 10px; } table { width: 100%; border-collapse: collapse; } table td, table th { border: 1px solid black; padding: 5px; }'
         });
 
-        // Fungsi Insert Variabel (Tetap Sama)
+        // Fungsi untuk memasukkan variabel ke editor
         function insertVar(variableName) {
             tinymce.get('my-editor').execCommand('mceInsertContent', false, variableName);
         }
