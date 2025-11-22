@@ -105,20 +105,20 @@
 
             
             <div>
-                <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Orang Tua / Wali</label>
+                <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Akun Orang Tua (Penautan)</label>
                 <select name="orang_tua_id" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500" required>
-                    <option value="">- Pilih Wali -</option>
+                    <option value="">- Pilih Akun Wali -</option>
                     <?php $__currentLoopData = $orangTuas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $ortu): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <option value="<?php echo e($ortu->id); ?>"><?php echo e($ortu->name); ?></option>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
-                <p class="text-[10px] text-gray-400 mt-1">Pastikan data wali sudah ada di sistem.</p>
+                <p class="text-[10px] text-gray-400 mt-1">Akun ini digunakan untuk login aplikasi wali santri.</p>
             </div>
 
             <hr class="border-dashed border-gray-200">
 
             
-            <h3 class="font-bold text-gray-800">Data Detail</h3>
+            <h3 class="font-bold text-gray-800">Data Pribadi</h3>
             
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -154,6 +154,148 @@
             <div>
                 <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Riwayat Penyakit</label>
                 <textarea name="riwayat_penyakit" rows="2" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500" placeholder="Contoh: Asma, Alergi Udang"></textarea>
+            </div>
+
+            <hr class="border-dashed border-gray-200">
+
+            
+            <h3 class="font-bold text-gray-800">Alamat & Domisili</h3>
+            
+            <div>
+                <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Alamat Lengkap</label>
+                <textarea name="alamat" rows="2" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500" placeholder="Nama Jalan, Gg, No Rumah"><?php echo e(old('alamat')); ?></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">RT</label>
+                        <input type="text" name="rt" value="<?php echo e(old('rt')); ?>" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">RW</label>
+                        <input type="text" name="rw" value="<?php echo e(old('rw')); ?>" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Kode Pos</label>
+                    <input type="text" name="kode_pos" value="<?php echo e(old('kode_pos')); ?>" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Kelurahan/Desa</label>
+                    <input type="text" name="desa" value="<?php echo e(old('desa')); ?>" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Kecamatan</label>
+                    <input type="text" name="kecamatan" value="<?php echo e(old('kecamatan')); ?>" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                </div>
+            </div>
+
+            <hr class="border-dashed border-gray-200">
+
+            
+            <h3 class="font-bold text-gray-800">Data Ayah (EMIS)</h3>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Nama Ayah</label>
+                    <input type="text" name="nama_ayah" value="<?php echo e(old('nama_ayah')); ?>" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">NIK Ayah</label>
+                        <input type="number" name="nik_ayah" value="<?php echo e(old('nik_ayah')); ?>" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Tahun Lahir</label>
+                        <input type="number" name="thn_lahir_ayah" placeholder="Contoh: 1980" value="<?php echo e(old('thn_lahir_ayah')); ?>" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Pendidikan</label>
+                        <select name="pendidikan_ayah" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                            <option value="">- Pilih -</option>
+                            <option value="SD">SD</option>
+                            <option value="SMP">SMP</option>
+                            <option value="SMA">SMA</option>
+                            <option value="D3">D3</option>
+                            <option value="S1">S1</option>
+                            <option value="S2">S2</option>
+                            <option value="S3">S3</option>
+                            <option value="Tidak Sekolah">Tidak Sekolah</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Pekerjaan</label>
+                        <input type="text" name="pekerjaan_ayah" value="<?php echo e(old('pekerjaan_ayah')); ?>" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Penghasilan / Bulan</label>
+                    <select name="penghasilan_ayah" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                        <option value="">- Pilih Range -</option>
+                        <option value="< 1 Juta">< 1.000.000</option>
+                        <option value="1 - 3 Juta">1.000.000 - 3.000.000</option>
+                        <option value="3 - 5 Juta">3.000.000 - 5.000.000</option>
+                        <option value="> 5 Juta">> 5.000.000</option>
+                    </select>
+                </div>
+            </div>
+
+            <hr class="border-dashed border-gray-200">
+
+            
+            <h3 class="font-bold text-gray-800">Data Ibu (EMIS)</h3>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Nama Ibu</label>
+                    <input type="text" name="nama_ibu" value="<?php echo e(old('nama_ibu')); ?>" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">NIK Ibu</label>
+                        <input type="number" name="nik_ibu" value="<?php echo e(old('nik_ibu')); ?>" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Tahun Lahir</label>
+                        <input type="number" name="thn_lahir_ibu" placeholder="Contoh: 1985" value="<?php echo e(old('thn_lahir_ibu')); ?>" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Pendidikan</label>
+                        <select name="pendidikan_ibu" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                            <option value="">- Pilih -</option>
+                            <option value="SD">SD</option>
+                            <option value="SMP">SMP</option>
+                            <option value="SMA">SMA</option>
+                            <option value="D3">D3</option>
+                            <option value="S1">S1</option>
+                            <option value="S2">S2</option>
+                            <option value="S3">S3</option>
+                            <option value="Tidak Sekolah">Tidak Sekolah</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Pekerjaan</label>
+                        <input type="text" name="pekerjaan_ibu" value="<?php echo e(old('pekerjaan_ibu')); ?>" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Penghasilan / Bulan</label>
+                    <select name="penghasilan_ibu" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+                        <option value="">- Pilih Range -</option>
+                        <option value="< 1 Juta">< 1.000.000</option>
+                        <option value="1 - 3 Juta">1.000.000 - 3.000.000</option>
+                        <option value="3 - 5 Juta">3.000.000 - 5.000.000</option>
+                        <option value="> 5 Juta">> 5.000.000</option>
+                    </select>
+                </div>
             </div>
 
             

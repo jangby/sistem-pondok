@@ -10,6 +10,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
+use App\Exports\Pengurus\SantriTemplateExport;
+use App\Imports\Pengurus\SantriImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SantriController extends Controller
 {
@@ -117,7 +120,28 @@ class SantriController extends Controller
             'kelas_id' => 'nullable|exists:kelas,id',
             'orang_tua_id' => 'required|exists:orang_tuas,id',
             'status' => 'required|in:active,graduated,moved',
-        ]);
+            // Validasi Tambahan (Semua Nullable)
+    'alamat' => 'nullable|string',
+    'rt' => 'nullable|string|max:5',
+    'rw' => 'nullable|string|max:5',
+    'desa' => 'nullable|string',
+    'kecamatan' => 'nullable|string',
+    'kode_pos' => 'nullable|string|max:10',
+
+    'nama_ayah' => 'nullable|string',
+    'thn_lahir_ayah' => 'nullable|digits:4',
+    'pendidikan_ayah' => 'nullable|string',
+    'pekerjaan_ayah' => 'nullable|string',
+    'penghasilan_ayah' => 'nullable|string',
+    'nik_ayah' => 'nullable|string|max:20',
+
+    'nama_ibu' => 'nullable|string',
+    'thn_lahir_ibu' => 'nullable|digits:4',
+    'pendidikan_ibu' => 'nullable|string',
+    'pekerjaan_ibu' => 'nullable|string',
+    'penghasilan_ibu' => 'nullable|string',
+    'nik_ibu' => 'nullable|string|max:20',
+]);
 
         $santri->update($validated);
 
@@ -137,5 +161,31 @@ class SantriController extends Controller
         $santri->update(['qrcode_token' => $newToken]);
 
         return back()->with('success', 'QR Code berhasil digenerate ulang.');
+    }
+
+    /**
+     * Download Template Excel
+     */
+    public function downloadTemplate()
+    {
+        return Excel::download(new SantriTemplateExport, 'template_import_santri.xlsx');
+    }
+
+    /**
+     * Proses Impor Data
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:2048',
+        ]);
+
+        try {
+            Excel::import(new SantriImport, $request->file('file'));
+            return redirect()->route('pengurus.santri.index')->with('success', 'Data Santri berhasil diimpor!');
+        } catch (\Exception $e) {
+            // Tangkap error jika format tanggal salah atau validasi gagal
+            return redirect()->back()->with('error', 'Gagal impor: ' . $e->getMessage());
+        }
     }
 }

@@ -433,6 +433,16 @@ Route::middleware(['auth', 'role:pengurus_pondok'])->prefix('pengurus')->name('p
     Route::resource('perizinan', App\Http\Controllers\Pengurus\PerizinanController::class);
     Route::get('perizinan-scan', [App\Http\Controllers\Pengurus\PerizinanController::class, 'create'])->name('perizinan.scan');
     Route::post('perizinan-process', [App\Http\Controllers\Pengurus\PerizinanController::class, 'processScan'])->name('perizinan.process');
+
+    // Route Download Template
+    Route::get('santri/template/download', [App\Http\Controllers\Pengurus\SantriController::class, 'downloadTemplate'])
+        ->name('santri.template');
+
+    // Route Proses Import
+    Route::post('santri/import', [App\Http\Controllers\Pengurus\SantriController::class, 'import'])
+        ->name('santri.import');
+
+    Route::resource('santri', App\Http\Controllers\Pengurus\SantriController::class);
     
     Route::prefix('absensi')->name('absensi.')->group(function () {
         Route::get('/', [App\Http\Controllers\Pengurus\AbsensiController::class, 'index'])->name('index');

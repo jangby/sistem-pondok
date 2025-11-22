@@ -11,22 +11,26 @@ class Santri extends Model
     use HasFactory, BelongsToPondok;
 
     protected $fillable = [
-        'nis',
-        'rfid_uid',       // <-- Tambahkan ini
-        'qrcode_token',
-        'full_name',
-        'jenis_kelamin',
-        'tempat_lahir',
-        'tanggal_lahir',
-        'golongan_darah',
-        'riwayat_penyakit',
-        'kelas_id',
-        'mustawa_id',
-        'status',
-        'orang_tua_id',
-        'pondok_id',
-        'asrama_id',
-    ];
+    'nis',
+    'rfid_uid',
+    'qrcode_token',
+    'full_name',
+    'jenis_kelamin',
+    'tempat_lahir',
+    'tanggal_lahir',
+    'golongan_darah',
+    'riwayat_penyakit',
+    'kelas_id',
+    'mustawa_id',
+    'status',
+    'orang_tua_id',
+    'pondok_id',
+    'asrama_id',
+    // --- TAMBAHAN BARU ---
+    'alamat', 'rt', 'rw', 'desa', 'kecamatan', 'kode_pos',
+    'nama_ayah', 'thn_lahir_ayah', 'pendidikan_ayah', 'pekerjaan_ayah', 'penghasilan_ayah', 'nik_ayah',
+    'nama_ibu', 'thn_lahir_ibu', 'pendidikan_ibu', 'pekerjaan_ibu', 'penghasilan_ibu', 'nik_ibu',
+];
 
     protected $casts = [
         'tanggal_lahir' => 'date',
