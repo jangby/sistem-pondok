@@ -17,13 +17,16 @@ class RaporController extends Controller
     private function getPondokId()
     {
         $user = auth()->user();
-        return $user->pondokStaff ? $user->pondokStaff->pondok_id : $user->pondok_id;
+        if ($user->pondokStaff) {
+            return $user->pondokStaff->pondok_id;
+        }
+        return $user->pondok_id; 
     }
 
     public function index()
     {
         $pondokId = $this->getPondokId();
-        if (!$pondokId) return redirect()->back()->with('error', 'Akun tidak valid.');
+        if (!$pondokId) return redirect()->back()->with('error', 'Akun tidak terhubung dengan data pondok.');
 
         $mustawas = Mustawa::where('pondok_id', $pondokId)->where('is_active', true)->orderBy('tingkat')->get();
         $templates = RaporTemplate::where('pondok_id', $pondokId)->where('is_active', true)->latest()->get();
@@ -42,11 +45,11 @@ class RaporController extends Controller
         $pondok = Pondok::find($pondokId);
         $template = RaporTemplate::findOrFail($request->template_id);
         
-        // Ambil Santri di kelas ini
-        // PERBAIKAN: orderBy('nama_lengkap') diubah menjadi orderBy('full_name')
+        // Ambil Santri
         $santris = Santri::where('mustawa_id', $request->mustawa_id)
-                         ->where('status', 'active') 
-                         ->orderBy('full_name') // <--- INI YANG DIPERBAIKI
+                         ->where('status', 'active')
+                         ->with('orangTua')
+                         ->orderBy('full_name')
                          ->get();
 
         if ($santris->isEmpty()) {
@@ -54,51 +57,76 @@ class RaporController extends Controller
         }
 
         $raporSiapCetak = [];
+        Carbon::setLocale('id');
 
         foreach ($santris as $santri) {
             $konten = $template->konten_html;
 
-            // PERBAIKAN: Menggunakan $santri->full_name
-            $konten = str_replace('{{nama_santri}}', $santri->full_name, $konten); // <--- INI JUGA DIPERBAIKI
+            // --- 1. DATA PRIBADI & UMUM ---
+            $konten = str_replace('{{nama_santri}}', $santri->full_name, $konten);
             $konten = str_replace('{{nis}}', $santri->nis ?? '-', $konten);
+            $konten = str_replace('{{nisn}}', $santri->nisn ?? '-', $konten);
+            $konten = str_replace('{{nik}}', $santri->nik ?? '-', $konten);
             
-            // Perbaikan Null Coalescing untuk relasi (jika data mustawa tidak lengkap)
-            $namaKelas = $santri->mustawa ? $santri->mustawa->nama : '-';
-            $tahunAjaran = $santri->mustawa ? $santri->mustawa->tahun_ajaran : date('Y/Y+1');
-            
-            $konten = str_replace('{{kelas}}', $namaKelas, $konten);
-            $konten = str_replace('{{tahun_ajaran}}', $tahunAjaran, $konten);
+            $tglLahir = $santri->tanggal_lahir ? Carbon::parse($santri->tanggal_lahir)->translatedFormat('d F Y') : '-';
+            $ttl = ($santri->tempat_lahir ?? '-') . ', ' . $tglLahir;
+            $konten = str_replace('{{ttl}}', $ttl, $konten);
+            $konten = str_replace('{{jenis_kelamin}}', $santri->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan', $konten);
+            $konten = str_replace('{{alamat}}', $santri->alamat ?? '-', $konten);
+            $konten = str_replace('{{kelas}}', $santri->mustawa->nama ?? '-', $konten);
+            $konten = str_replace('{{tahun_ajaran}}', $santri->mustawa->tahun_ajaran ?? date('Y/Y+1'), $konten);
             $konten = str_replace('{{semester}}', 'Ganjil/Genap', $konten);
-            
             $konten = str_replace('{{nama_pondok}}', $pondok->nama_pondok, $konten);
             $konten = str_replace('{{alamat_pondok}}', $pondok->alamat, $konten);
-            
-            // Logo Pondok
+
+            // Data Wali
+            $namaAyah = $santri->orangTua->nama_ayah ?? '-';
+            $konten = str_replace('{{nama_ayah}}', $namaAyah, $konten);
+            $konten = str_replace('{{nama_ibu}}', $santri->orangTua->nama_ibu ?? '-', $konten);
+            $konten = str_replace('{{nama_wali}}', $namaAyah, $konten);
+            $konten = str_replace('{{pekerjaan_ayah}}', $santri->orangTua->pekerjaan_ayah ?? '-', $konten);
+            $konten = str_replace('{{no_hp_wali}}', $santri->orangTua->no_hp ?? '-', $konten);
+
+            // Logo
             $logoPath = public_path('storage/' . $pondok->logo); 
             if (file_exists($logoPath) && !empty($pondok->logo)) {
                 $logoBase64 = base64_encode(file_get_contents($logoPath));
                 $imgTag = '<img src="data:image/png;base64,' . $logoBase64 . '" style="max-height: 80px;">';
                 $konten = str_replace('{{logo_pondok}}', $imgTag, $konten);
             } else {
-                // Jika logo tidak ada, hapus variabelnya
                 $konten = str_replace('{{logo_pondok}}', '', $konten);
             }
 
-            // Tabel Nilai
+            // --- 2. GENERATE TABEL NILAI PER KATEGORI ---
+            if (str_contains($konten, '{{tabel_nilai_tulis}}')) {
+                $tabelTulis = $this->generateTabelKategori($santri->id, $request->mustawa_id, 'tulis');
+                $konten = str_replace('{{tabel_nilai_tulis}}', $tabelTulis, $konten);
+            }
+
+            if (str_contains($konten, '{{tabel_nilai_lisan}}')) {
+                $tabelLisan = $this->generateTabelKategori($santri->id, $request->mustawa_id, 'lisan');
+                $konten = str_replace('{{tabel_nilai_lisan}}', $tabelLisan, $konten);
+            }
+
+            if (str_contains($konten, '{{tabel_nilai_praktek}}')) {
+                $tabelPraktek = $this->generateTabelKategori($santri->id, $request->mustawa_id, 'praktek');
+                $konten = str_replace('{{tabel_nilai_praktek}}', $tabelPraktek, $konten);
+            }
+
+            if (str_contains($konten, '{{tabel_nilai_absensi}}')) {
+                $tabelAbsen = $this->generateTabelKategori($santri->id, $request->mustawa_id, 'absensi');
+                $konten = str_replace('{{tabel_nilai_absensi}}', $tabelAbsen, $konten);
+            }
+
             if (str_contains($konten, '{{tabel_nilai}}')) {
-                $tabelNilai = $this->generateTabelNilai($santri->id, $request->mustawa_id);
-                $konten = str_replace('{{tabel_nilai}}', $tabelNilai, $konten);
+                $tabelLengkap = $this->generateTabelKategori($santri->id, $request->mustawa_id, 'lengkap');
+                $konten = str_replace('{{tabel_nilai}}', $tabelLengkap, $konten);
             }
 
             // Tanda Tangan
-            Carbon::setLocale('id');
             $konten = str_replace('{{titimangsa}}', Carbon::now()->translatedFormat('d F Y'), $konten);
-            
-            $namaWali = ($santri->mustawa && $santri->mustawa->waliUstadz) 
-                        ? $santri->mustawa->waliUstadz->nama_lengkap 
-                        : '................';
-                        
-            $konten = str_replace('{{wali_kelas}}', $namaWali, $konten);
+            $namaWaliKelas = ($santri->mustawa && $santri->mustawa->waliUstadz) ? $santri->mustawa->waliUstadz->nama_lengkap : '................';
+            $konten = str_replace('{{wali_kelas}}', $namaWaliKelas, $konten);
             $konten = str_replace('{{kepala_pondok}}', 'Kyai Pengasuh', $konten);
 
             $raporSiapCetak[] = $konten;
@@ -119,44 +147,76 @@ class RaporController extends Controller
         return view('pendidikan.admin.rapor.print', $data);
     }
 
-    private function generateTabelNilai($santriId, $mustawaId)
+    /**
+     * Fungsi dinamis membuat tabel berdasarkan kategori
+     */
+    private function generateTabelKategori($santriId, $mustawaId, $kategori)
     {
-        // Pastikan model NilaiPesantren juga menggunakan nama kolom yang benar di database Anda
-        $nilais = NilaiPesantren::where('santri_id', $santriId)
+        // Query Dasar
+        $query = NilaiPesantren::where('santri_id', $santriId)
             ->where('mustawa_id', $mustawaId)
-            ->with('mapel')
-            ->get();
+            ->with('mapel');
 
-        if ($nilais->isEmpty()) {
-            return '<p style="text-align:center; font-style:italic; color:red; border:1px dashed #ccc; padding:10px;">Belum ada data nilai yang diinput untuk kelas ini.</p>';
+        if ($kategori == 'tulis') {
+            $query->whereHas('mapel', function($q) { $q->where('uji_tulis', true); });
+        } elseif ($kategori == 'lisan') {
+            $query->whereHas('mapel', function($q) { $q->where('uji_lisan', true); });
+        } elseif ($kategori == 'praktek') {
+            $query->whereHas('mapel', function($q) { $q->where('uji_praktek', true); });
         }
 
+        $nilais = $query->get();
+
+        if ($nilais->isEmpty()) {
+            return '<p style="text-align:center; font-style:italic; font-size:10pt;">- Tidak ada nilai -</p>';
+        }
+
+        // Header Tabel
         $html = '<table style="width:100%; border-collapse: collapse; border: 1px solid black; font-size: 10pt;">';
         $html .= '<thead>
                     <tr style="background-color: #f0f0f0;">
-                        <th style="border: 1px solid black; padding: 5px; width: 5%;">No</th>
-                        <th style="border: 1px solid black; padding: 5px;">Mata Pelajaran / Kitab</th>
-                        <th style="border: 1px solid black; padding: 5px; width: 10%;">KKM</th>
-                        <th style="border: 1px solid black; padding: 5px; width: 10%;">Nilai</th>
-                        <th style="border: 1px solid black; padding: 5px; width: 15%;">Predikat</th>
+                        <th style="border: 1px solid black; padding: 5px; width: 5%; text-align: center;">No</th>
+                        <th style="border: 1px solid black; padding: 5px; text-align: left;">Mata Pelajaran</th>
+                        <th style="border: 1px solid black; padding: 5px; width: 10%; text-align: center;">KKM</th>';
+        
+        if ($kategori == 'tulis') $html .= '<th style="border: 1px solid black; padding: 5px; width: 15%; text-align: center;">Nilai Tulis</th>';
+        elseif ($kategori == 'lisan') $html .= '<th style="border: 1px solid black; padding: 5px; width: 15%; text-align: center;">Nilai Lisan</th>';
+        elseif ($kategori == 'praktek') $html .= '<th style="border: 1px solid black; padding: 5px; width: 15%; text-align: center;">Nilai Praktek</th>';
+        elseif ($kategori == 'absensi') $html .= '<th style="border: 1px solid black; padding: 5px; width: 15%; text-align: center;">Kehadiran (%)</th>';
+        else $html .= '<th style="border: 1px solid black; padding: 5px; width: 15%; text-align: center;">Nilai Akhir</th>';
+
+        $html .= '<th style="border: 1px solid black; padding: 5px; width: 20%; text-align: center;">Predikat</th>
                     </tr>
                   </thead><tbody>';
 
         $no = 1;
         $total = 0;
+        $count = 0;
+
         foreach ($nilais as $nilai) {
-            $predikat = $this->getPredikat($nilai->nilai_akhir);
+            $nilaiAngka = 0;
+            if ($kategori == 'tulis') $nilaiAngka = $nilai->nilai_tulis;
+            elseif ($kategori == 'lisan') $nilaiAngka = $nilai->nilai_lisan;
+            elseif ($kategori == 'praktek') $nilaiAngka = $nilai->nilai_praktek;
+            elseif ($kategori == 'absensi') $nilaiAngka = $nilai->nilai_kehadiran;
+            else $nilaiAngka = $nilai->nilai_akhir;
+
+            $predikat = $this->getPredikat($nilaiAngka);
+
+            // --- PERBAIKAN DI SINI: Hapus nama kitab dari tampilan ---
             $html .= '<tr>
                         <td style="border: 1px solid black; padding: 5px; text-align: center;">' . $no++ . '</td>
-                        <td style="border: 1px solid black; padding: 5px;">' . ($nilai->mapel->nama_mapel ?? '-') . ' <br><small><i>' . ($nilai->mapel->nama_kitab ?? '') . '</i></small></td>
+                        <td style="border: 1px solid black; padding: 5px; text-align: left;">' . ($nilai->mapel->nama_mapel ?? '-') . '</td>
                         <td style="border: 1px solid black; padding: 5px; text-align: center;">' . ($nilai->mapel->kkm ?? 60) . '</td>
-                        <td style="border: 1px solid black; padding: 5px; text-align: center; font-weight: bold;">' . $nilai->nilai_akhir . '</td>
+                        <td style="border: 1px solid black; padding: 5px; text-align: center; font-weight: bold;">' . $nilaiAngka . '</td>
                         <td style="border: 1px solid black; padding: 5px; text-align: center;">' . $predikat . '</td>
                       </tr>';
-            $total += $nilai->nilai_akhir;
+            
+            $total += $nilaiAngka;
+            $count++;
         }
         
-        $rataRata = $nilais->count() > 0 ? round($total / $nilais->count(), 1) : 0;
+        $rataRata = $count > 0 ? round($total / $count, 1) : 0;
         $html .= '<tr>
                     <td colspan="3" style="border: 1px solid black; padding: 5px; text-align: right; font-weight: bold;">Rata-rata</td>
                     <td colspan="2" style="border: 1px solid black; padding: 5px; text-align: center; font-weight: bold;">' . $rataRata . '</td>
@@ -169,10 +229,10 @@ class RaporController extends Controller
 
     private function getPredikat($nilai)
     {
-        if ($nilai >= 90) return 'Mumtaz (Istimewa)';
-        if ($nilai >= 80) return 'Jayyid Jiddan (Sangat Baik)';
-        if ($nilai >= 70) return 'Jayyid (Baik)';
-        if ($nilai >= 60) return 'Maqbul (Cukup)';
-        return 'Rasib (Kurang)';
+        if ($nilai >= 90) return 'Mumtaz';
+        if ($nilai >= 80) return 'Jayyid Jiddan';
+        if ($nilai >= 70) return 'Jayyid';
+        if ($nilai >= 60) return 'Maqbul';
+        return 'Rasib';
     }
 }

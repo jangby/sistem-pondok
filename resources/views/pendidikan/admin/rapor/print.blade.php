@@ -38,6 +38,15 @@
             padding: 4px;
         }
 
+        /* Tambahan agar page break TinyMCE terbaca oleh DomPDF */
+        .mce-pagebreak {
+            page-break-before: always;
+            display: block;
+            height: 0;
+            border: 0;
+            margin: 0;
+        }
+
         /* CSS khusus jika menggunakan dompdf */
         @page {
             margin: {{ $template->margin_top ?? 10 }}mm {{ $template->margin_right ?? 10 }}mm {{ $template->margin_bottom ?? 10 }}mm {{ $template->margin_left ?? 15 }}mm;

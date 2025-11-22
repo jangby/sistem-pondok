@@ -19,7 +19,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Nama Desain</label>
-                                <input type="text" name="nama_template" required class="w-full border-gray-300 rounded-md shadow-sm" placeholder="Contoh: Rapor UTS 2025">
+                                <input type="text" name="nama_template" required class="w-full border-gray-300 rounded-md shadow-sm" placeholder="Contoh: Rapor Akhirussanah">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Ukuran Kertas</label>
@@ -63,62 +63,76 @@
                         </div>
                     </div>
 
-                    <div class="w-full lg:w-80 bg-gray-50 p-4 rounded-lg border border-gray-200 h-fit sticky top-4">
+                    <div class="w-full lg:w-80 bg-gray-50 p-4 rounded-lg border border-gray-200 h-fit sticky top-4 overflow-y-auto max-h-screen">
                         <h3 class="font-bold text-lg mb-4 text-gray-800">Panel Variabel</h3>
-                        <p class="text-xs text-gray-500 mb-4">Klik tombol di bawah untuk menyisipkan data otomatis ke dalam rapor.</p>
+                        <p class="text-xs text-gray-500 mb-4">Klik tombol di bawah untuk menyisipkan data otomatis.</p>
 
-                        <div class="mb-4">
-                            <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Identitas Santri</h4>
+                        <div class="mb-4 border-b pb-4">
+                            <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Biodata Santri</h4>
                             <div class="flex flex-wrap gap-2">
-                                <button type="button" onclick="insertVar('@{{nama_santri}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Nama Lengkap</button>
-                                <button type="button" onclick="insertVar('@{{nis}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">NIS</button>
-                                <button type="button" onclick="insertVar('@{{kelas}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Kelas/Mustawa</button>
-                                <button type="button" onclick="insertVar('@{{tahun_ajaran}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Thn. Ajaran</button>
-                                <button type="button" onclick="insertVar('@{{semester}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Semester</button>
+                                <button type="button" onclick="insertVar('@{{nama_santri}}')" class="btn-var">Nama Lengkap</button>
+                                <button type="button" onclick="insertVar('@{{nis}}')" class="btn-var">NIS</button>
+                                <button type="button" onclick="insertVar('@{{nisn}}')" class="btn-var">NISN</button>
+                                <button type="button" onclick="insertVar('@{{nik}}')" class="btn-var">NIK</button>
+                                <button type="button" onclick="insertVar('@{{ttl}}')" class="btn-var">TTL (Lengkap)</button>
+                                <button type="button" onclick="insertVar('@{{jenis_kelamin}}')" class="btn-var">Jenis Kelamin</button>
+                                <button type="button" onclick="insertVar('@{{alamat}}')" class="btn-var">Alamat</button>
+                                <button type="button" onclick="insertVar('@{{kelas}}')" class="btn-var">Kelas</button>
                             </div>
                         </div>
 
-                        <div class="mb-4">
+                        <div class="mb-4 border-b pb-4">
+                            <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Orang Tua / Wali</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" onclick="insertVar('@{{nama_ayah}}')" class="btn-var">Nama Ayah</button>
+                                <button type="button" onclick="insertVar('@{{nama_ibu}}')" class="btn-var">Nama Ibu</button>
+                                <button type="button" onclick="insertVar('@{{pekerjaan_ayah}}')" class="btn-var">Pekerjaan Ayah</button>
+                                <button type="button" onclick="insertVar('@{{no_hp_wali}}')" class="btn-var">No. HP Wali</button>
+                            </div>
+                        </div>
+
+                        <div class="mb-4 border-b pb-4">
                             <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Data Pondok</h4>
                             <div class="flex flex-wrap gap-2">
-                                <button type="button" onclick="insertVar('@{{nama_pondok}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Nama Pondok</button>
-                                <button type="button" onclick="insertVar('@{{alamat_pondok}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Alamat</button>
-                                <button type="button" onclick="insertVar('@{{logo_pondok}}')" class="text-xs bg-blue-50 border border-blue-200 text-blue-700 px-2 py-1 rounded hover:bg-blue-100">Logo (Gambar)</button>
+                                <button type="button" onclick="insertVar('@{{nama_pondok}}')" class="btn-var">Nama Pondok</button>
+                                <button type="button" onclick="insertVar('@{{alamat_pondok}}')" class="btn-var">Alamat</button>
+                                <button type="button" onclick="insertVar('@{{logo_pondok}}')" class="btn-var-blue">Logo (Gambar)</button>
+                                <button type="button" onclick="insertVar('@{{tahun_ajaran}}')" class="btn-var">Thn. Ajaran</button>
+                                <button type="button" onclick="insertVar('@{{semester}}')" class="btn-var">Semester</button>
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Nilai & Tabel</h4>
+                        <div class="mb-4 border-b pb-4">
+                            <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Tabel Nilai (Per Jenis)</h4>
                             <div class="flex flex-col gap-2">
-                                <button type="button" onclick="insertVar('@{{tabel_nilai}}')" class="text-sm bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-left">
-                                    + Tabel Nilai Otomatis
+                                <button type="button" onclick="insertVar('@{{tabel_nilai_tulis}}')" class="text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-2 rounded hover:bg-indigo-100 text-left">
+                                    + Tabel Ujian Tulis
                                 </button>
-                                <p class="text-[10px] text-gray-400 mb-2">*Otomatis membuat tabel berisi No, Mapel, KKM, Nilai, Predikat</p>
-
-                                <div class="flex flex-wrap gap-2">
-                                    <button type="button" onclick="insertVar('@{{total_nilai}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Total Nilai</button>
-                                    <button type="button" onclick="insertVar('@{{rata_rata}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Rata-rata</button>
-                                    <button type="button" onclick="insertVar('@{{ranking}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Ranking</button>
-                                    <button type="button" onclick="insertVar('@{{keputusan}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Keputusan</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Kehadiran</h4>
-                            <div class="flex flex-wrap gap-2">
-                                <button type="button" onclick="insertVar('@{{sakit}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Jml Sakit</button>
-                                <button type="button" onclick="insertVar('@{{izin}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Jml Izin</button>
-                                <button type="button" onclick="insertVar('@{{alpha}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Jml Alpha</button>
+                                <button type="button" onclick="insertVar('@{{tabel_nilai_lisan}}')" class="text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-2 rounded hover:bg-indigo-100 text-left">
+                                    + Tabel Ujian Lisan (Hafalan)
+                                </button>
+                                <button type="button" onclick="insertVar('@{{tabel_nilai_praktek}}')" class="text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-2 rounded hover:bg-indigo-100 text-left">
+                                    + Tabel Ujian Praktek (Ibadah)
+                                </button>
+                                <button type="button" onclick="insertVar('@{{tabel_nilai_absensi}}')" class="text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-2 rounded hover:bg-indigo-100 text-left">
+                                    + Tabel Kehadiran Mapel
+                                </button>
+                                
+                                <hr class="my-1 border-gray-200">
+                                
+                                <button type="button" onclick="insertVar('@{{tabel_nilai}}')" class="text-xs bg-gray-100 border border-gray-300 text-gray-700 px-2 py-2 rounded hover:bg-gray-200 text-left">
+                                    + Tabel Nilai Gabungan (Akhir)
+                                </button>
                             </div>
                         </div>
 
                         <div class="mb-4">
                             <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Area Tanda Tangan</h4>
                             <div class="flex flex-wrap gap-2">
-                                <button type="button" onclick="insertVar('@{{titimangsa}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Tanggal Cetak</button>
-                                <button type="button" onclick="insertVar('@{{wali_kelas}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Nama Wali Kelas</button>
-                                <button type="button" onclick="insertVar('@{{kepala_pondok}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Nama Kepala Pondok</button>
+                                <button type="button" onclick="insertVar('@{{titimangsa}}')" class="btn-var">Tanggal Cetak</button>
+                                <button type="button" onclick="insertVar('@{{wali_kelas}}')" class="btn-var">Nama Wali Kelas</button>
+                                <button type="button" onclick="insertVar('@{{kepala_pondok}}')" class="btn-var">Nama Kepala Pondok</button>
+                                <button type="button" onclick="insertVar('@{{nama_wali}}')" class="btn-var">Nama Wali Santri</button>
                             </div>
                         </div>
 
@@ -127,6 +141,33 @@
             </form>
         </div>
     </div>
+
+    <style>
+        .btn-var {
+            font-size: 0.75rem; /* text-xs */
+            background-color: white;
+            border: 1px solid #d1d5db; /* gray-300 */
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-var:hover {
+            background-color: #f3f4f6; /* gray-100 */
+        }
+        .btn-var-blue {
+            font-size: 0.75rem;
+            background-color: #eff6ff; /* blue-50 */
+            border: 1px solid #bfdbfe; /* blue-200 */
+            color: #1d4ed8; /* blue-700 */
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+        .btn-var-blue:hover {
+            background-color: #dbeafe; /* blue-100 */
+        }
+    </style>
 
     <script>
         tinymce.init({

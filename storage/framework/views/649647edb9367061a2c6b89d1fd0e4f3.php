@@ -75,62 +75,76 @@
                         </div>
                     </div>
 
-                    <div class="w-full lg:w-80 bg-gray-50 p-4 rounded-lg border border-gray-200 h-fit sticky top-4">
+                    <div class="w-full lg:w-80 bg-gray-50 p-4 rounded-lg border border-gray-200 h-fit sticky top-4 overflow-y-auto max-h-screen">
                         <h3 class="font-bold text-lg mb-4 text-gray-800">Panel Variabel</h3>
-                        <p class="text-xs text-gray-500 mb-4">Klik tombol di bawah untuk menyisipkan data otomatis ke dalam rapor.</p>
+                        <p class="text-xs text-gray-500 mb-4">Klik tombol di bawah untuk menyisipkan data otomatis.</p>
 
-                        <div class="mb-4">
-                            <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Identitas Santri</h4>
+                        <div class="mb-4 border-b pb-4">
+                            <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Biodata Santri</h4>
                             <div class="flex flex-wrap gap-2">
-                                <button type="button" onclick="insertVar('{{nama_santri}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Nama Lengkap</button>
-                                <button type="button" onclick="insertVar('{{nis}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">NIS</button>
-                                <button type="button" onclick="insertVar('{{kelas}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Kelas/Mustawa</button>
-                                <button type="button" onclick="insertVar('{{tahun_ajaran}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Thn. Ajaran</button>
-                                <button type="button" onclick="insertVar('{{semester}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Semester</button>
+                                <button type="button" onclick="insertVar('{{nama_santri}}')" class="btn-var">Nama Lengkap</button>
+                                <button type="button" onclick="insertVar('{{nis}}')" class="btn-var">NIS</button>
+                                <button type="button" onclick="insertVar('{{nisn}}')" class="btn-var">NISN</button>
+                                <button type="button" onclick="insertVar('{{nik}}')" class="btn-var">NIK</button>
+                                <button type="button" onclick="insertVar('{{ttl}}')" class="btn-var">TTL (Lengkap)</button>
+                                <button type="button" onclick="insertVar('{{jenis_kelamin}}')" class="btn-var">Jenis Kelamin</button>
+                                <button type="button" onclick="insertVar('{{alamat}}')" class="btn-var">Alamat</button>
+                                <button type="button" onclick="insertVar('{{kelas}}')" class="btn-var">Kelas</button>
                             </div>
                         </div>
 
-                        <div class="mb-4">
+                        <div class="mb-4 border-b pb-4">
+                            <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Orang Tua / Wali</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" onclick="insertVar('{{nama_ayah}}')" class="btn-var">Nama Ayah</button>
+                                <button type="button" onclick="insertVar('{{nama_ibu}}')" class="btn-var">Nama Ibu</button>
+                                <button type="button" onclick="insertVar('{{pekerjaan_ayah}}')" class="btn-var">Pekerjaan Ayah</button>
+                                <button type="button" onclick="insertVar('{{no_hp_wali}}')" class="btn-var">No. HP Wali</button>
+                            </div>
+                        </div>
+
+                        <div class="mb-4 border-b pb-4">
                             <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Data Pondok</h4>
                             <div class="flex flex-wrap gap-2">
-                                <button type="button" onclick="insertVar('{{nama_pondok}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Nama Pondok</button>
-                                <button type="button" onclick="insertVar('{{alamat_pondok}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Alamat</button>
-                                <button type="button" onclick="insertVar('{{logo_pondok}}')" class="text-xs bg-blue-50 border border-blue-200 text-blue-700 px-2 py-1 rounded hover:bg-blue-100">Logo (Gambar)</button>
+                                <button type="button" onclick="insertVar('{{nama_pondok}}')" class="btn-var">Nama Pondok</button>
+                                <button type="button" onclick="insertVar('{{alamat_pondok}}')" class="btn-var">Alamat</button>
+                                <button type="button" onclick="insertVar('{{logo_pondok}}')" class="btn-var-blue">Logo (Gambar)</button>
+                                <button type="button" onclick="insertVar('{{tahun_ajaran}}')" class="btn-var">Thn. Ajaran</button>
+                                <button type="button" onclick="insertVar('{{semester}}')" class="btn-var">Semester</button>
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Nilai & Tabel</h4>
+                        <div class="mb-4 border-b pb-4">
+                            <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Tabel Nilai (Per Jenis)</h4>
                             <div class="flex flex-col gap-2">
-                                <button type="button" onclick="insertVar('{{tabel_nilai}}')" class="text-sm bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-left">
-                                    + Tabel Nilai Otomatis
+                                <button type="button" onclick="insertVar('{{tabel_nilai_tulis}}')" class="text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-2 rounded hover:bg-indigo-100 text-left">
+                                    + Tabel Ujian Tulis
                                 </button>
-                                <p class="text-[10px] text-gray-400 mb-2">*Otomatis membuat tabel berisi No, Mapel, KKM, Nilai, Predikat</p>
-
-                                <div class="flex flex-wrap gap-2">
-                                    <button type="button" onclick="insertVar('{{total_nilai}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Total Nilai</button>
-                                    <button type="button" onclick="insertVar('{{rata_rata}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Rata-rata</button>
-                                    <button type="button" onclick="insertVar('{{ranking}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Ranking</button>
-                                    <button type="button" onclick="insertVar('{{keputusan}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Keputusan</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Kehadiran</h4>
-                            <div class="flex flex-wrap gap-2">
-                                <button type="button" onclick="insertVar('{{sakit}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Jml Sakit</button>
-                                <button type="button" onclick="insertVar('{{izin}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Jml Izin</button>
-                                <button type="button" onclick="insertVar('{{alpha}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Jml Alpha</button>
+                                <button type="button" onclick="insertVar('{{tabel_nilai_lisan}}')" class="text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-2 rounded hover:bg-indigo-100 text-left">
+                                    + Tabel Ujian Lisan (Hafalan)
+                                </button>
+                                <button type="button" onclick="insertVar('{{tabel_nilai_praktek}}')" class="text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-2 rounded hover:bg-indigo-100 text-left">
+                                    + Tabel Ujian Praktek (Ibadah)
+                                </button>
+                                <button type="button" onclick="insertVar('{{tabel_nilai_absensi}}')" class="text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-2 rounded hover:bg-indigo-100 text-left">
+                                    + Tabel Kehadiran Mapel
+                                </button>
+                                
+                                <hr class="my-1 border-gray-200">
+                                
+                                <button type="button" onclick="insertVar('{{tabel_nilai}}')" class="text-xs bg-gray-100 border border-gray-300 text-gray-700 px-2 py-2 rounded hover:bg-gray-200 text-left">
+                                    + Tabel Nilai Gabungan (Akhir)
+                                </button>
                             </div>
                         </div>
 
                         <div class="mb-4">
                             <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Area Tanda Tangan</h4>
                             <div class="flex flex-wrap gap-2">
-                                <button type="button" onclick="insertVar('{{titimangsa}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Tanggal Cetak</button>
-                                <button type="button" onclick="insertVar('{{wali_kelas}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Nama Wali Kelas</button>
-                                <button type="button" onclick="insertVar('{{kepala_pondok}}')" class="text-xs bg-white border border-gray-300 px-2 py-1 rounded hover:bg-gray-100">Nama Kepala Pondok</button>
+                                <button type="button" onclick="insertVar('{{titimangsa}}')" class="btn-var">Tanggal Cetak</button>
+                                <button type="button" onclick="insertVar('{{wali_kelas}}')" class="btn-var">Nama Wali Kelas</button>
+                                <button type="button" onclick="insertVar('{{kepala_pondok}}')" class="btn-var">Nama Kepala Pondok</button>
+                                <button type="button" onclick="insertVar('{{nama_wali}}')" class="btn-var">Nama Wali Santri</button>
                             </div>
                         </div>
 
@@ -140,19 +154,131 @@
         </div>
     </div>
 
+    <style>
+        .btn-var {
+            font-size: 0.75rem; /* text-xs */
+            background-color: white;
+            border: 1px solid #d1d5db; /* gray-300 */
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-var:hover {
+            background-color: #f3f4f6; /* gray-100 */
+        }
+        .btn-var-blue {
+            font-size: 0.75rem;
+            background-color: #eff6ff; /* blue-50 */
+            border: 1px solid #bfdbfe; /* blue-200 */
+            color: #1d4ed8; /* blue-700 */
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+        .btn-var-blue:hover {
+            background-color: #dbeafe; /* blue-100 */
+        }
+    </style>
+
     <script>
+        // Konfigurasi Ukuran Kertas (dalam mm)
+        const paperSizes = {
+            'A4': { width: 210, height: 297 },
+            'F4': { width: 215, height: 330 }, // Ukuran F4/Folio Indonesia umumnya 21.5 x 33 cm
+            'A5': { width: 148, height: 210 }
+        };
+
+        function getPaperStyle() {
+            // Ambil nilai dari form input
+            let sizeKey = document.querySelector('select[name="ukuran_kertas"]').value || 'A4';
+            let orientation = document.querySelector('select[name="orientasi"]').value || 'portrait';
+            
+            // Ambil margin
+            let mt = document.querySelector('input[name="margin_top"]').value || 10;
+            let mb = document.querySelector('input[name="margin_bottom"]').value || 10;
+            let ml = document.querySelector('input[name="margin_left"]').value || 15;
+            let mr = document.querySelector('input[name="margin_right"]').value || 10;
+
+            let width = paperSizes[sizeKey].width;
+            let height = paperSizes[sizeKey].height;
+
+            // Jika landscape, tukar width & height
+            if (orientation === 'landscape') {
+                let temp = width;
+                width = height;
+                height = temp;
+            }
+
+            // CSS untuk mensimulasikan kertas MS Word
+            return `
+                body { 
+                    font-family: 'Times New Roman', Helvetica, Arial, sans-serif; 
+                    font-size: 12pt; 
+                    background-color: #fff;
+                    width: ${width}mm; 
+                    min-height: ${height}mm;
+                    padding: ${mt}mm ${mr}mm ${mb}mm ${ml}mm !important; /* Margin visual */
+                    margin: 20px auto; 
+                    box-shadow: 0 0 10px rgba(0,0,0,0.2); /* Efek bayangan kertas */
+                    box-sizing: border-box;
+                }
+                html {
+                    background-color: #555; /* Latar belakang gelap seperti Word */
+                    padding: 20px 0;
+                    display: flex;
+                    justify-content: center;
+                }
+                /* Tampilan Page Break */
+                .mce-pagebreak {
+                    border: 0;
+                    border-top: 2px dashed #888;
+                    height: 20px;
+                    background: #ddd;
+                    margin: 20px -${mr}mm 20px -${ml}mm; /* Melebar ke pinggir */
+                    text-align: center;
+                    content: "--- BATAS HALAMAN (PAGE BREAK) ---";
+                    color: #555;
+                    font-size: 10px;
+                    display: block;
+                    page-break-before: always;
+                }
+                table { width: 100%; border-collapse: collapse; } 
+                table td, table th { border: 1px solid black; padding: 4px; }
+            `;
+        }
+
+        // Inisialisasi TinyMCE
         tinymce.init({
             selector: '#my-editor',
             plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
             menubar: 'file edit view insert format tools table help',
-            toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen  preview save print | insertfile image media template link anchor codesample | ltr rtl',
+            // Menambahkan tombol 'pagebreak' ke toolbar
+            toolbar: 'undo redo | fontfamily fontsize | bold italic underline | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist | table pagebreak | fullscreen preview save',
             toolbar_sticky: true,
             height: 800,
-            // Agar tampilan di editor mirip kertas cetak
-            content_style: 'body { font-family:Times New Roman,Helvetica,Arial,sans-serif; font-size:12pt; padding: 10px; } table { width: 100%; border-collapse: collapse; } table td, table th { border: 1px solid black; padding: 5px; }'
+            
+            // PENTING: Memuat CSS dinamis saat editor start
+            content_style: getPaperStyle(),
+            
+            // Agar tombol pagebreak berfungsi memasukkan elemen pemisah halaman
+            pagebreak_separator: "", 
+            pagebreak_split_block: true,
+
+            setup: function(editor) {
+                // Listener: Jika user mengubah ukuran kertas/margin di form, update tampilan editor
+                const inputs = document.querySelectorAll('select[name="ukuran_kertas"], select[name="orientasi"], input[name^="margin_"]');
+                inputs.forEach(input => {
+                    input.addEventListener('change', function() {
+                        // Update CSS editor secara realtime
+                        let newStyle = getPaperStyle();
+                        editor.dom.doc.querySelector('style').innerHTML = newStyle;
+                    });
+                });
+            }
         });
 
-        // Fungsi untuk memasukkan variabel ke editor
+        // Fungsi Insert Variabel (Tetap Sama)
         function insertVar(variableName) {
             tinymce.get('my-editor').execCommand('mceInsertContent', false, variableName);
         }
