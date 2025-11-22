@@ -21,19 +21,17 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 
                 <div class="flex justify-between items-center mb-6 border-b pb-4">
-                    <h3 class="text-lg font-medium text-gray-900">Filter Cetak Kartu</h3>
-                    <a href="<?php echo e(route('pendidikan.admin.kartu-template.index')); ?>" class="text-sm text-blue-600 hover:underline">
-                        &rarr; Kelola Desain Kartu
-                    </a>
+                    <h3 class="text-lg font-medium text-gray-900">Filter Data</h3>
                 </div>
 
                 <form action="<?php echo e(route('pendidikan.admin.kartu.generate')); ?>" method="POST" target="_blank">
                     <?php echo csrf_field(); ?>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Kelas (Mustawa)</label>
-                            <select name="mustawa_id" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <select name="mustawa_id" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
                                 <option value="">-- Pilih Kelas --</option>
                                 <?php $__currentLoopData = $mustawas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <option value="<?php echo e($m->id); ?>"><?php echo e($m->nama); ?> (Tingkat <?php echo e($m->tingkat); ?>)</option>
@@ -41,40 +39,22 @@
                             </select>
                         </div>
 
+                        
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Desain Kartu</label>
-                            <select name="template_id" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                <option value="">-- Pilih Desain --</option>
-                                <?php $__currentLoopData = $templates; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($t->id); ?>"><?php echo e($t->nama_template); ?> (<?php echo e($t->ukuran_kertas); ?>)</option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </select>
-                            
-                            <?php if($templates->isEmpty()): ?>
-                                <p class="text-xs text-red-500 mt-1">
-                                    Belum ada desain. 
-                                    <a href="<?php echo e(route('pendidikan.admin.kartu-template.create')); ?>" class="underline font-bold">Buat dulu di sini.</a>
-                                </p>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-
-                    <div class="mt-6 p-4 bg-gray-50 rounded-md border border-gray-200">
-                        <h4 class="text-sm font-semibold text-gray-600 mb-2">Opsi Cetak</h4>
-                        <div class="flex items-center gap-4">
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="download" value="1" class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-600">Langsung Download PDF</span>
-                            </label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Ujian (Judul Kartu)</label>
+                            <input type="text" name="nama_ujian" placeholder="Contoh: Ujian Akhir Semester Ganjil" 
+                                   class="w-full border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                                   value="UJIAN AKHIR PERIODE <?php echo e(date('Y')); ?>">
+                            <p class="text-xs text-gray-500 mt-1">Akan tampil di kop kartu ujian.</p>
                         </div>
                     </div>
 
                     <div class="mt-6 flex justify-end">
-                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded shadow-lg flex items-center gap-2">
+                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded shadow-lg flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                             </svg>
-                            <span>Generate Kartu</span>
+                            <span>Cetak Kartu (PDF)</span>
                         </button>
                     </div>
                 </form>

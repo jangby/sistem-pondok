@@ -139,56 +139,57 @@
 </head>
 <body>
 
-    {{-- Loop Utama: Membagi santri per 8 orang (1 halaman) --}}
-    @foreach($santris->chunk(8) as $chunk)
+    
+    <?php $__currentLoopData = $santris->chunk(8); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $chunk): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
     <div class="page">
-        @foreach($chunk as $santri)
+        <?php $__currentLoopData = $chunk; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $santri): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
         <div class="card">
             
-            {{-- Header / Kop --}}
+            
             <div class="header">
                 <img src="https://raw.githubusercontent.com/Dhuyuand/aset-cerdas-cermat/main/Logo.png" class="logo" alt="Logo Pondok">
                 <div class="kop-text">
                     <h2>PONDOK PESANTREN ASSA'ADAH</h2>
                     <h3>KARTU PESERTA UJIAN</h3>
                     <p>
-                        {{ $ujian->nama ?? 'Ujian Diniyah' }} 
-                        | Tahun Ajaran {{ $ujian->tahun_ajaran ?? date('Y/Y+1') }}
+                        <?php echo e($ujian->nama ?? 'Ujian Diniyah'); ?> 
+                        | Tahun Ajaran <?php echo e($ujian->tahun_ajaran ?? date('Y/Y+1')); ?>
+
                     </p>
                 </div>
             </div>
 
-            {{-- Body / Data Santri --}}
+            
             <div class="content">
                 <table>
                     <tr>
                         <td class="label">Nama</td>
                         <td class="titik">:</td>
-                        <td style="text-transform: uppercase;"><strong>{{ $santri->full_name }}</strong></td>
+                        <td style="text-transform: uppercase;"><strong><?php echo e($santri->full_name); ?></strong></td>
                     </tr>
                     <tr>
                         <td class="label">NIS/ID</td>
                         <td class="titik">:</td>
-                        <td>{{ $santri->nis }}</td>
+                        <td><?php echo e($santri->nis); ?></td>
                     </tr>
                     <tr>
                         <td class="label">Kelas</td>
                         <td class="titik">:</td>
-                        <td>{{ $santri->kelas->nama ?? $santri->mustawa->nama ?? '-' }}</td>
+                        <td><?php echo e($santri->kelas->nama ?? $santri->mustawa->nama ?? '-'); ?></td>
                     </tr>
                 </table>
             </div>
 
-            {{-- Footer / TTD --}}
+            
             <div class="footer">
                 
-                {{-- Kiri: Kotak Nomor Ujian (Opsional, bisa dihapus kalau tidak perlu) --}}
+                
                 <div class="nomor-ujian">
-                   {{ substr($santri->nis, -4) }} </div>
+                   <?php echo e(substr($santri->nis, -4)); ?> </div>
 
-                {{-- Kanan: Tanda Tangan --}}
+                
                 <div class="ttd-box">
-                    <div class="tgl">Limbangan, {{ date('d M Y') }}</div>
+                    <div class="tgl">Limbangan, <?php echo e(date('d M Y')); ?></div>
                     <div class="tgl">Ketua Panitia Ujian</div>
                     <img src="https://raw.githubusercontent.com/Dhuyuand/aset-cerdas-cermat/main/TTD.png" class="ttd-img" alt="TTD Panitia">
                     <div class="panitia">Ihsan</div>
@@ -196,9 +197,9 @@
             </div>
 
         </div>
-        @endforeach
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </div>
-    @endforeach
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
     <script>
         window.onload = function() {
@@ -206,4 +207,4 @@
         }
     </script>
 </body>
-</html>
+</html><?php /**PATH C:\laragon\www\keuangan-pesantren\resources\views/pendidikan/admin/kartu/print.blade.php ENDPATH**/ ?>

@@ -41,6 +41,19 @@ class MidtransWebhookController extends Controller
         try {
             // 1. Buat objek Notifikasi dari library Midtrans
             $notif = new Notification();
+
+            $serverKey = config('midtrans.server_key');
+    $grossAmount = $notif->gross_amount; // Pastikan ambil string amount (misal: 10000.00)
+    $statusCode = $notif->status_code;
+    $orderId = $notif->order_id;
+
+    $inputSignature = $notif->signature_key;
+    $mySignature = hash("sha512", $orderId . $statusCode . $grossAmount . $serverKey);
+
+    if ($inputSignature !== $mySignature) {
+        Log::warning("Security Alert: Invalid Signature Key pada Order ID {$orderId}");
+        return response()->json(['message' => 'Invalid Signature'], 403);
+    }
         } catch (\Exception $e) {
             Log::error('Webhook Midtrans Gagal: Gagal membuat objek Notifikasi. ' . $e->getMessage());
             return response()->json(['message' => 'Invalid payload'], 400);
