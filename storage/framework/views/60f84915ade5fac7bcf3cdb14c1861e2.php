@@ -1,9 +1,19 @@
-<x-app-layout hide-nav>
-    <x-slot name="header">
+<?php if (isset($component)) { $__componentOriginal9ac128a9029c0e4701924bd2d73d7f54 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54 = $attributes; } ?>
+<?php $component = App\View\Components\AppLayout::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('app-layout'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\App\View\Components\AppLayout::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['hide-nav' => true]); ?>
+     <?php $__env->slot('header', null, []); ?> 
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Input Setoran') }}
+            <?php echo e(__('Input Setoran')); ?>
+
         </h2>
-    </x-slot>
+     <?php $__env->endSlot(); ?>
 
     <style>
         nav.bg-white.border-b { display: none !important; }
@@ -12,41 +22,43 @@
 
     <div class="py-6 px-4 max-w-md mx-auto pb-24">
         
-        <form action="{{ route('ustadz.jurnal.store') }}" method="POST">
-            @csrf
-            <input type="hidden" name="tanggal" value="{{ date('Y-m-d') }}">
+        <form action="<?php echo e(route('ustadz.jurnal.store')); ?>" method="POST">
+            <?php echo csrf_field(); ?>
+            <input type="hidden" name="tanggal" value="<?php echo e(date('Y-m-d')); ?>">
 
-            {{-- 1. Pilih Kelas --}}
+            
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Kelas</label>
-                <select name="mustawa_id" onchange="window.location.href='{{ route('ustadz.jurnal.create') }}?mustawa_id=' + this.value"
+                <select name="mustawa_id" onchange="window.location.href='<?php echo e(route('ustadz.jurnal.create')); ?>?mustawa_id=' + this.value"
                     class="w-full rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm">
                     <option value="">-- Pilih Kelas Dulu --</option>
-                    @foreach($mustawas as $m)
-                        <option value="{{ $m->id }}" {{ $selectedMustawaId == $m->id ? 'selected' : '' }}>
-                            {{ $m->nama }}
+                    <?php $__currentLoopData = $mustawas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($m->id); ?>" <?php echo e($selectedMustawaId == $m->id ? 'selected' : ''); ?>>
+                            <?php echo e($m->nama); ?>
+
                         </option>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
             </div>
 
-            {{-- 2. Pilih Santri --}}
+            
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nama Santri</label>
                 <select name="santri_id" required class="w-full rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm bg-gray-50"
-                    {{ $santris->isEmpty() ? 'disabled' : '' }}>
+                    <?php echo e($santris->isEmpty() ? 'disabled' : ''); ?>>
                     <option value="">
-                        {{ $santris->isEmpty() ? ($selectedMustawaId ? '-- Tidak ada santri --' : '-- Pilih Kelas diatas --') : '-- Pilih Santri --' }}
+                        <?php echo e($santris->isEmpty() ? ($selectedMustawaId ? '-- Tidak ada santri --' : '-- Pilih Kelas diatas --') : '-- Pilih Santri --'); ?>
+
                     </option>
-                    @foreach($santris as $s)
-                        <option value="{{ $s->id }}">{{ $s->full_name }}</option>
-                    @endforeach
+                    <?php $__currentLoopData = $santris; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($s->id); ?>"><?php echo e($s->full_name); ?></option>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
             </div>
 
             <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-5">
                 
-                {{-- 3. Kategori --}}
+                
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Kategori</label>
                     <div class="grid grid-cols-2 gap-3">
@@ -65,7 +77,7 @@
                     </div>
                 </div>
 
-                {{-- 4. Jenis Setoran --}}
+                
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Jenis Setoran</label>
                     <div class="grid grid-cols-2 gap-3">
@@ -84,7 +96,7 @@
                     </div>
                 </div>
 
-                {{-- 5. Input Materi --}}
+                
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Surat / Kitab</label>
                     <input type="text" name="materi" placeholder="Contoh: Al-Mulk" required
@@ -104,7 +116,7 @@
                     </div>
                 </div>
 
-                {{-- 6. Predikat --}}
+                
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Hasil / Predikat</label>
                     <div class="grid grid-cols-3 gap-2">
@@ -132,7 +144,7 @@
                     </div>
                 </div>
 
-                {{-- 7. Catatan --}}
+                
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Catatan (Opsional)</label>
                     <textarea name="catatan" rows="2" placeholder="Tajwid perlu diperbaiki..."
@@ -141,16 +153,25 @@
 
             </div>
 
-            {{-- Tombol Simpan --}}
+            
             <div class="mt-6">
                 <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:bg-emerald-700 transition active:scale-95">
                     Simpan Hafalan
                 </button>
-                <a href="{{ route('ustadz.jurnal.index') }}" class="block text-center text-gray-500 text-sm mt-4 hover:text-gray-800">
+                <a href="<?php echo e(route('ustadz.jurnal.index')); ?>" class="block text-center text-gray-500 text-sm mt-4 hover:text-gray-800">
                     Batal / Kembali
                 </a>
             </div>
 
         </form>
     </div>
-</x-app-layout>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54)): ?>
+<?php $attributes = $__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54; ?>
+<?php unset($__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9ac128a9029c0e4701924bd2d73d7f54)): ?>
+<?php $component = $__componentOriginal9ac128a9029c0e4701924bd2d73d7f54; ?>
+<?php unset($__componentOriginal9ac128a9029c0e4701924bd2d73d7f54); ?>
+<?php endif; ?><?php /**PATH C:\laragon\www\keuangan-pesantren\resources\views/pendidikan/ustadz/jurnal/create.blade.php ENDPATH**/ ?>
