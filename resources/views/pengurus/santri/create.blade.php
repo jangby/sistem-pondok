@@ -36,7 +36,7 @@
             </div>
 
             {{-- SECTION 2: DATA AKADEMIK --}}
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-3 gap-4"> {{-- Ubah grid-cols-2 jadi grid-cols-3 --}}
                 <div>
                     <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Kelas</label>
                     <select name="kelas_id" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
@@ -45,6 +45,10 @@
                             <option value="{{ $k->id }}">{{ $k->nama_kelas }}</option>
                         @endforeach
                     </select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Tahun Masuk</label>
+                    <input type="number" name="tahun_masuk" value="{{ old('tahun_masuk', date('Y')) }}" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500" placeholder="YYYY">
                 </div>
                 <div>
                     <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Status</label>

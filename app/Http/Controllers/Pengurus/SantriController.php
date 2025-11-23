@@ -62,7 +62,8 @@ class SantriController extends Controller
         $pondokId = $this->getPondokId();
 
         $validated = $request->validate([
-            'nis' => ['required', Rule::unique('santris')->where('pondok_id', $pondokId)],
+            'nis' => ['nullable', Rule::unique('santris')->where('pondok_id', $pondokId)], // <--- Ubah jadi nullable
+            'tahun_masuk' => 'nullable|digits:4|integer|min:2000|max:'.(date('Y')+1),
             'rfid_uid' => ['nullable', 'string', Rule::unique('santris')->where('pondok_id', $pondokId)], // Validasi RFID unik
             'full_name' => 'required|string|max:255',
             'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
@@ -76,6 +77,33 @@ class SantriController extends Controller
         ]);
 
         $validated['pondok_id'] = $pondokId;
+        
+        // 2. LOGIKA AUTO GENERATE NIS
+        if (empty($request->nis)) {
+            $tahun = $request->tahun_masuk;
+            
+            // Cari santri terakhir di tahun yang sama & pondok yang sama
+            // Kita cari yang format depannya mirip tahun masuk (cth: '2025%')
+            $lastSantri = Santri::where('pondok_id', $pondokId)
+                ->where('nis', 'like', $tahun . '%')
+                // Order by panjang string dulu (biar 2025100 tidak dianggap lebih kecil dari 202599)
+                ->orderByRaw('LENGTH(nis) DESC') 
+                ->orderBy('nis', 'desc')
+                ->first();
+
+            if ($lastSantri) {
+                // Ambil 4 digit terakhir, ubah jadi integer, tambah 1
+                // Contoh NIS: 20250045 -> ambil 0045 -> jadi 45 -> +1 = 46
+                $lastNo = intval(substr($lastSantri->nis, 4));
+                $newNo = $lastNo + 1;
+            } else {
+                $newNo = 1;
+            }
+
+            // Format ulang: Tahun + 4 Digit Urut (Pad Left dengan 0)
+            // Contoh: 2025 + 0046 = 20250046
+            $validated['nis'] = $tahun . str_pad($newNo, 4, '0', STR_PAD_LEFT);
+        }
         
         // OTOMATIS GENERATE QR CODE SAAT BUAT BARU
         // Format: SANTRI-TIMESTAMP-RANDOM (agar unik)
@@ -110,6 +138,7 @@ class SantriController extends Controller
 
         $validated = $request->validate([
             'nis' => ['required', Rule::unique('santris')->where('pondok_id', $pondokId)->ignore($santri->id)],
+            'tahun_masuk' => 'nullable|digits:4|integer|min:2000|max:'.(date('Y')+1),
             'rfid_uid' => ['nullable', 'string', Rule::unique('santris')->where('pondok_id', $pondokId)->ignore($santri->id)], // Validasi RFID
             'full_name' => 'required|string|max:255',
             'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',

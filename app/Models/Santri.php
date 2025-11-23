@@ -12,6 +12,7 @@ class Santri extends Model
 
     protected $fillable = [
     'nis',
+    'tahun_masuk',
     'rfid_uid',
     'qrcode_token',
     'full_name',

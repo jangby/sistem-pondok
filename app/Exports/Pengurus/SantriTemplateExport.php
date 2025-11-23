@@ -16,6 +16,7 @@ class SantriTemplateExport implements FromArray, WithHeadings, ShouldAutoSize, W
         return [
             [
                 '123456',           // NIS
+                '2025',
                 'Ahmad Santri',     // Nama Lengkap
                 'Laki-laki',        // Jenis Kelamin (Laki-laki/Perempuan)
                 'Jakarta',          // Tempat Lahir
@@ -48,6 +49,7 @@ class SantriTemplateExport implements FromArray, WithHeadings, ShouldAutoSize, W
     {
         return [
             'NIS',
+            'Tahun Masuk',
             'Nama Lengkap',
             'Jenis Kelamin',
             'Tempat Lahir',

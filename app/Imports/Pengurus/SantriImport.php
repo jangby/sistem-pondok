@@ -5,7 +5,7 @@ namespace App\Imports\Pengurus;
 use App\Models\Santri;
 use App\Models\Kelas;
 use App\Models\OrangTua;
-use App\Models\User; // Tambahkan Model User
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -20,19 +20,23 @@ class SantriImport implements ToModel, WithHeadingRow, WithValidation
 
     public function __construct()
     {
+        // Ambil ID pondok dari user yang sedang login (Pengurus)
         $this->pondokId = Auth::user()->pondokStaff->pondok_id;
     }
 
     /**
      * Helper: Handle format tanggal Excel (Angka vs Teks)
+     * Mengubah serial number Excel menjadi objek tanggal PHP
      */
     private function transformDate($value)
     {
         if (empty($value)) return null;
         try {
+            // Jika format angka (Serial Number Excel), gunakan library phpspreadsheet
             if (is_numeric($value)) {
                 return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value);
             }
+            // Jika format teks biasa (YYYY-MM-DD), gunakan Carbon
             return Carbon::parse($value);
         } catch (\Exception $e) {
             return null;
@@ -41,66 +45,104 @@ class SantriImport implements ToModel, WithHeadingRow, WithValidation
 
     public function model(array $row)
     {
-        // 1. Cari ID Kelas
+        // 1. Cari ID Kelas berdasarkan Nama Kelas di Excel
         $kelas = Kelas::where('pondok_id', $this->pondokId)
             ->where('nama_kelas', $row['nama_kelas'])
             ->first();
 
         // ==================================================
-        // PERBAIKAN LOGIKA USER & ORANG TUA
+        // LOGIKA 1: NIS OTOMATIS
         // ==================================================
-        
-        // Bersihkan No HP
-        $phone = preg_replace('/[^0-9]/', '', $row['no_hp_wali_wajib_unik']);
-        
-        // Buat Email Login Dummy: [NoHP]@wali.santri
-        $loginEmail = $phone . '@wali.santri';
+        $nis = $row['nis'];
+        // Ambil tahun masuk dari excel, atau default tahun sekarang
+        $tahunMasuk = $row['tahun_masuk'] ?? date('Y'); 
 
-        // A. Cek Data OrangTua di Database Pondok
-        $orangTua = OrangTua::where('pondok_id', $this->pondokId)
-            ->where('phone', $phone)
-            ->first();
+        // Jika NIS kosong di Excel, kita buatkan otomatis
+        if (empty($nis)) {
+            // Cari santri terakhir di tahun tersebut untuk mendapatkan nomor urut terakhir
+            $lastSantri = Santri::where('pondok_id', $this->pondokId)
+                ->where('nis', 'like', $tahunMasuk . '%')
+                // Order by panjang string dulu agar urutan puluhan/ratusan benar
+                ->orderByRaw('LENGTH(nis) DESC') 
+                ->orderBy('nis', 'desc')
+                ->first();
 
-        // Jika OrangTua belum ada, kita buat User dulu, baru OrangTua
-        if (!$orangTua) {
+            // Ambil 4 digit terakhir (nomor urut)
+            $lastNo = $lastSantri ? intval(substr($lastSantri->nis, 4)) : 0;
+            $newNo = $lastNo + 1;
             
-            // B. Cek/Buat User Login (Tabel 'users')
-            $user = User::where('email', $loginEmail)->first();
-            
-            if (!$user) {
-                $user = User::create([
-                    'name'     => $row['nama_wali_akun_app'],
-                    'email'    => $loginEmail,
-                    'password' => Hash::make('123456'), // Password Default
-                ]);
-                
-                // Assign Role (Pastikan Spatie Permission terinstall)
-                $user->assignRole('orang-tua');
-            }
-
-            // C. Buat Profil OrangTua (Tabel 'orang_tuas') linked ke User
-            $orangTua = OrangTua::create([
-                'pondok_id' => $this->pondokId,
-                'user_id'   => $user->id, // <--- PENTING: Link ke tabel users
-                'name'      => $row['nama_wali_akun_app'],
-                'phone'     => $phone,
-                'address'   => $row['alamat'] ?? '-',
-            ]);
+            // Format: TAHUN + 0001 (contoh: 20250001)
+            $nis = $tahunMasuk . str_pad($newNo, 4, '0', STR_PAD_LEFT);
         }
 
         // ==================================================
-        // SIMPAN DATA SANTRI
+        // LOGIKA 2: USER & ORANG TUA (SAFE MODE)
+        // ==================================================
+        $orangTuaId = null;
+        $phoneInput = $row['no_hp_wali_wajib_unik'];
+
+        // Hanya proses jika No HP diisi di Excel
+        if (!empty($phoneInput)) {
+            
+            // Bersihkan No HP dari karakter aneh
+            $phone = preg_replace('/[^0-9]/', '', $phoneInput);
+            
+            if (!empty($phone)) {
+                // Email Login Dummy: [NoHP]@wali.santri
+                $loginEmail = $phone . '@wali.santri';
+
+                // A. Cek Data OrangTua di Database (Profile)
+                $orangTua = OrangTua::where('pondok_id', $this->pondokId)
+                    ->where('phone', $phone)
+                    ->first();
+
+                if (!$orangTua) {
+                    // B. Cek/Buat User Login (Tabel 'users')
+                    $user = User::where('email', $loginEmail)->first();
+                    
+                    if (!$user) {
+                        $user = User::create([
+                            'name'     => $row['nama_wali_akun_app'] ?? 'Wali Santri',
+                            'email'    => $loginEmail,
+                            'password' => Hash::make('123456'), // Password Default
+                        ]);
+                        
+                        // Pastikan role sudah ada di sistem (Spatie Permission)
+                        $user->assignRole('orang-tua');
+                    }
+
+                    // C. Buat Profil OrangTua linked ke User
+                    $orangTua = OrangTua::create([
+                        'pondok_id' => $this->pondokId,
+                        'user_id'   => $user->id,
+                        'name'      => $row['nama_wali_akun_app'] ?? 'Wali Santri',
+                        'phone'     => $phone,
+                        'address'   => $row['alamat'] ?? '-',
+                    ]);
+                }
+                
+                $orangTuaId = $orangTua->id;
+            }
+        }
+
+        // ==================================================
+        // LOGIKA 3: SIMPAN DATA SANTRI
         // ==================================================
         return new Santri([
             'pondok_id' => $this->pondokId,
-            'nis' => $row['nis'],
+            
+            // Gunakan NIS hasil proses di atas (Manual atau Otomatis)
+            'nis' => $nis, 
+            'tahun_masuk' => $tahunMasuk,
+            
             'full_name' => $row['nama_lengkap'],
             'jenis_kelamin' => $row['jenis_kelamin'],
             'tempat_lahir' => $row['tempat_lahir'],
             'tanggal_lahir' => $this->transformDate($row['tanggal_lahir_yyyy_mm_dd']),
             
             'kelas_id' => $kelas ? $kelas->id : null,
-            'orang_tua_id' => $orangTua->id,
+            'orang_tua_id' => $orangTuaId, // Bisa NULL jika No HP kosong
+            
             'status' => 'active',
             'qrcode_token' => 'S-' . time() . '-' . Str::random(8),
 
@@ -131,9 +173,13 @@ class SantriImport implements ToModel, WithHeadingRow, WithValidation
     public function rules(): array
     {
         return [
-            'nis' => ['required'],
+            // Hapus validasi 'required' pada NIS agar bisa kosong (auto-generate)
+            // 'nis' => ['required'], 
+            
             'nama_lengkap' => ['required'],
-            'no_hp_wali_wajib_unik' => ['required'],
+            
+            // Ubah jadi nullable agar data santri tetap masuk walau tanpa wali
+            'no_hp_wali_wajib_unik' => ['nullable'], 
         ];
     }
 }
