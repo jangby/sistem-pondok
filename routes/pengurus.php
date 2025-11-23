@@ -35,6 +35,9 @@ Route::middleware(['auth', 'role:pengurus_pondok'])->prefix('pengurus')->name('p
     Route::post('santri/import', [SantriController::class, 'import'])->name('santri.import');
     Route::resource('santri', SantriController::class); 
 
+    Route::post('santri/cleanup', [App\Http\Controllers\Pengurus\SantriController::class, 'cleanupFailedImport'])
+    ->name('santri.cleanup');
+
     // UKS
     Route::get('uks', [UksController::class, 'index'])->name('uks.index');
     Route::get('uks/history', [UksController::class, 'history'])->name('uks.history');

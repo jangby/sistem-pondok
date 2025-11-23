@@ -217,4 +217,31 @@ class SantriController extends Controller
             return redirect()->back()->with('error', 'Gagal impor: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Fitur Darurat: Hapus data santri yang tidak punya kelas (akibat gagal import)
+     * Hanya menghapus data yang dibuat HARI INI agar aman.
+     */
+    public function cleanupFailedImport()
+    {
+        $pondokId = $this->getPondokId();
+        
+        // Hitung dulu berapa yang akan dihapus (untuk pesan sukses)
+        $count = Santri::where('pondok_id', $pondokId)
+            ->whereNull('kelas_id') // Hanya yang tidak punya kelas
+            ->whereDate('created_at', \Carbon\Carbon::today()) // Hanya yang dibuat HARI INI
+            ->count();
+
+        if ($count == 0) {
+            return redirect()->back()->with('error', 'Tidak ditemukan data santri tanpa kelas yang dibuat hari ini.');
+        }
+
+        // Lakukan penghapusan
+        Santri::where('pondok_id', $pondokId)
+            ->whereNull('kelas_id')
+            ->whereDate('created_at', \Carbon\Carbon::today())
+            ->delete();
+
+        return redirect()->back()->with('success', "Berhasil menghapus {$count} data santri yang tidak memiliki kelas.");
+    }
 }

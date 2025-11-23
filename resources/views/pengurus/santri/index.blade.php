@@ -121,6 +121,21 @@
                                 Proses Import
                             </button>
                         </form>
+                        <hr class="border-gray-100 my-4">
+                        
+                        <div class="bg-red-50 p-4 rounded-xl border border-red-100">
+                            <h4 class="text-red-800 font-bold text-sm mb-1">Salah Import?</h4>
+                            <p class="text-xs text-red-600 mb-3">
+                                Jika ada data santri yang masuk tanpa kelas (karena lupa buat kelas), tekan tombol di bawah ini untuk menghapusnya.
+                            </p>
+                            
+                            <form action="{{ route('pengurus.santri.cleanup') }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus semua data santri TANPA KELAS yang dibuat HARI INI?');">
+                                @csrf
+                                <button type="submit" class="w-full bg-white text-red-600 border border-red-200 py-2 rounded-lg text-sm font-bold hover:bg-red-100 transition">
+                                    Hapus Data Gagal (Tanpa Kelas)
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
