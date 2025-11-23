@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Inventaris\Barang;
 use App\Models\Inventaris\Lokasi;
 use App\Models\Santri;
+use Picqer\Barcode\BarcodeGeneratorPNG; // Tambahan library barcode
+use Illuminate\Support\Str; // Helper string
 
 class BarangController extends Controller
 {
@@ -62,11 +64,11 @@ class BarangController extends Controller
         return view('pengurus.inventaris.barang.list', compact('lokasi', 'barangs', 'santris'));
     }
 
-    // 3. SIMPAN BARANG (Redirectnya kembali ke lokasi tsb)
+    // 3. SIMPAN BARANG (Auto Generate Kode jika kosong)
     public function store(Request $request)
     {
         $request->validate([
-            'code' => 'required|unique:inv_items,code',
+            'code' => 'nullable|unique:inv_items,code', // Ubah jadi nullable agar bisa auto-generate
             'name' => 'required',
             'location_id' => 'required',
             'qty_good' => 'required|integer|min:0',
@@ -74,10 +76,20 @@ class BarangController extends Controller
             'price' => 'required|numeric',
         ]);
 
+        // Logika Auto Generate Kode
+        $kodeBarang = $request->code;
+        if (empty($kodeBarang)) {
+            // Format: INV-{TAHUN}-{URUTAN_ID}
+            // Kita ambil ID terakhir secara global untuk urutan unik
+            $latestBarang = Barang::latest()->first();
+            $nextId = $latestBarang ? $latestBarang->id + 1 : 1;
+            $kodeBarang = 'INV-' . date('Y') . '-' . sprintf('%04d', $nextId);
+        }
+
         Barang::create([
             'pondok_id' => $this->getPondokId(),
             'location_id' => $request->location_id,
-            'code' => $request->code,
+            'code' => $kodeBarang, // Gunakan kode hasil generate/input user
             'name' => $request->name,
             'unit' => $request->unit,
             'price' => $request->price,
@@ -86,7 +98,7 @@ class BarangController extends Controller
             'pic_santri_id' => $request->pic_santri_id
         ]);
 
-        return back()->with('success', 'Barang berhasil ditambahkan.');
+        return back()->with('success', 'Barang berhasil ditambahkan dengan Kode: ' . $kodeBarang);
     }
 
     public function update(Request $request, $id)
@@ -103,5 +115,33 @@ class BarangController extends Controller
         $barang = Barang::where('pondok_id', $this->getPondokId())->findOrFail($id);
         $barang->delete();
         return back()->with('success', 'Barang dihapus.');
+    }
+
+   // 4. DOWNLOAD LABEL BARCODE (PER LOKASI)
+    public function printLabels($id) // Tambahkan parameter $id
+    {
+        $pondokId = $this->getPondokId();
+        
+        // Validasi: Pastikan lokasi tersebut milik pondok ini
+        $lokasi = Lokasi::where('pondok_id', $pondokId)->findOrFail($id);
+
+        // Filter barang berdasarkan pondok_id DAN location_id
+        $barangs = Barang::where('pondok_id', $pondokId)
+                         ->where('location_id', $id) // Filter Lokasi
+                         ->whereNotNull('code')
+                         ->where('code', '!=', '')
+                         ->get();
+        
+        $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
+
+        $pdf = app('dompdf.wrapper');
+        
+        // Kita kirim data lokasi juga untuk judul PDF jika perlu
+        $pdf->loadView('pengurus.inventaris.barang.pdf_labels', compact('barangs', 'generator', 'lokasi'));
+        
+        $pdf->setPaper('A4', 'portrait');
+
+        // Nama file dinamis
+        return $pdf->stream('label-barang-' . \Illuminate\Support\Str::slug($lokasi->name) . '.pdf');
     }
 }

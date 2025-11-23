@@ -125,6 +125,9 @@ Route::middleware(['auth', 'role:pengurus_pondok'])->prefix('pengurus')->name('p
     Route::prefix('inventaris')->name('inventaris.')->group(function () {
         Route::get('/', [InventarisController::class, 'index'])->name('index');
         Route::resource('lokasi', LokasiController::class);
+        Route::get('barang/print-labels/{id}', [App\Http\Controllers\Pengurus\Inventaris\BarangController::class, 'printLabels'])
+        ->name('barang.print-labels');
+        Route::resource('barang', App\Http\Controllers\Pengurus\Inventaris\BarangController::class);
         Route::resource('barang', BarangController::class);
         Route::get('barang/lokasi/{id}', [BarangController::class, 'byLokasi'])->name('barang.by_lokasi');
         Route::resource('kerusakan', KerusakanController::class);
