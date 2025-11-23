@@ -10,7 +10,8 @@
 <?php $component->withAttributes(['hide-nav' => true]); ?>
      <?php $__env->slot('header', null, []); ?>  <?php $__env->endSlot(); ?>
 
-    <div class="min-h-screen bg-gray-50 pb-24">
+    
+    <div class="min-h-screen bg-gray-50" style="padding-bottom: 180px;">
         
         
         <div class="bg-emerald-600 pt-6 pb-10 px-6 rounded-b-[30px] shadow-lg sticky top-0 z-30">
@@ -78,7 +79,8 @@
         </div>
 
         
-        <div class="fixed bottom-24 right-6 flex flex-col gap-3 z-50">
+        
+        <div class="fixed right-6 flex flex-col gap-3 z-50" style="bottom: 140px;">
             
             
             <button onclick="document.getElementById('importModal').showModal()" class="bg-white text-emerald-600 w-12 h-12 rounded-full shadow-lg shadow-emerald-200 flex items-center justify-center hover:bg-emerald-50 active:scale-90 transition border border-emerald-100" title="Import Excel">
@@ -132,6 +134,21 @@
                                 Proses Import
                             </button>
                         </form>
+                        <hr class="border-gray-100 my-4">
+                        
+                        <div class="bg-red-50 p-4 rounded-xl border border-red-100">
+                            <h4 class="text-red-800 font-bold text-sm mb-1">Salah Import?</h4>
+                            <p class="text-xs text-red-600 mb-3">
+                                Jika ada data santri yang masuk tanpa kelas (karena lupa buat kelas), tekan tombol di bawah ini untuk menghapusnya.
+                            </p>
+                            
+                            <form action="<?php echo e(route('pengurus.santri.cleanup')); ?>" method="POST" onsubmit="return confirm('Yakin ingin menghapus semua data santri TANPA KELAS yang dibuat HARI INI?');">
+                                <?php echo csrf_field(); ?>
+                                <button type="submit" class="w-full bg-white text-red-600 border border-red-200 py-2 rounded-lg text-sm font-bold hover:bg-red-100 transition">
+                                    Hapus Data Gagal (Tanpa Kelas)
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -139,10 +156,7 @@
 
     </div>
 
-    
     <?php echo $__env->make('layouts.pengurus-nav', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?> 
-    
-    
  <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54)): ?>

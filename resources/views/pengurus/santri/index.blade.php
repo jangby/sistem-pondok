@@ -1,7 +1,13 @@
 <x-app-layout hide-nav>
     <x-slot name="header"></x-slot>
 
-    <div class="min-h-screen bg-gray-50 pb-24">
+    {{-- 
+        PERBAIKAN 1:
+        Saya ganti 'pb-24' dengan style="padding-bottom: 180px".
+        Ini memaksa halaman punya ruang kosong luas di bawah, jadi pagination 
+        bisa di-scroll sampai ke atas tombol tambah.
+    --}}
+    <div class="min-h-screen bg-gray-50" style="padding-bottom: 180px;">
         
         {{-- HEADER MOBILE --}}
         <div class="bg-emerald-600 pt-6 pb-10 px-6 rounded-b-[30px] shadow-lg sticky top-0 z-30">
@@ -67,7 +73,13 @@
         </div>
 
         {{-- Group Floating Action Button --}}
-        <div class="fixed bottom-24 right-6 flex flex-col gap-3 z-50">
+        {{-- 
+            PERBAIKAN 2:
+            Saya hapus class 'bottom-24' dan ganti pakai style="bottom: 140px;".
+            Ini akan memaksa tombol naik ke atas tanpa tergantung compile CSS.
+            Tombol PASTI muncul di posisi agak tinggi.
+        --}}
+        <div class="fixed right-6 flex flex-col gap-3 z-50" style="bottom: 140px;">
             
             {{-- Tombol Import (Kecil) --}}
             <button onclick="document.getElementById('importModal').showModal()" class="bg-white text-emerald-600 w-12 h-12 rounded-full shadow-lg shadow-emerald-200 flex items-center justify-center hover:bg-emerald-50 active:scale-90 transition border border-emerald-100" title="Import Excel">
@@ -143,13 +155,5 @@
 
     </div>
 
-    {{-- Bottom Nav (Include file yang sudah dibuat sebelumnya) --}}
     @include('layouts.pengurus-nav') 
-    
-    {{-- 
-       CATATAN: Jika Anda belum memisahkan bottom nav ke file sendiri, 
-       copas kode bottom nav dari dashboard.blade.php ke sini, 
-       atau buat file baru `resources/views/layouts/pengurus-nav-bottom.blade.php` 
-       berisi kode <div class="fixed bottom-0 ...">...</div>
-    --}}
 </x-app-layout>

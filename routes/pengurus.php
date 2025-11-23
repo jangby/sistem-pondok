@@ -34,7 +34,6 @@ Route::middleware(['auth', 'role:pengurus_pondok'])->prefix('pengurus')->name('p
     Route::get('santri/template/download', [SantriController::class, 'downloadTemplate'])->name('santri.template');
     Route::post('santri/import', [SantriController::class, 'import'])->name('santri.import');
     Route::resource('santri', SantriController::class); 
-
     Route::post('santri/cleanup', [App\Http\Controllers\Pengurus\SantriController::class, 'cleanupFailedImport'])
     ->name('santri.cleanup');
 
