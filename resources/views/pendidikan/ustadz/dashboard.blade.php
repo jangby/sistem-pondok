@@ -16,7 +16,7 @@ Carbon::setLocale('id');
 
             <div class="relative z-10 flex justify-between items-center">
                 <div>
-                    <p class="text-emerald-100 text-sm font-medium mb-1">Ahlan wa Sahlan,</p>
+                    <p class="text-emerald-100 text-sm font-medium mb-1">اهلا وسهلا,</p>
                     <h1 class="text-2xl font-bold text-white truncate max-w-[200px]">
                         {{ Auth::user()->ustadz->nama_lengkap ?? Auth::user()->name }}
                     </h1>
