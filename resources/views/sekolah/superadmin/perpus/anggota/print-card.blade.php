@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cetak Kartu Perpustakaan & Lab</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;800&display=swap');
+        
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: #e5e5e5; /* Abu-abu untuk background halaman preview */
+            margin: 0;
+            padding: 20px;
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact;
+        }
+
+        .card-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        /* === DESAIN KARTU UTAMA === */
+        .id-card {
+            width: 85.6mm;
+            height: 54mm;
+            background-color: #fff;
+            background-image: radial-gradient(#f3f4f6 1px, transparent 1px); /* Pattern titik halus */
+            background-size: 10px 10px;
+            border: 1px solid #bbb;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            page-break-inside: avoid;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Watermark Logo di Tengah */
+        .watermark {
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            opacity: 0.08; /* Transparan */
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* === HEADER === */
+        .header {
+            background: #004d40; /* Hijau Tua Pesantren */
+            color: white;
+            padding: 6px 8px;
+            display: flex;
+            align-items: center;
+            border-bottom: 3px solid #fbbf24; /* Garis Kuning Emas */
+            position: relative;
+            z-index: 1;
+            height: 42px;
+        }
+
+        .logo-box {
+            width: 38px;
+            height: 38px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .logo-box img {
+            width: 32px;
+            height: auto;
+        }
+
+        .header-text {
+            flex: 1;
+            text-align: center;
+        }
+
+        .header-title {
+            font-size: 7pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1px;
+            opacity: 0.9;
+        }
+
+        .school-name {
+            font-size: 9pt;
+            font-weight: 800; /* Extra Bold */
+            text-transform: uppercase;
+            margin-bottom: 1px;
+            line-height: 1;
+            color: #fff;
+        }
+
+        .address {
+            font-size: 4.5pt;
+            line-height: 1.1;
+            opacity: 0.8;
+            font-weight: 400;
+        }
+
+        /* === BODY (NAMA & DETAIL) === */
+        .card-body {
+            padding: 5px 10px;
+            flex: 1;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* Isi mulai dari atas */
+            text-align: center;
+        }
+
+        .name-section {
+            margin-top: 8px;
+            margin-bottom: 5px;
+        }
+
+        .student-name {
+            font-size: 14pt; /* Nama Besar */
+            font-weight: 800;
+            color: #111;
+            text-transform: uppercase;
+            line-height: 1.1;
+            letter-spacing: -0.5px; /* Sedikit rapat biar muat */
+        }
+
+        .info-table {
+            width: 100%;
+            margin: 0 auto;
+            border-collapse: collapse;
+            margin-top: 2px;
+        }
+
+        .info-table td {
+            padding: 1px 2px;
+            font-size: 10pt; /* Ukuran Font Info Dibesarkan */
+            font-weight: 600;
+            color: #333;
+            text-align: left;
+        }
+        
+        .info-table td:first-child {
+            text-align: right;
+            width: 42%;
+            color: #555;
+            font-weight: 400;
+            padding-right: 5px;
+        }
+        
+        .info-table td:nth-child(2) {
+            width: 5px;
+        }
+
+        /* === FOOTER (BARCODE) === */
+        .footer {
+            background: white;
+            padding: 5px 0 8px 0;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .barcode-img {
+            height: 40px; /* Barcode Tinggi & Besar */
+            max-width: 90%;
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* === PRINT SETTINGS === */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+            .card-container {
+                gap: 0;
+                display: block;
+            }
+            .id-card {
+                float: left;
+                margin: 2mm;
+                border: 1px dashed #999; /* Garis potong tipis */
+                box-shadow: none;
+            }
+            @page {
+                margin: 5mm;
+                size: A4;
+            }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+
+    <div class="card-container">
+        @foreach($santris as $santri)
+        <div class="id-card">
+            
+            {{-- Watermark Logo di Belakang --}}
+            {{-- Pastikan path logo benar. Menggunakan file yang baru diupload user jika ada --}}
+            <img src="{{ asset('uploads/logos/logo-1-1762956082.jpg') }}" 
+                 onerror="this.src='{{ asset('image_5a2b20.png') }}'"
+                 class="watermark" alt="Watermark">
+
+            {{-- Header --}}
+            <div class="header">
+                <div class="logo-box">
+                    {{-- Logo Utama --}}
+                    <img src="{{ asset('uploads/logos/logo-1-1762956082.jpg') }}" 
+                         onerror="this.style.display='none'" alt="Logo">
+                </div>
+                <div class="header-text">
+                    <div class="header-title">Kartu Perpustakaan & Lab Komputer</div>
+                    <div class="school-name">SMP & SMA Assa'adah Limbangan</div>
+                    <div class="address">
+                        Jl Raya Limbangan Tengah No. 104 Telp. (0262)431010<br>
+                        Bl. Limbangan Garut 44186
+                    </div>
+                </div>
+            </div>
+
+            {{-- Body --}}
+            <div class="card-body">
+                <div class="name-section">
+                    <div class="student-name">{{ Str::limit($santri->name, 20) }}</div>
+                </div>
+
+                {{-- Tabel Info yang Rapi dan Besar --}}
+                <table class="info-table">
+                    <tr>
+                        <td>NIS</td>
+                        <td>:</td>
+                        <td>{{ $santri->nis }}</td>
+                    </tr>
+                    <tr>
+                        <td>Jenjang</td>
+                        <td>:</td>
+                        {{-- Mengambil Jenjang dari Tingkat Kelas --}}
+                        <td>{{ $santri->kelas ? strtoupper($santri->kelas->tingkat) : '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Kelas</td>
+                        <td>:</td>
+                        <td>{{ $santri->kelas ? $santri->kelas->nama_kelas : '-' }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            {{-- Footer: Barcode Besar --}}
+            <div class="footer">
+                {{-- Barcode Generator Code 128 --}}
+                <img class="barcode-img" 
+                     src="https://bwipjs-api.metafloor.com/?bcid=code128&text={{ $santri->nis }}&scale=3&height=14&includetext&textxalign=center&textsize=10" 
+                     alt="Barcode {{ $santri->nis }}">
+            </div>
+        </div>
+        @endforeach
+    </div>
+
+</body>
+</html>

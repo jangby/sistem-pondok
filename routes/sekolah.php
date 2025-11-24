@@ -56,6 +56,39 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:super-admin-sekol
         Route::resource('tahun-ajaran', SuperAdminTahunAjaranController::class)->except(['show']);
         Route::resource('admin-pendidikan', AdminPendidikanController::class);
         Route::post('tahun-ajaran/{tahunAjaran}/activate', [SuperAdminTahunAjaranController::class, 'activate'])->name('tahun-ajaran.activate');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Modul Perpustakaan
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('perpustakaan')->name('perpustakaan.')->group(function () {
+            // 1. Manajemen Buku
+            Route::resource('buku', \App\Http\Controllers\Sekolah\SuperAdmin\Perpus\BukuController::class);
+            
+            // 2. Kunjungan (Buku Tamu / Kiosk)
+            Route::get('kunjungan', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\KunjunganController::class, 'index'])->name('kunjungan.index');
+            Route::get('kunjungan/kiosk', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\KunjunganController::class, 'kiosk'])->name('kunjungan.kiosk'); // Layar Scan
+            Route::post('kunjungan', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\KunjunganController::class, 'store'])->name('kunjungan.store');
+            
+            // 3. Cetak Kartu Anggota (Akan kita bahas di view nanti)
+            Route::get('anggota/kartu', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\AnggotaController::class, 'cetakKartu'])->name('anggota.kartu');
+
+            // 3. Transaksi Sirkulasi (Peminjaman & Pengembalian)
+            Route::prefix('sirkulasi')->name('sirkulasi.')->group(function () {
+                // Halaman Utama Sirkulasi (List Peminjaman Aktif)
+                Route::get('/', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\SirkulasiController::class, 'index'])->name('index');
+                
+                // Peminjaman Baru
+                Route::get('create', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\SirkulasiController::class, 'create'])->name('create');
+                Route::post('store', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\SirkulasiController::class, 'store'])->name('store');
+                
+                // Pengembalian (Scan & Proses)
+                Route::get('kembali', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\SirkulasiController::class, 'returnIndex'])->name('kembali.index');
+                Route::get('kembali/{peminjaman}', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\SirkulasiController::class, 'returnForm'])->name('kembali.form');
+                Route::post('kembali/{peminjaman}', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\SirkulasiController::class, 'returnProcess'])->name('kembali.process');
+            });
+        });
     });
 
 // 2. ADMIN SEKOLAH
