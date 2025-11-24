@@ -26,9 +26,8 @@ class JadwalUjianController extends Controller
     {
         $pondokId = $this->getPondokId();
         
-        // Filter Default
         $mustawaId = $request->input('mustawa_id');
-        $jenisUjian = $request->input('jenis_ujian', 'uas'); // Default UAS
+        $jenisUjian = $request->input('jenis_ujian', 'uas');
         $semester = $request->input('semester', 'ganjil');
 
         $query = JadwalUjianDiniyah::where('pondok_id', $pondokId)
@@ -49,13 +48,11 @@ class JadwalUjianController extends Controller
     public function create()
     {
         $pondokId = $this->getPondokId();
-        
         $data = [
             'mustawas' => Mustawa::where('pondok_id', $pondokId)->where('is_active', true)->orderBy('tingkat')->get(),
             'mapels' => MapelDiniyah::where('pondok_id', $pondokId)->orderBy('nama_mapel')->get(),
             'ustadzs' => Ustadz::where('pondok_id', $pondokId)->where('is_active', true)->orderBy('nama_lengkap')->get(),
         ];
-
         return view('pendidikan.admin.ujian.create', $data);
     }
 
@@ -74,7 +71,6 @@ class JadwalUjianController extends Controller
             'kategori_tes' => 'required',
         ]);
 
-        // Cek Bentrok Jadwal Pengawas
         $bentrok = JadwalUjianDiniyah::where('pondok_id', $this->getPondokId())
             ->where('pengawas_id', $request->pengawas_id)
             ->where('tanggal', $request->tanggal)
@@ -98,79 +94,91 @@ class JadwalUjianController extends Controller
         return back()->with('success', 'Jadwal dihapus.');
     }
 
-    // 1. Halaman Kelola (Dashboard Ujian)
-    // 1. Halaman Kelola (Dashboard Ujian)
+    // --- LOGIKA UTAMA: SHOW & STORE GRADES (FIXED) ---
+
     public function show($id)
     {
         $pondokId = $this->getPondokId();
-        $jadwal = JadwalUjianDiniyah::with(['mustawa', 'mapel', 'pengawas'])->where('pondok_id', $pondokId)->findOrFail($id);
+        
+        $jadwal = JadwalUjianDiniyah::with(['mustawa', 'mapel', 'pengawas'])
+            ->where('pondok_id', $pondokId)
+            ->findOrFail($id);
 
-        // Ambil Santri di kelas ini
         $santris = Santri::where('mustawa_id', $jadwal->mustawa_id)
                          ->where('status', 'active')
                          ->orderBy('full_name')
                          ->get();
 
-        // Load Data Absensi Ujian
-        $absensiData = AbsensiUjianDiniyah::where('jadwal_ujian_diniyah_id', $id)
-                                          ->pluck('status', 'santri_id')
-                                          ->toArray();
+        $absensi = AbsensiUjianDiniyah::where('jadwal_ujian_diniyah_id', $id)
+                                      ->pluck('status', 'santri_id');
 
-        // Load Data Nilai Existing
-        $nilaiData = NilaiPesantren::where('mapel_diniyah_id', $jadwal->mapel_diniyah_id)
+        $nilai = NilaiPesantren::where('mapel_diniyah_id', $jadwal->mapel_diniyah_id)
             ->where('jenis_ujian', $jadwal->jenis_ujian)
             ->where('semester', $jadwal->semester)
             ->where('tahun_ajaran', $jadwal->tahun_ajaran)
             ->get()
             ->keyBy('santri_id');
 
-        // --- LOGIKA BARU: HITUNG % KEHADIRAN HARIAN (AUTO) ---
-        // Ambil semua jadwal harian untuk mapel & kelas ini
-        $jadwalHarianIds = \App\Models\JadwalDiniyah::where('mustawa_id', $jadwal->mustawa_id)
-            ->where('mapel_diniyah_id', $jadwal->mapel_diniyah_id)
-            ->pluck('id');
-
-        // Hitung statistik kehadiran per santri
-        $statistikKehadiran = [];
-        foreach($santris as $santri) {
-            // Hitung total pertemuan mapel ini
-            $totalPertemuan = \App\Models\AbsensiDiniyah::whereIn('jadwal_diniyah_id', $jadwalHarianIds)
-                ->where('santri_id', $santri->id)
-                ->count();
+        // --- 1. LOGIKA TOTAL PERTEMUAN (PRIORITY: SAVED > LOG) ---
+        if ($jadwal->total_pertemuan > 0) {
+            // Gunakan data tersimpan agar konsisten
+            $totalPertemuan = $jadwal->total_pertemuan;
+        } else {
+            // Hitung estimasi dari log harian jika belum ada yg disimpan
+            $jadwalIds = \App\Models\JadwalDiniyah::where('mustawa_id', $jadwal->mustawa_id)
+                ->where('mapel_diniyah_id', $jadwal->mapel_diniyah_id)
+                ->pluck('id');
             
-            // Hitung jumlah hadir
-            $totalHadir = \App\Models\AbsensiDiniyah::whereIn('jadwal_diniyah_id', $jadwalHarianIds)
-                ->where('santri_id', $santri->id)
-                ->where('status', 'H')
+            $logCount = \App\Models\AbsensiDiniyah::whereIn('jadwal_diniyah_id', $jadwalIds)
+                ->select('jadwal_diniyah_id', 'created_at')
+                ->distinct()
                 ->count();
-
-            // Kalkulasi Persen (0-100)
-            $persen = $totalPertemuan > 0 ? ($totalHadir / $totalPertemuan) * 100 : 100; 
-            $statistikKehadiran[$santri->id] = round($persen, 0);
+                
+            $totalPertemuan = $logCount > 0 ? $logCount : 14; // Default 14
         }
-        // -----------------------------------------------------
 
-        return view('pendidikan.admin.ujian.show', compact('jadwal', 'santris', 'absensiData', 'nilaiData', 'statistikKehadiran'));
+        // --- 2. LOGIKA JUMLAH HADIR (REVERSE CALCULATION) ---
+        $dataKehadiran = [];
+        foreach($santris as $santri) {
+            $record = $nilai->get($santri->id);
+
+            if ($record && $record->nilai_kehadiran !== null) {
+                // Hitung balik: (Persen / 100) * Total = Jumlah Hari
+                $savedCount = round(($record->nilai_kehadiran / 100) * $totalPertemuan);
+                $dataKehadiran[$santri->id] = $savedCount;
+            } else {
+                // Jika belum ada nilai, biarkan 0 atau ambil dari log (opsional)
+                // Agar bersih, kita set 0 agar Admin menginput real-nya
+                $dataKehadiran[$santri->id] = 0; 
+            }
+        }
+
+        return view('pendidikan.admin.ujian.show', compact('jadwal', 'santris', 'absensi', 'nilai', 'dataKehadiran', 'totalPertemuan'));
     }
 
-    // 3. Simpan Nilai (Update: Termasuk Nilai Kehadiran)
     public function storeGrades(Request $request, $id)
     {
         $jadwal = JadwalUjianDiniyah::findOrFail($id);
-        $grades = $request->grades ?? []; 
-        $attendanceScores = $request->attendance_score ?? []; // Ambil input nilai kehadiran
+        $kategori = strtolower($jadwal->kategori_tes);
 
-        DB::transaction(function() use ($jadwal, $grades, $attendanceScores) {
-            foreach($grades as $santriId => $nilai) {
-                
-                // Validasi nilai 0-100
-                $nilai = max(0, min(100, (float)$nilai));
-                
-                // Ambil nilai kehadiran untuk santri ini
-                $valKehadiran = $attendanceScores[$santriId] ?? 0;
-                $valKehadiran = max(0, min(100, (float)$valKehadiran));
+        $request->validate([
+            'grades.*' => 'nullable|numeric|min:0|max:100',
+            'total_meetings' => 'nullable|numeric|min:1', // Validasi input ini
+        ]);
 
-                // Cari atau Buat Record Nilai
+        DB::transaction(function() use ($jadwal, $request, $kategori) {
+            
+            // 1. SIMPAN TOTAL PERTEMUAN KE JADWAL (WAJIB)
+            if ($kategori == 'tulis' && $request->has('total_meetings')) {
+                $totalMeetings = $request->input('total_meetings');
+                $jadwal->update(['total_pertemuan' => $totalMeetings]);
+            } else {
+                $totalMeetings = $jadwal->total_pertemuan > 0 ? $jadwal->total_pertemuan : 14;
+            }
+
+            foreach($request->grades as $santriId => $val) {
+                $val = is_numeric($val) ? $val : 0;
+
                 $record = NilaiPesantren::firstOrNew([
                     'santri_id' => $santriId,
                     'mapel_diniyah_id' => $jadwal->mapel_diniyah_id,
@@ -179,52 +187,49 @@ class JadwalUjianController extends Controller
                     'tahun_ajaran' => $jadwal->tahun_ajaran,
                 ]);
 
-                // Update kolom yang sesuai dengan kategori tes jadwal ini
-                if ($jadwal->kategori_tes == 'tulis') {
-                    $record->nilai_tulis = $nilai;
-                } elseif ($jadwal->kategori_tes == 'lisan') {
-                    $record->nilai_lisan = $nilai;
-                } elseif ($jadwal->kategori_tes == 'praktek') {
-                    $record->nilai_praktek = $nilai;
+                $record->mustawa_id = $jadwal->mustawa_id;
+
+                // Update Nilai Ujian
+                if ($kategori == 'tulis') {
+                    $record->nilai_tulis = $val;
+                    
+                    // Simpan Kehadiran (Convert Count -> Percent)
+                    $hadirCount = $request->input('attendance_count.'.$santriId, 0);
+                    $persenKehadiran = ($hadirCount / $totalMeetings) * 100;
+                    $record->nilai_kehadiran = min($persenKehadiran, 100);
+                    
+                } elseif ($kategori == 'lisan') {
+                    $record->nilai_lisan = $val;
+                } elseif ($kategori == 'praktek') {
+                    $record->nilai_praktek = $val;
                 }
 
-                // Update Nilai Kehadiran
-                $record->nilai_kehadiran = $valKehadiran;
-                $record->mustawa_id = $jadwal->mustawa_id;
+                // Hitung Rata-rata Akhir
+                $cols = 0; $sum = 0;
+                if($record->nilai_tulis > 0 || $kategori == 'tulis') { $sum += $record->nilai_tulis; $cols++; }
+                if($record->nilai_lisan > 0 || $kategori == 'lisan') { $sum += $record->nilai_lisan; $cols++; }
+                if($record->nilai_praktek > 0 || $kategori == 'praktek') { $sum += $record->nilai_praktek; $cols++; }
+                if($record->nilai_kehadiran > 0) { $sum += $record->nilai_kehadiran; $cols++; }
                 
-                // Hitung Rata-rata Akhir (Termasuk Kehadiran)
-                $pembagi = 0;
-                $total = 0;
-                if($record->nilai_tulis > 0) { $total += $record->nilai_tulis; $pembagi++; }
-                if($record->nilai_lisan > 0) { $total += $record->nilai_lisan; $pembagi++; }
-                if($record->nilai_praktek > 0) { $total += $record->nilai_praktek; $pembagi++; }
-                if($record->nilai_kehadiran > 0) { $total += $record->nilai_kehadiran; $pembagi++; }
-                
-                $record->nilai_akhir = $pembagi > 0 ? ($total / $pembagi) : 0;
-                
+                $record->nilai_akhir = $cols > 0 ? ($sum / $cols) : 0;
                 $record->save();
             }
         });
 
-        return back()->with('success', 'Nilai ujian dan kehadiran berhasil disimpan.');
+        return back()->with('success', 'Nilai ujian dan parameter kehadiran berhasil disimpan.');
     }
 
-    // 2. Simpan Absensi
     public function storeAttendance(Request $request, $id)
     {
         $jadwal = JadwalUjianDiniyah::findOrFail($id);
         $data = $request->attendance ?? [];
 
         DB::transaction(function() use ($jadwal, $data) {
-            // Ambil semua santri di kelas
             $santriIds = Santri::where('mustawa_id', $jadwal->mustawa_id)->where('status', 'active')->pluck('id');
-
             foreach($santriIds as $santriId) {
-                $status = $data[$santriId] ?? 'A'; // Default Alpha jika tidak dicentang/pilih
-                
                 AbsensiUjianDiniyah::updateOrCreate(
                     ['jadwal_ujian_diniyah_id' => $jadwal->id, 'santri_id' => $santriId],
-                    ['status' => $status]
+                    ['status' => $data[$santriId] ?? 'A']
                 );
             }
         });
@@ -232,33 +237,28 @@ class JadwalUjianController extends Controller
         return back()->with('success', 'Absensi ujian berhasil disimpan.');
     }
 
-    // 4. Export PDF Ledger
     public function exportPdf($id)
     {
         $jadwal = JadwalUjianDiniyah::with(['mustawa', 'mapel', 'pengawas'])->findOrFail($id);
         
-        // Ambil data lengkap (Santri + Nilai)
         $data = Santri::where('mustawa_id', $jadwal->mustawa_id)
             ->where('status', 'active')
             ->orderBy('full_name')
             ->get()
             ->map(function($santri) use ($jadwal) {
-                $nilai = NilaiPesantren::where('santri_id', $santri->id)
+                $santri->nilai_ujian = NilaiPesantren::where('santri_id', $santri->id)
                     ->where('mapel_diniyah_id', $jadwal->mapel_diniyah_id)
                     ->where('jenis_ujian', $jadwal->jenis_ujian)
                     ->where('semester', $jadwal->semester)
                     ->where('tahun_ajaran', $jadwal->tahun_ajaran)
                     ->first();
-                
-                $santri->nilai_ujian = $nilai;
                 return $santri;
             });
 
         $pdf = Pdf::loadView('pendidikan.admin.ujian.pdf.ledger', compact('jadwal', 'data'));
-        return $pdf->download('Ledger_Nilai_'.$jadwal->mapel->nama_mapel.'.pdf');
+        return $pdf->download('Ledger_Nilai.pdf');
     }
 
-    // 5. Export Excel (Versi HTML Table sederhana)
     public function exportExcel($id)
     {
         $jadwal = JadwalUjianDiniyah::with(['mustawa', 'mapel', 'pengawas'])->findOrFail($id);
@@ -268,23 +268,18 @@ class JadwalUjianController extends Controller
             ->orderBy('full_name')
             ->get()
             ->map(function($santri) use ($jadwal) {
-                $nilai = NilaiPesantren::where('santri_id', $santri->id)
+                $santri->nilai_ujian = NilaiPesantren::where('santri_id', $santri->id)
                     ->where('mapel_diniyah_id', $jadwal->mapel_diniyah_id)
                     ->where('jenis_ujian', $jadwal->jenis_ujian)
                     ->where('semester', $jadwal->semester)
                     ->where('tahun_ajaran', $jadwal->tahun_ajaran)
                     ->first();
-                
-                $santri->nilai_ujian = $nilai;
                 return $santri;
             });
 
-        // 1. Buat variabelnya dulu
-$isExcel = true; 
-
-// 2. Masukkan 'isExcel' ke dalam compact
-return response(view('pendidikan.admin.ujian.pdf.ledger', compact('jadwal', 'data', 'isExcel')))
-    ->header('Content-Type', 'application/vnd.ms-excel')
-    ->header('Content-Disposition', 'attachment; filename="Ledger_Nilai_'.$jadwal->mapel->nama_mapel.'.xls"');
+        $isExcel = true; 
+        return response(view('pendidikan.admin.ujian.pdf.ledger', compact('jadwal', 'data', 'isExcel')))
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header('Content-Disposition', 'attachment; filename="Ledger_Nilai.xls"');
     }
 }
