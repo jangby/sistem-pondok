@@ -8,6 +8,8 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
+            {{-- Alert Sukses/Error akan muncul otomatis dari AppLayout --}}
+
             <div class="flex justify-end mb-6">
                 <a href="{{ route('sekolah.superadmin.perpustakaan.buku.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-sm transition">
                     + Tambah Buku
@@ -44,13 +46,31 @@
                                         <div class="text-xs text-gray-500">{{ $buku->penulis ?? '-' }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $buku->stok_tersedia > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                            {{ $buku->stok_tersedia }} / {{ $buku->stok_total }}
-                                        </span>
+                                        {{-- Indikator Warna Stok --}}
+                                        @if($buku->stok_tersedia > 0)
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                {{ $buku->stok_tersedia }} / {{ $buku->stok_total }}
+                                            </span>
+                                        @else
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                Habis ({{ $buku->stok_total }})
+                                            </span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $buku->lokasi_rak ?? '-' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="{{ route('sekolah.superadmin.perpustakaan.buku.edit', $buku->id) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+                                        {{-- Tombol Edit --}}
+                                        <a href="{{ route('sekolah.superadmin.perpustakaan.buku.edit', $buku->id) }}" class="text-indigo-600 hover:text-indigo-900 mr-4 font-bold">Edit</a>
+                                        
+                                        {{-- Tombol Hapus dengan Form DELETE --}}
+                                        <form action="{{ route('sekolah.superadmin.perpustakaan.buku.destroy', $buku->id) }}" method="POST" class="inline-block">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-600 hover:text-red-900 font-bold" 
+                                                    onclick="return confirm('Apakah Anda yakin ingin menghapus buku ini? Data yang sudah dihapus tidak dapat dikembalikan.');">
+                                                Hapus
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                                 @empty

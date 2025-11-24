@@ -69,7 +69,7 @@ class KunjunganController extends Controller
             ->first();
 
         if ($lastVisit) {
-            return back()->with('warning', 'Halo ' . $santri->name . ', kehadiranmu sudah tercatat barusan.');
+            return back()->with('warning', 'Halo ' . $santri->full_name . ', kehadiranmu sudah tercatat barusan.');
         }
 
         // Simpan Kunjungan
@@ -81,6 +81,6 @@ class KunjunganController extends Controller
             'keperluan' => $request->input('keperluan', 'Membaca'),
         ]);
 
-        return back()->with('success', 'Selamat Datang, ' . $santri->name . ' (' . ($santri->kelas->nama_kelas ?? '-') . ')');
+        return back()->with('success', 'Selamat Datang, ' . $santri->full_name . ' (' . ($santri->kelas->nama_kelas ?? '-') . ')');
     }
 }

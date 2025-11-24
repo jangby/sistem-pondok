@@ -52,7 +52,7 @@
 
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900"><?php echo e($kunjungan->santri->name); ?></div>
+                                        <div class="text-sm font-medium text-gray-900"><?php echo e($kunjungan->santri->full_name); ?></div>
                                         <div class="text-xs text-gray-500"><?php echo e($kunjungan->santri->nis); ?></div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -66,7 +66,7 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <?php echo e($kunjungan->user->name ?? 'Self Service'); ?>
+                                        <?php echo e($kunjungan->user->full_name ?? 'Self Service'); ?>
 
                                     </td>
                                 </tr>

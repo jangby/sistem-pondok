@@ -47,7 +47,7 @@
                                 <?php $__empty_1 = true; $__currentLoopData = $peminjamans; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $pinjam): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                 <tr>
                                     <td class="px-6 py-4">
-                                        <div class="text-sm font-medium text-gray-900"><?php echo e($pinjam->santri->name); ?></div>
+                                        <div class="text-sm font-medium text-gray-900"><?php echo e($pinjam->santri->full_name); ?></div>
                                         <div class="text-xs text-gray-500"><?php echo e($pinjam->santri->kelas->nama_kelas ?? '-'); ?></div>
                                     </td>
                                     <td class="px-6 py-4">

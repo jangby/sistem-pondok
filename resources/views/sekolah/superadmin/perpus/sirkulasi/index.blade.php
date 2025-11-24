@@ -37,7 +37,7 @@
                                 @forelse($peminjamans as $pinjam)
                                 <tr>
                                     <td class="px-6 py-4">
-                                        <div class="text-sm font-medium text-gray-900">{{ $pinjam->santri->name }}</div>
+                                        <div class="text-sm font-medium text-gray-900">{{ $pinjam->santri->full_name }}</div>
                                         <div class="text-xs text-gray-500">{{ $pinjam->santri->kelas->nama_kelas ?? '-' }}</div>
                                     </td>
                                     <td class="px-6 py-4">

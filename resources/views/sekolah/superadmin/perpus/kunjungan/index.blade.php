@@ -41,7 +41,7 @@
                                         {{ $kunjungan->waktu_berkunjung->format('d M Y, H:i') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">{{ $kunjungan->santri->name }}</div>
+                                        <div class="text-sm font-medium text-gray-900">{{ $kunjungan->santri->full_name }}</div>
                                         <div class="text-xs text-gray-500">{{ $kunjungan->santri->nis }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -53,7 +53,7 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $kunjungan->user->name ?? 'Self Service' }}
+                                        {{ $kunjungan->user->full_name ?? 'Self Service' }}
                                     </td>
                                 </tr>
                                 @empty

@@ -9,7 +9,7 @@
         
         body {
             font-family: 'Open Sans', sans-serif;
-            background: #e5e5e5; /* Abu-abu untuk background halaman preview */
+            background: #e5e5e5; 
             margin: 0;
             padding: 20px;
             -webkit-print-color-adjust: exact; 
@@ -28,7 +28,7 @@
             width: 85.6mm;
             height: 54mm;
             background-color: #fff;
-            background-image: radial-gradient(#f3f4f6 1px, transparent 1px); /* Pattern titik halus */
+            background-image: radial-gradient(#f3f4f6 1px, transparent 1px);
             background-size: 10px 10px;
             border: 1px solid #bbb;
             border-radius: 8px;
@@ -40,26 +40,26 @@
             flex-direction: column;
         }
 
-        /* Watermark Logo di Tengah */
+        /* Watermark Logo */
         .watermark {
             position: absolute;
             top: 55%;
             left: 50%;
             transform: translate(-50%, -50%);
             width: 120px;
-            opacity: 0.08; /* Transparan */
+            opacity: 0.08;
             z-index: 0;
             pointer-events: none;
         }
 
         /* === HEADER === */
         .header {
-            background: #004d40; /* Hijau Tua Pesantren */
+            background: #004d40; 
             color: white;
             padding: 6px 8px;
             display: flex;
             align-items: center;
-            border-bottom: 3px solid #fbbf24; /* Garis Kuning Emas */
+            border-bottom: 3px solid #fbbf24; 
             position: relative;
             z-index: 1;
             height: 42px;
@@ -97,7 +97,7 @@
 
         .school-name {
             font-size: 9pt;
-            font-weight: 800; /* Extra Bold */
+            font-weight: 800;
             text-transform: uppercase;
             margin-bottom: 1px;
             line-height: 1;
@@ -111,73 +111,102 @@
             font-weight: 400;
         }
 
-        /* === BODY (NAMA & DETAIL) === */
+        /* === BODY === */
         .card-body {
-            padding: 5px 10px;
+            padding: 4px 15px;
             flex: 1;
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start; /* Isi mulai dari atas */
-            text-align: center;
+            position: relative; 
+            z-index: 5; /* Layer body di atas background */
         }
 
         .name-section {
-            margin-top: 8px;
-            margin-bottom: 5px;
+            margin-top: 2px;
+            margin-bottom: 6px;
+            text-align: center;
+            border-bottom: 1px dashed #eee;
+            padding-bottom: 4px;
         }
 
         .student-name {
-            font-size: 14pt; /* Nama Besar */
+            font-size: 13pt;
             font-weight: 800;
             color: #111;
             text-transform: uppercase;
             line-height: 1.1;
-            letter-spacing: -0.5px; /* Sedikit rapat biar muat */
+            letter-spacing: -0.3px;
+        }
+
+        /* Info Data (Kiri) */
+        .info-left {
+            width: 65%;
+            float: left;
         }
 
         .info-table {
             width: 100%;
-            margin: 0 auto;
             border-collapse: collapse;
-            margin-top: 2px;
         }
 
         .info-table td {
-            padding: 1px 2px;
-            font-size: 10pt; /* Ukuran Font Info Dibesarkan */
+            padding: 1px 0;
+            font-size: 9.5pt; 
             font-weight: 600;
             color: #333;
             text-align: left;
         }
         
         .info-table td:first-child {
-            text-align: right;
-            width: 42%;
+            width: 55px;
             color: #555;
             font-weight: 400;
-            padding-right: 5px;
         }
         
         .info-table td:nth-child(2) {
-            width: 5px;
+            width: 10px;
+            text-align: center;
         }
 
         /* === FOOTER (BARCODE) === */
         .footer {
             background: white;
-            padding: 5px 0 8px 0;
+            padding: 2px 0 6px 0;
             text-align: center;
             position: relative;
-            z-index: 1;
+            z-index: 2; /* Layer di bawah QR Code tapi di atas watermark */
+            border-top: 1px solid #f0f0f0;
+            margin-top: auto;
         }
 
         .barcode-img {
-            height: 40px; /* Barcode Tinggi & Besar */
-            max-width: 90%;
+            height: 38px; 
+            max-width: 96%;
             display: block;
-            margin: 0 auto;
+            margin: 4px auto 0 auto;
+        }
+
+        /* === QR CODE ABSOLUT (Layer Paling Atas) === */
+        /* Posisi diubah menjadi absolut terhadap .id-card, bukan .card-body */
+        .qr-absolute {
+            position: absolute;
+            right: 30px;    /* Sesuai permintaan (30px dari kanan) */
+            bottom: 28px;   /* Jarak dari bawah kartu (overlap dengan area footer) */
+            width: 74px;    
+            height: 74px;
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 2px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Shadow sedikit dipertebal agar terlihat mengambang */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999; /* LAYER TERTINGGI: Pasti di atas footer & elemen lain */
+        }
+        
+        .qr-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         /* === PRINT SETTINGS === */
@@ -194,7 +223,7 @@
             .id-card {
                 float: left;
                 margin: 2mm;
-                border: 1px dashed #999; /* Garis potong tipis */
+                border: 1px dashed #999;
                 box-shadow: none;
             }
             @page {
@@ -210,17 +239,15 @@
         @foreach($santris as $santri)
         <div class="id-card">
             
-            {{-- Watermark Logo di Belakang --}}
-            {{-- Pastikan path logo benar. Menggunakan file yang baru diupload user jika ada --}}
-            <img src="{{ asset('uploads/logos/logo-1-1762956082.jpg') }}" 
+            {{-- Watermark --}}
+            <img src="{{ asset('uploads/logos/logo-pondok.jpg') }}" 
                  onerror="this.src='{{ asset('image_5a2b20.png') }}'"
                  class="watermark" alt="Watermark">
 
             {{-- Header --}}
             <div class="header">
                 <div class="logo-box">
-                    {{-- Logo Utama --}}
-                    <img src="{{ asset('uploads/logos/logo-1-1762956082.jpg') }}" 
+                    <img src="{{ asset('uploads/logos/logo-pondok.jpg') }}" 
                          onerror="this.style.display='none'" alt="Logo">
                 </div>
                 <div class="header-text">
@@ -235,38 +262,47 @@
 
             {{-- Body --}}
             <div class="card-body">
+                {{-- Nama Santri --}}
                 <div class="name-section">
-                    <div class="student-name">{{ Str::limit($santri->name, 20) }}</div>
+                    <div class="student-name">{{ Str::limit($santri->full_name, 22) }}</div>
                 </div>
 
-                {{-- Tabel Info yang Rapi dan Besar --}}
-                <table class="info-table">
-                    <tr>
-                        <td>NIS</td>
-                        <td>:</td>
-                        <td>{{ $santri->nis }}</td>
-                    </tr>
-                    <tr>
-                        <td>Jenjang</td>
-                        <td>:</td>
-                        {{-- Mengambil Jenjang dari Tingkat Kelas --}}
-                        <td>{{ $santri->kelas ? strtoupper($santri->kelas->tingkat) : '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td>Kelas</td>
-                        <td>:</td>
-                        <td>{{ $santri->kelas ? $santri->kelas->nama_kelas : '-' }}</td>
-                    </tr>
-                </table>
+                {{-- Data Text --}}
+                <div class="info-left">
+                    <table class="info-table">
+                        <tr>
+                            <td>NIS</td>
+                            <td>:</td>
+                            <td>{{ $santri->nis }}</td>
+                        </tr>
+                        <tr>
+                            <td>Jenjang</td>
+                            <td>:</td>
+                            <td>{{ $santri->kelas ? strtoupper($santri->kelas->tingkat) : '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td>Kelas</td>
+                            <td>:</td>
+                            <td>{{ $santri->kelas ? $santri->kelas->nama_kelas : '-' }}</td>
+                        </tr>
+                    </table>
+                </div>
             </div>
 
-            {{-- Footer: Barcode Besar --}}
+            {{-- Footer: Barcode --}}
             <div class="footer">
-                {{-- Barcode Generator Code 128 --}}
                 <img class="barcode-img" 
-                     src="https://bwipjs-api.metafloor.com/?bcid=code128&text={{ $santri->nis }}&scale=3&height=14&includetext&textxalign=center&textsize=10" 
+                     src="https://bwipjs-api.metafloor.com/?bcid=code128&text={{ $santri->nis }}&scale=4&height=16&includetext&textxalign=center&textsize=12" 
                      alt="Barcode {{ $santri->nis }}">
             </div>
+
+            {{-- QR Code (POSISI: Direct Child of .id-card, Paling Bawah di HTML agar layer paling atas) --}}
+            <div class="qr-absolute">
+                <img class="qr-img" 
+                     src="https://bwipjs-api.metafloor.com/?bcid=qrcode&text={{ $santri->nis }}&scale=5" 
+                     alt="QR {{ $santri->nis }}">
+            </div>
+
         </div>
         @endforeach
     </div>
