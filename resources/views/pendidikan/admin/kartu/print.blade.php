@@ -181,10 +181,6 @@
 
             {{-- Footer / TTD --}}
             <div class="footer">
-                
-                {{-- Kiri: Kotak Nomor Ujian (Opsional, bisa dihapus kalau tidak perlu) --}}
-                <div class="nomor-ujian">
-                   {{ substr($santri->nis, -4) }} </div>
 
                 {{-- Kanan: Tanda Tangan --}}
                 <div class="ttd-box">
