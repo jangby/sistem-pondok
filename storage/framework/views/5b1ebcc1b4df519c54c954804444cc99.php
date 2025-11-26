@@ -191,11 +191,29 @@
             </div>
 
             
-            <div x-show="tab === 'ledger'" class="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-gray-100 p-6 text-center" style="display: none;">
-                <div class="max-w-md mx-auto">
-                    <svg class="w-16 h-16 text-emerald-200 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <h3 class="text-lg font-bold text-gray-800 mb-2">Export Data Nilai</h3>
-                    <p class="text-gray-500 text-sm mb-6">Unduh rekapitulasi nilai untuk ujian ini dalam format PDF atau Excel.</p>
+            <div x-show="tab === 'ledger'" class="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-gray-100 p-6" style="display: none;">
+                
+                
+                <div class="mb-8 border-b border-gray-100 pb-8 text-center">
+                    <h3 class="text-md font-bold text-gray-700 mb-2">Dokumen Kelengkapan Ujian</h3>
+                    <p class="text-gray-400 text-sm mb-4">Cetak dokumen ini untuk pegangan pengawas saat ujian berlangsung.</p>
+                    
+                    <div class="flex justify-center gap-3">
+                        <a href="<?php echo e(route('pendidikan.admin.ujian.format-nilai', $jadwal->id)); ?>" target="_blank" class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-indigo-100 transition text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            Cetak Blangko Nilai
+                        </a>
+                        <a href="<?php echo e(route('pendidikan.admin.ujian.daftar-hadir', $jadwal->id)); ?>" target="_blank" class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-indigo-100 transition text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                            Cetak Absensi Ujian
+                        </a>
+                    </div>
+                </div>
+
+                
+                <div class="text-center">
+                    <h3 class="text-md font-bold text-gray-700 mb-2">Export Ledger Nilai</h3>
+                    <p class="text-gray-400 text-sm mb-4">Unduh rekapitulasi nilai yang sudah diinput ke sistem.</p>
                     
                     <div class="flex justify-center gap-4">
                         <a href="<?php echo e(route('pendidikan.admin.ujian.pdf', $jadwal->id)); ?>" class="bg-red-500 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-red-600 transition shadow-lg shadow-red-200">

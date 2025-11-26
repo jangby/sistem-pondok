@@ -282,4 +282,44 @@ class JadwalUjianController extends Controller
             ->header('Content-Type', 'application/vnd.ms-excel')
             ->header('Content-Disposition', 'attachment; filename="Ledger_Nilai.xls"');
     }
+
+    public function exportFormatNilai($id)
+    {
+        $jadwal = JadwalUjianDiniyah::with(['mustawa', 'mapel', 'pengawas'])->findOrFail($id);
+        
+        // Ambil data santri aktif di mustawa tersebut
+        $santris = Santri::where('mustawa_id', $jadwal->mustawa_id)
+            ->where('status', 'active')
+            ->orderBy('full_name')
+            ->get();
+
+        // Ambil nama pondok dari user yang login (sesuai logic getPondokId)
+        $pondok = auth()->user()->pondokStaff->pondok;
+
+        $judul = "FORMAT NILAI - " . strtoupper($jadwal->mapel->nama_mapel) . " (" . $jadwal->mustawa->nama . ")";
+        
+        $pdf = Pdf::loadView('pendidikan.admin.ujian.pdf.format-nilai', compact('jadwal', 'santris', 'pondok', 'judul'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->stream('Format_Nilai_' . $jadwal->mapel->nama_mapel . '.pdf');
+    }
+
+    public function exportDaftarHadir($id)
+    {
+        $jadwal = JadwalUjianDiniyah::with(['mustawa', 'mapel', 'pengawas'])->findOrFail($id);
+        
+        $santris = Santri::where('mustawa_id', $jadwal->mustawa_id)
+            ->where('status', 'active')
+            ->orderBy('full_name')
+            ->get();
+
+        $pondok = auth()->user()->pondokStaff->pondok;
+        
+        $judul = "DAFTAR HADIR - " . strtoupper($jadwal->mapel->nama_mapel) . " (" . $jadwal->mustawa->nama . ")";
+
+        $pdf = Pdf::loadView('pendidikan.admin.ujian.pdf.daftar-hadir', compact('jadwal', 'santris', 'pondok', 'judul'))
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->stream('Daftar_Hadir_Ujian_' . $jadwal->mapel->nama_mapel . '.pdf');
+    }
 }

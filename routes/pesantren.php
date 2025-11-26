@@ -62,6 +62,8 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-pendidikan'
         Route::post('kenaikan-kelas/process', [AnggotaKelasController::class, 'promotionStore'])->name('kenaikan-kelas.store');
 
         Route::resource('ujian', JadwalUjianController::class)->except(['show']);
+        Route::get('ujian/{ujian}/format-nilai', [JadwalUjianController::class, 'exportFormatNilai'])->name('ujian.format-nilai');
+        Route::get('ujian/{ujian}/daftar-hadir', [JadwalUjianController::class, 'exportDaftarHadir'])->name('ujian.daftar-hadir');
         Route::get('ujian/{ujian}/kelola', [JadwalUjianController::class, 'show'])->name('ujian.show');
         
         Route::post('ujian/{ujian}/attendance', [JadwalUjianController::class, 'storeAttendance'])->name('ujian.attendance');
