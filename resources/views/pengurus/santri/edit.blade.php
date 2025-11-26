@@ -65,16 +65,24 @@
 
             {{-- SECTION 3: WALI --}}
             <div>
-                <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Akun Orang Tua</label>
-                <select name="orang_tua_id" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500" required>
-                    <option value="">- Pilih Wali -</option>
-                    @foreach($orangTuas as $ortu)
-                        <option value="{{ $ortu->id }}" {{ old('orang_tua_id', $santri->orang_tua_id) == $ortu->id ? 'selected' : '' }}>
-                            {{ $ortu->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+    <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Akun Orang Tua</label>
+    
+    {{-- PERBAIKAN: Hapus 'required' dan update opsi default --}}
+    <select name="orang_tua_id" class="w-full rounded-xl border-gray-200 focus:ring-emerald-500">
+        <option value="">-- Tanpa Akun Orang Tua (Bisa disusulkan) --</option>
+        
+        @foreach($orangTuas as $ortu)
+            <option value="{{ $ortu->id }}" {{ old('orang_tua_id', $santri->orang_tua_id) == $ortu->id ? 'selected' : '' }}>
+                {{ $ortu->name }}
+            </option>
+        @endforeach
+    </select>
+    
+    {{-- Tambahan pesan helper --}}
+    <p class="text-xs text-gray-400 mt-1">
+        *Biarkan kosong jika belum ingin menghubungkan ke akun wali.
+    </p>
+</div>
 
             <hr class="border-dashed border-gray-200">
 
