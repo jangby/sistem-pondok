@@ -97,7 +97,7 @@
                                      <img src="https://ui-avatars.com/api/?name=<?php echo e(urlencode($santri->name)); ?>" alt="" class="w-full h-full object-cover">
                                 </div>
                                 <div>
-                                    <div class="font-bold text-sm text-gray-900"><?php echo e($santri->name); ?></div>
+                                    <div class="font-bold text-sm text-gray-900"><?php echo e($santri->full_name); ?></div>
                                     <div class="text-xs text-gray-500"><?php echo e($santri->nis); ?></div>
                                 </div>
                             </div>

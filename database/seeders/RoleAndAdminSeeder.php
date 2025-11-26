@@ -28,6 +28,7 @@ class RoleAndAdminSeeder extends Seeder
         Role::firstOrCreate(['name' => 'super-admin-sekolah']);
         Role::firstOrCreate(['name' => 'admin-sekolah']);
         Role::firstOrCreate(['name' => 'guru']);
+        
 
         // Buat Akun Super Admin (gunakan firstOrCreate agar aman)
         $superAdmin = User::firstOrCreate(

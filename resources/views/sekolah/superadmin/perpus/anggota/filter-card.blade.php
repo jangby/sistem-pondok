@@ -49,7 +49,7 @@
                                      <img src="https://ui-avatars.com/api/?name={{ urlencode($santri->name) }}" alt="" class="w-full h-full object-cover">
                                 </div>
                                 <div>
-                                    <div class="font-bold text-sm text-gray-900">{{ $santri->name }}</div>
+                                    <div class="font-bold text-sm text-gray-900">{{ $santri->full_name }}</div>
                                     <div class="text-xs text-gray-500">{{ $santri->nis }}</div>
                                 </div>
                             </div>

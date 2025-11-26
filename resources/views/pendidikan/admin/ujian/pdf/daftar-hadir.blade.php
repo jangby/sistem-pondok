@@ -34,13 +34,13 @@
             <td width="15%"><strong>Ujian</strong></td>
             <td width="35%">: {{ ucfirst($jadwal->jenis_ujian) }} {{ ucfirst($jadwal->semester) }}</td>
             <td width="15%"><strong>Mapel/Kitab</strong></td>
-            <td width="35%">: {{ $jadwal->mapel->nama_mapel }}</td>
+            <td width="35%">: </td>
         </tr>
         <tr>
             <td><strong>Mustawa</strong></td>
             <td>: {{ $jadwal->mustawa->nama }}</td>
             <td><strong>Waktu</strong></td>
-            <td>: {{ \Carbon\Carbon::parse($jadwal->tanggal)->isoFormat('D MMMM Y') }}</td>
+            <td>: </td>
         </tr>
     </table>
     
@@ -76,7 +76,7 @@
         <div class="ttd-box">
             <p>Pengawas Ujian,</p>
             <div class="ttd-line"></div>
-            <p>( {{ $jadwal->pengawas->nama_lengkap ?? '.......................' }} )</p>
+            <p>( {{ $jadwal->pengawas->nama ?? '.......................' }} )</p>
         </div>
     </div>
 </body>
