@@ -30,12 +30,19 @@ Route::middleware(['auth', 'role:pengurus_pondok'])->prefix('pengurus')->name('p
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
     // Santri
+    // --- PERBAIKAN DI SINI (Hapus 'pengurus.') ---
+    Route::get('/santri/export', [SantriController::class, 'export'])->name('santri.export'); 
+    // Hasil akhirnya otomatis jadi: pengurus.santri.export
+    
     Route::post('santri/{santri}/regenerate-qr', [SantriController::class, 'regenerateQR'])->name('santri.regenerate-qr');
     Route::get('santri/template/download', [SantriController::class, 'downloadTemplate'])->name('santri.template');
     Route::post('santri/import', [SantriController::class, 'import'])->name('santri.import');
+    
+    // Resource harus ditaruh SETELAH route custom (seperti export) agar tidak bentrok dengan {santri}
     Route::resource('santri', SantriController::class); 
+    
     Route::post('santri/cleanup', [App\Http\Controllers\Pengurus\SantriController::class, 'cleanupFailedImport'])
-    ->name('santri.cleanup');
+        ->name('santri.cleanup');
 
     // UKS
     Route::get('uks', [UksController::class, 'index'])->name('uks.index');

@@ -81,6 +81,11 @@
         --}}
         <div class="fixed right-6 flex flex-col gap-3 z-50" style="bottom: 140px;">
             
+            <button onclick="document.getElementById('exportModal').showModal()" class="bg-white text-emerald-600 w-12 h-12 rounded-full shadow-lg shadow-emerald-200 flex items-center justify-center hover:bg-emerald-50 active:scale-90 transition border border-emerald-100" title="Export Excel">
+                {{-- Icon Download/Excel --}}
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            </button>
+
             {{-- Tombol Import (Kecil) --}}
             <button onclick="document.getElementById('importModal').showModal()" class="bg-white text-emerald-600 w-12 h-12 rounded-full shadow-lg shadow-emerald-200 flex items-center justify-center hover:bg-emerald-50 active:scale-90 transition border border-emerald-100" title="Import Excel">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
@@ -149,6 +154,65 @@
                             </form>
                         </div>
                     </div>
+                </div>
+            </div>
+        </dialog>
+
+        {{-- MODAL EXPORT FILTER --}}
+        <dialog id="exportModal" class="modal bg-transparent p-0 w-full h-full backdrop:bg-black/50">
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all">
+                    
+                    {{-- Header Modal --}}
+                    <div class="bg-emerald-600 p-4 flex justify-between items-center text-white">
+                        <h3 class="font-bold text-lg">Filter & Export Data</h3>
+                        <button onclick="document.getElementById('exportModal').close()" class="hover:bg-white/20 p-1 rounded-lg">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+
+                    {{-- Form Filter --}}
+                    <form action="{{ route('pengurus.santri.export') }}" method="GET" class="p-6 space-y-4">
+                        
+                        {{-- Filter Jenis Kelamin --}}
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Jenis Kelamin</label>
+                            <select name="jenis_kelamin" class="w-full rounded-xl border-gray-300 focus:border-emerald-500 focus:ring-emerald-500">
+                                <option value="">Semua Gender</option>
+                                <option value="Laki-laki">Laki-laki</option>
+                                <option value="Perempuan">Perempuan</option>
+                            </select>
+                        </div>
+
+                        {{-- Filter Kelas --}}
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Kelas</label>
+                            <select name="kelas_id" class="w-full rounded-xl border-gray-300 focus:border-emerald-500 focus:ring-emerald-500">
+                                <option value="">Semua Kelas</option>
+                                @foreach($kelas_list as $kls)
+                                    <option value="{{ $kls->id }}">{{ $kls->nama_kelas }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Filter Status --}}
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Status Santri</label>
+                            <select name="status" class="w-full rounded-xl border-gray-300 focus:border-emerald-500 focus:ring-emerald-500">
+                                <option value="">Semua Status</option>
+                                <option value="active">Aktif</option>
+                                <option value="graduated">Lulus</option>
+                                <option value="moved">Pindah</option>
+                            </select>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                Download Excel
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </dialog>

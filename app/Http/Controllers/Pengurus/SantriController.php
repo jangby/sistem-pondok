@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 use App\Exports\Pengurus\SantriTemplateExport;
 use App\Imports\Pengurus\SantriImport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\Pengurus\SantriExport; // <--- Tambahkan ini
 
 class SantriController extends Controller
 {
@@ -24,6 +25,10 @@ class SantriController extends Controller
     public function index(Request $request)
     {
         $pondokId = $this->getPondokId();
+
+        // --- TAMBAHAN: Ambil data kelas untuk filter di modal ---
+        $kelas_list = Kelas::where('pondok_id', $pondokId)->orderBy('nama_kelas')->get();
+        // -------------------------------------------------------
 
         $query = Santri::where('pondok_id', $pondokId)
             ->with(['kelas', 'orangTua'])
@@ -45,7 +50,8 @@ class SantriController extends Controller
 
         $santris = $query->paginate(15)->withQueryString();
 
-        return view('pengurus.santri.index', compact('santris'));
+        // Jangan lupa passing 'kelas_list' ke view
+        return view('pengurus.santri.index', compact('santris', 'kelas_list'));
     }
 
     public function create()
@@ -57,62 +63,115 @@ class SantriController extends Controller
         return view('pengurus.santri.create', compact('orangTuas', 'kelas'));
     }
 
-    public function store(Request $request)
-    {
-        $pondokId = $this->getPondokId();
+    // File: app/Http/Controllers/Pengurus/SantriController.php
 
-        $validated = $request->validate([
-            'nis' => ['nullable', Rule::unique('santris')->where('pondok_id', $pondokId)], // <--- Ubah jadi nullable
-            'tahun_masuk' => 'nullable|digits:4|integer|min:2000|max:'.(date('Y')+1),
-            'rfid_uid' => ['nullable', 'string', Rule::unique('santris')->where('pondok_id', $pondokId)], // Validasi RFID unik
-            'full_name' => 'required|string|max:255',
-            'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
-            'tempat_lahir' => 'nullable|string',
-            'tanggal_lahir' => 'nullable|date',
-            'golongan_darah' => 'nullable|in:A,B,AB,O',
-            'riwayat_penyakit' => 'nullable|string',
-            'kelas_id' => 'nullable|exists:kelas,id',
-            'orang_tua_id' => 'required|exists:orang_tuas,id',
-            'status' => 'required|in:active,graduated,moved',
-        ]);
+public function store(Request $request)
+{
+    $pondokId = $this->getPondokId();
 
-        $validated['pondok_id'] = $pondokId;
+    // 1. VALIDASI
+    $validated = $request->validate([
+        'nis' => ['nullable', Rule::unique('santris')->where('pondok_id', $pondokId)],
+        'tahun_masuk' => 'required|digits:4|integer|min:2000|max:'.(date('Y')+1),
+        'rfid_uid' => ['nullable', 'string', Rule::unique('santris')->where('pondok_id', $pondokId)], 
+        'full_name' => 'required|string|max:255',
+        'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
+        'tempat_lahir' => 'nullable|string',
+        'tanggal_lahir' => 'nullable|date',
+        'golongan_darah' => 'nullable|in:A,B,AB,O',
+        'riwayat_penyakit' => 'nullable|string',
+        'kelas_id' => 'nullable|exists:kelas,id',
         
-        // 2. LOGIKA AUTO GENERATE NIS
-        if (empty($request->nis)) {
-            $tahun = $request->tahun_masuk;
-            
-            // Cari santri terakhir di tahun yang sama & pondok yang sama
-            // Kita cari yang format depannya mirip tahun masuk (cth: '2025%')
-            $lastSantri = Santri::where('pondok_id', $pondokId)
-                ->where('nis', 'like', $tahun . '%')
-                // Order by panjang string dulu (biar 2025100 tidak dianggap lebih kecil dari 202599)
-                ->orderByRaw('LENGTH(nis) DESC') 
-                ->orderBy('nis', 'desc')
-                ->first();
+        // --- PERUBAHAN DISINI: Jadi nullable (boleh kosong) ---
+        'orang_tua_id' => 'nullable|exists:orang_tuas,id', 
+        
+        'status' => 'required|in:active,graduated,moved',
+    ]);
 
-            if ($lastSantri) {
-                // Ambil 4 digit terakhir, ubah jadi integer, tambah 1
-                // Contoh NIS: 20250045 -> ambil 0045 -> jadi 45 -> +1 = 46
-                $lastNo = intval(substr($lastSantri->nis, 4));
-                $newNo = $lastNo + 1;
-            } else {
-                $newNo = 1;
-            }
+    $validated['pondok_id'] = $pondokId;
+    
+    // 2. LOGIKA AUTO GENERATE NIS JIKA KOSONG
+    if (empty($validated['nis'])) {
+        $tahun = $validated['tahun_masuk'];
+        
+        $lastSantri = Santri::where('pondok_id', $pondokId)
+            ->where('nis', 'like', $tahun . '%')
+            ->orderByRaw('LENGTH(nis) DESC') 
+            ->orderBy('nis', 'desc')
+            ->first();
 
-            // Format ulang: Tahun + 4 Digit Urut (Pad Left dengan 0)
-            // Contoh: 2025 + 0046 = 20250046
-            $validated['nis'] = $tahun . str_pad($newNo, 4, '0', STR_PAD_LEFT);
+        if ($lastSantri) {
+            $lastNo = intval(substr($lastSantri->nis, 4));
+            $newNo = $lastNo + 1;
+        } else {
+            $newNo = 1;
         }
-        
-        // OTOMATIS GENERATE QR CODE SAAT BUAT BARU
-        // Format: SANTRI-TIMESTAMP-RANDOM (agar unik)
-        $validated['qrcode_token'] = 'S-' . time() . '-' . Str::random(8);
 
-        Santri::create($validated);
-
-        return redirect()->route('pengurus.santri.index')->with('success', 'Data santri berhasil ditambahkan.');
+        $validated['nis'] = $tahun . str_pad($newNo, 4, '0', STR_PAD_LEFT);
     }
+    
+    // Generate Token QR Code
+    $validated['qrcode_token'] = 'S-' . time() . '-' . Str::random(8);
+
+    Santri::create($validated);
+
+    return redirect()->route('pengurus.santri.index')
+        ->with('success', 'Data santri berhasil ditambahkan' . (empty($request->nis) ? ' (NIS Otomatis: '.$validated['nis'].')' : '.'));
+}
+
+public function update(Request $request, Santri $santri)
+{
+    if ($santri->pondok_id != $this->getPondokId()) abort(404);
+    $pondokId = $this->getPondokId();
+
+    $validated = $request->validate([
+        'nis' => ['nullable', Rule::unique('santris')->where('pondok_id', $pondokId)->ignore($santri->id)],
+        'tahun_masuk' => 'required|digits:4|integer|min:2000|max:'.(date('Y')+1),
+        'rfid_uid' => ['nullable', 'string', Rule::unique('santris')->where('pondok_id', $pondokId)->ignore($santri->id)],
+        'full_name' => 'required|string|max:255',
+        'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
+        'tempat_lahir' => 'nullable|string',
+        'tanggal_lahir' => 'nullable|date',
+        'golongan_darah' => 'nullable|in:A,B,AB,O',
+        'riwayat_penyakit' => 'nullable|string',
+        'kelas_id' => 'nullable|exists:kelas,id',
+        
+        // --- PERUBAHAN DISINI: Jadi nullable juga saat edit ---
+        'orang_tua_id' => 'nullable|exists:orang_tuas,id',
+        
+        'status' => 'required|in:active,graduated,moved',
+        
+        // Validasi Data Pelengkap
+        'alamat' => 'nullable|string',
+        'rt' => 'nullable|string|max:5',
+        'rw' => 'nullable|string|max:5',
+        'desa' => 'nullable|string',
+        'kecamatan' => 'nullable|string',
+        'kode_pos' => 'nullable|string|max:10',
+        'nama_ayah' => 'nullable|string',
+        'thn_lahir_ayah' => 'nullable|digits:4',
+        'pendidikan_ayah' => 'nullable|string',
+        'pekerjaan_ayah' => 'nullable|string',
+        'penghasilan_ayah' => 'nullable|string',
+        'nik_ayah' => 'nullable|string|max:20',
+        'nama_ibu' => 'nullable|string',
+        'thn_lahir_ibu' => 'nullable|digits:4',
+        'pendidikan_ibu' => 'nullable|string',
+        'pekerjaan_ibu' => 'nullable|string',
+        'penghasilan_ibu' => 'nullable|string',
+        'nik_ibu' => 'nullable|string|max:20',
+    ]);
+    
+    // Logika NIS otomatis jika dikosongkan saat edit (opsional, biasanya jarang berubah)
+    if (empty($validated['nis'])) {
+        // Gunakan NIS lama jika user mengosongkan field NIS saat edit
+        $validated['nis'] = $santri->nis; 
+    }
+
+    $santri->update($validated);
+
+    return redirect()->route('pengurus.santri.index')->with('success', 'Data santri berhasil diperbarui.');
+}
 
     public function show(Santri $santri)
     {
@@ -129,52 +188,6 @@ class SantriController extends Controller
         $kelas = Kelas::where('pondok_id', $pondokId)->orderBy('nama_kelas')->get();
 
         return view('pengurus.santri.edit', compact('santri', 'orangTuas', 'kelas'));
-    }
-
-    public function update(Request $request, Santri $santri)
-    {
-        if ($santri->pondok_id != $this->getPondokId()) abort(404);
-        $pondokId = $this->getPondokId();
-
-        $validated = $request->validate([
-            'nis' => ['required', Rule::unique('santris')->where('pondok_id', $pondokId)->ignore($santri->id)],
-            'tahun_masuk' => 'nullable|digits:4|integer|min:2000|max:'.(date('Y')+1),
-            'rfid_uid' => ['nullable', 'string', Rule::unique('santris')->where('pondok_id', $pondokId)->ignore($santri->id)], // Validasi RFID
-            'full_name' => 'required|string|max:255',
-            'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
-            'tempat_lahir' => 'nullable|string',
-            'tanggal_lahir' => 'nullable|date',
-            'golongan_darah' => 'nullable|in:A,B,AB,O',
-            'riwayat_penyakit' => 'nullable|string',
-            'kelas_id' => 'nullable|exists:kelas,id',
-            'orang_tua_id' => 'required|exists:orang_tuas,id',
-            'status' => 'required|in:active,graduated,moved',
-            // Validasi Tambahan (Semua Nullable)
-    'alamat' => 'nullable|string',
-    'rt' => 'nullable|string|max:5',
-    'rw' => 'nullable|string|max:5',
-    'desa' => 'nullable|string',
-    'kecamatan' => 'nullable|string',
-    'kode_pos' => 'nullable|string|max:10',
-
-    'nama_ayah' => 'nullable|string',
-    'thn_lahir_ayah' => 'nullable|digits:4',
-    'pendidikan_ayah' => 'nullable|string',
-    'pekerjaan_ayah' => 'nullable|string',
-    'penghasilan_ayah' => 'nullable|string',
-    'nik_ayah' => 'nullable|string|max:20',
-
-    'nama_ibu' => 'nullable|string',
-    'thn_lahir_ibu' => 'nullable|digits:4',
-    'pendidikan_ibu' => 'nullable|string',
-    'pekerjaan_ibu' => 'nullable|string',
-    'penghasilan_ibu' => 'nullable|string',
-    'nik_ibu' => 'nullable|string|max:20',
-]);
-
-        $santri->update($validated);
-
-        return redirect()->route('pengurus.santri.index')->with('success', 'Data santri berhasil diperbarui.');
     }
 
     /**
@@ -243,5 +256,22 @@ class SantriController extends Controller
             ->delete();
 
         return redirect()->back()->with('success', "Berhasil menghapus {$count} data santri yang tidak memiliki kelas.");
+    }
+
+    public function export(Request $request)
+    {
+        $pondokId = $this->getPondokId();
+        
+        // Ambil filter dari request modal
+        $filters = [
+            'jenis_kelamin' => $request->jenis_kelamin,
+            'kelas_id' => $request->kelas_id,
+            'status' => $request->status,
+        ];
+
+        // Nama file dinamis ada tanggalnya
+        $fileName = 'Data_Santri_' . date('d-m-Y_H-i') . '.xlsx';
+
+        return Excel::download(new SantriExport($pondokId, $filters), $fileName);
     }
 }

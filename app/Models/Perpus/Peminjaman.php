@@ -61,4 +61,13 @@ class Peminjaman extends Model
     {
         return $this->belongsTo(User::class, 'petugas_kembali');
     }
+
+    public function peminjam()
+{
+    // Jika Anda menyimpan ID di kolom 'peminjam_id' dan tipe di 'tipe_peminjam' (Polimorfik)
+    return $this->morphTo(); 
+    
+    // ATAU jika Anda menyimpan langsung di 'santri_id' (Relasi Biasa)
+    // return $this->belongsTo(\App\Models\Santri::class, 'santri_id');
+}
 }

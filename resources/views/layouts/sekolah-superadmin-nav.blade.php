@@ -147,6 +147,17 @@
             <x-dropdown-link :href="route('sekolah.superadmin.perpustakaan.anggota.kartu')">
                 {{ __('Cetak Kartu Anggota') }}
             </x-dropdown-link>
+
+            <div class="block px-4 py-2 text-xs text-gray-400 uppercase font-bold">
+    Manajemen SDM
+</div>
+
+{{-- Menu Baru --}}
+<x-dropdown-link :href="route('sekolah.superadmin.perpustakaan.petugas.index')">
+    {{ __('Kelola Petugas Perpus') }}
+</x-dropdown-link>
+
+<div class="border-t border-gray-100 my-1"></div>
         </x-slot>
     </x-dropdown>
 </div>

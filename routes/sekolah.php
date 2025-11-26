@@ -33,6 +33,13 @@ use App\Http\Controllers\Sekolah\Guru\AbsensiSiswaController;
 use App\Http\Controllers\Sekolah\Guru\NilaiController;
 use App\Http\Controllers\Sekolah\Guru\IzinController;
 
+// Petugas Perpus (Controller Baru)
+use App\Http\Controllers\Sekolah\Petugas\DashboardController as PetugasDashboard;
+use App\Http\Controllers\Sekolah\Petugas\SirkulasiController as PetugasSirkulasiController;
+use App\Http\Controllers\Sekolah\Petugas\BukuController as PetugasBukuController;
+use App\Http\Controllers\Sekolah\Petugas\KunjunganController as PetugasKunjunganController;
+use App\Http\Controllers\Sekolah\Petugas\AuditController as PetugasAuditController;
+
 /*
 |--------------------------------------------------------------------------
 | Sekolah Formal Routes (Premium)
@@ -59,31 +66,24 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:super-admin-sekol
 
         /*
         |--------------------------------------------------------------------------
-        | Modul Perpustakaan
+        | Modul Perpustakaan (Super Admin)
         |--------------------------------------------------------------------------
         */
         Route::prefix('perpustakaan')->name('perpustakaan.')->group(function () {
-            // 1. Manajemen Buku
             Route::resource('buku', \App\Http\Controllers\Sekolah\SuperAdmin\Perpus\BukuController::class);
+            Route::resource('petugas', \App\Http\Controllers\Sekolah\SuperAdmin\Perpus\PetugasController::class); // <--- CRUD Petugas
             
-            // 2. Kunjungan (Buku Tamu / Kiosk)
             Route::get('kunjungan', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\KunjunganController::class, 'index'])->name('kunjungan.index');
-            Route::get('kunjungan/kiosk', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\KunjunganController::class, 'kiosk'])->name('kunjungan.kiosk'); // Layar Scan
+            Route::get('kunjungan/kiosk', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\KunjunganController::class, 'kiosk'])->name('kunjungan.kiosk');
             Route::post('kunjungan', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\KunjunganController::class, 'store'])->name('kunjungan.store');
             
-            // 3. Cetak Kartu Anggota (Akan kita bahas di view nanti)
             Route::get('anggota/kartu', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\AnggotaController::class, 'cetakKartu'])->name('anggota.kartu');
 
-            // 3. Transaksi Sirkulasi (Peminjaman & Pengembalian)
             Route::prefix('sirkulasi')->name('sirkulasi.')->group(function () {
-                // Halaman Utama Sirkulasi (List Peminjaman Aktif)
                 Route::get('/', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\SirkulasiController::class, 'index'])->name('index');
-                
-                // Peminjaman Baru
                 Route::get('create', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\SirkulasiController::class, 'create'])->name('create');
                 Route::post('store', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\SirkulasiController::class, 'store'])->name('store');
                 
-                // Pengembalian (Scan & Proses)
                 Route::get('kembali', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\SirkulasiController::class, 'returnIndex'])->name('kembali.index');
                 Route::get('kembali/{peminjaman}', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\SirkulasiController::class, 'returnForm'])->name('kembali.form');
                 Route::post('kembali/{peminjaman}', [\App\Http\Controllers\Sekolah\SuperAdmin\Perpus\SirkulasiController::class, 'returnProcess'])->name('kembali.process');
@@ -170,4 +170,34 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:guru'])
         Route::get('izin', [IzinController::class, 'index'])->name('izin.index');
         Route::get('izin/create', [IzinController::class, 'create'])->name('izin.create');
         Route::post('izin', [IzinController::class, 'store'])->name('izin.store');
+    });
+
+// 4. PETUGAS PERPUSTAKAAN (MOBILE FRIENDLY)
+Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:petugas_perpus'])
+    ->prefix('sekolah-petugas-perpus')
+    ->name('sekolah.petugas.')
+    ->group(function () {
+        
+        Route::get('/dashboard', [PetugasDashboard::class, 'index'])->name('dashboard');
+
+        // Menu Sirkulasi
+        Route::prefix('sirkulasi')->name('sirkulasi.')->group(function () {
+            Route::get('/', [PetugasSirkulasiController::class, 'index'])->name('index');
+            Route::post('/', [PetugasSirkulasiController::class, 'store'])->name('store');
+            
+            // INI RUTE YANG TADINYA HILANG (KEMBALI)
+            Route::get('kembali/{peminjaman}', [PetugasSirkulasiController::class, 'returnForm'])->name('kembali.form');
+            Route::post('kembali/{peminjaman}', [PetugasSirkulasiController::class, 'returnProcess'])->name('kembali.process');
+        });
+
+        // Menu Buku
+        Route::get('/buku', [PetugasBukuController::class, 'index'])->name('buku.index');
+        
+        // Menu Kunjungan
+        Route::get('/kunjungan', [PetugasKunjunganController::class, 'index'])->name('kunjungan.index');
+        Route::post('/kunjungan', [PetugasKunjunganController::class, 'store'])->name('kunjungan.store');
+
+        // Menu Audit
+        Route::get('/audit', [PetugasAuditController::class, 'index'])->name('audit.index');
+        Route::post('/audit/update', [PetugasAuditController::class, 'updateStock'])->name('audit.update');
     });
