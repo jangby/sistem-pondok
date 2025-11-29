@@ -1,9 +1,19 @@
-<x-app-layout>
-    <x-slot name="header">
+<?php if (isset($component)) { $__componentOriginal9ac128a9029c0e4701924bd2d73d7f54 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54 = $attributes; } ?>
+<?php $component = App\View\Components\AppLayout::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('app-layout'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\App\View\Components\AppLayout::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+     <?php $__env->slot('header', null, []); ?> 
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Cetak Kartu Ujian') }}
+            <?php echo e(__('Cetak Kartu Ujian')); ?>
+
         </h2>
-    </x-slot>
+     <?php $__env->endSlot(); ?>
 
     <div class="py-12">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
@@ -14,32 +24,32 @@
                     <h3 class="text-lg font-medium text-gray-900">Filter Data</h3>
                 </div>
 
-                <form action="{{ route('pendidikan.admin.kartu.generate') }}" method="POST" target="_blank">
-                    @csrf
+                <form action="<?php echo e(route('pendidikan.admin.kartu.generate')); ?>" method="POST" target="_blank">
+                    <?php echo csrf_field(); ?>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {{-- 1. Pilih Kelas --}}
+                        
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Kelas (Mustawa)</label>
-                            {{-- [MODIFIKASI] Tambahkan ID dan onchange --}}
+                            
                             <select name="mustawa_id" id="mustawa_select" required onchange="loadSantri(this.value)" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
                                 <option value="">-- Pilih Kelas --</option>
-                                @foreach($mustawas as $m)
-                                    <option value="{{ $m->id }}">{{ $m->nama }} (Tingkat {{ $m->tingkat }})</option>
-                                @endforeach
+                                <?php $__currentLoopData = $mustawas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($m->id); ?>"><?php echo e($m->nama); ?> (Tingkat <?php echo e($m->tingkat); ?>)</option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
 
-                        {{-- 2. Input Nama Ujian --}}
+                        
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nama Ujian (Judul Kartu)</label>
                             <input type="text" name="nama_ujian" placeholder="Contoh: Ujian Akhir Semester" 
                                    class="w-full border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
-                                   value="UJIAN AKHIR PERIODE {{ date('Y') }}">
+                                   value="UJIAN AKHIR PERIODE <?php echo e(date('Y')); ?>">
                         </div>
                     </div>
 
-                    {{-- [BARU] 3. Pilih Santri Spesifik --}}
+                    
                     <div class="mt-6">
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             Pilih Santri (Opsional - Untuk Cetak Ulang/Hilang)
@@ -66,8 +76,8 @@
         </div>
     </div>
 
-    {{-- [BARU] Script untuk AJAX --}}
-    @push('scripts')
+    
+    <?php $__env->startPush('scripts'); ?>
     <script>
     function loadSantri(mustawaId) {
         const santriSelect = document.getElementById('santri_select');
@@ -87,7 +97,7 @@
 
         // [PERBAIKAN] Menggunakan route() agar URL dinamis dan benar
         // URL ini akan otomatis menjadi: /pendidikan-admin/kartu-ujian/get-santri/1
-        const url = "{{ route('pendidikan.admin.kartu.get-santri', ':id') }}".replace(':id', mustawaId);
+        const url = "<?php echo e(route('pendidikan.admin.kartu.get-santri', ':id')); ?>".replace(':id', mustawaId);
 
         fetch(url)
             .then(response => {
@@ -121,5 +131,14 @@
             });
     }
 </script>
-    @endpush
-</x-app-layout>
+    <?php $__env->stopPush(); ?>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54)): ?>
+<?php $attributes = $__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54; ?>
+<?php unset($__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9ac128a9029c0e4701924bd2d73d7f54)): ?>
+<?php $component = $__componentOriginal9ac128a9029c0e4701924bd2d73d7f54; ?>
+<?php unset($__componentOriginal9ac128a9029c0e4701924bd2d73d7f54); ?>
+<?php endif; ?><?php /**PATH C:\laragon\www\keuangan-pesantren\resources\views/pendidikan/admin/kartu/index.blade.php ENDPATH**/ ?>

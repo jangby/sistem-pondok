@@ -85,7 +85,7 @@ class SantriExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSi
     public function headings(): array
     {
         return [
-            'NIS', 'RFID UID', 'Nama Lengkap', 'L/P', 'Tempat Lahir', 'Tgl Lahir', 'Gol. Darah', 'Riwayat Penyakit',
+            'NIS', 'RFID UID', 'Nama Lengkap', 'L/P', 'Tempat Lahir', 'Tgl Lahir', 'nik', 'Gol. Darah', 'Riwayat Penyakit',
             'Kelas', 'Angkatan', 'Status',
             'Alamat', 'RT', 'RW', 'Desa', 'Kecamatan', 'Kode Pos',
             'Nama Ayah', 'NIK Ayah', 'Pekerjaan Ayah',

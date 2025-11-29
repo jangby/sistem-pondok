@@ -46,6 +46,9 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-pendidikan'
         Route::resource('kartu-template', KartuUjianTemplateController::class);
         Route::get('kartu-ujian', [KartuUjianController::class, 'index'])->name('kartu.index');
         Route::post('kartu-ujian/generate', [KartuUjianController::class, 'generate'])->name('kartu.generate');
+
+     Route::get('kartu-ujian/get-santri/{mustawa}', [KartuUjianController::class, 'getSantriByMustawa'])
+     ->name('kartu.get-santri');
         
         Route::get('rapor', [RaporController::class, 'index'])->name('rapor.index');
         Route::post('rapor/generate', [RaporController::class, 'generate'])->name('rapor.generate');
