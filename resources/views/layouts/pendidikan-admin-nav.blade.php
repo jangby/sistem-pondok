@@ -95,6 +95,10 @@
             </button>
         </x-slot>
         <x-slot name="content">
+            <div class="px-4 py-2 text-xs text-gray-400 uppercase border-b border-gray-100">Ujian & Nilai</div>
+                                <x-dropdown-link :href="route('pendidikan.admin.monitoring.ujian.index')">Monitoring Input Nilai</x-dropdown-link>
+                                
+                                <div class="border-t border-gray-100"></div>
             <div class="px-4 py-2 text-xs text-gray-400 uppercase border-b border-gray-100">Jurnal</div>
             <x-dropdown-link :href="route('pendidikan.admin.monitoring.jurnal')">Jurnal Mengajar (Kelas)</x-dropdown-link>
             <x-dropdown-link :href="route('pendidikan.admin.monitoring.hafalan')">Jurnal Hafalan (Santri)</x-dropdown-link>

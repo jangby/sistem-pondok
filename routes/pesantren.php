@@ -16,6 +16,7 @@ use App\Http\Controllers\Pendidikan\JadwalUjianController;
 use App\Http\Controllers\Pendidikan\AbsensiController;
 use App\Http\Controllers\Pendidikan\JurnalMonitoringController;
 use App\Http\Controllers\Pendidikan\JurnalHafalanMonitoringController;
+use App\Http\Controllers\Pendidikan\MonitoringNilaiUjianController;
 
 // Ustadz
 use App\Http\Controllers\Ustadz\DashboardController as UstadzDashboardController;
@@ -77,6 +78,15 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-pendidikan'
         Route::get('absensi/rekap', [AbsensiController::class, 'rekap'])->name('absensi.rekap');
         Route::get('monitoring-jurnal', [JurnalMonitoringController::class, 'index'])->name('monitoring.jurnal');
         Route::get('monitoring-hafalan', [JurnalHafalanMonitoringController::class, 'index'])->name('monitoring.hafalan');
+
+        // === TAMBAHAN BARU: MONITORING UJIAN ===
+        Route::prefix('monitoring-ujian')->name('monitoring.ujian.')->group(function() {
+            Route::get('/', [MonitoringNilaiUjianController::class, 'index'])->name('index');
+            Route::get('/{mustawa}/mapel', [MonitoringNilaiUjianController::class, 'showMapel'])->name('mapel');
+            Route::get('/{mustawa}/mapel/{mapel}', [MonitoringNilaiUjianController::class, 'showDetail'])->name('detail');
+            Route::get('/{mustawa}/mapel/{mapel}/input/{jenis}', [MonitoringNilaiUjianController::class, 'showInput'])->name('input');
+            Route::post('/{mustawa}/mapel/{mapel}/update/{jenis}', [MonitoringNilaiUjianController::class, 'updateNilai'])->name('update');
+        });
     });
 
 // 2. AREA USTADZ
