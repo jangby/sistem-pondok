@@ -15,6 +15,7 @@ class MonitoringNilaiUjianController extends Controller
 {
     private function getPondokId()
     {
+        // Pastikan user punya relasi ke pondok
         return auth()->user()->pondokStaff->pondok_id;
     }
 
@@ -28,25 +29,34 @@ class MonitoringNilaiUjianController extends Controller
         return request('tahun_ajaran', date('Y') . '/' . (date('Y') + 1));
     }
 
-    // === LEVEL 1: DASHBOARD MUSTAWA ===
+    // === LEVEL 1: DASHBOARD MUSTAWA (PERBAIKAN FINAL) ===
     public function index(Request $request)
     {
         $pondokId = $this->getPondokId();
         $semester = $this->getActiveSemester();
         $tahunAjaran = $this->getActiveTahunAjaran();
 
-        $mustawas = Mustawa::where('pondok_id', $pondokId)->orderBy('tingkat')->get();
+        // 1. Ambil Semua Mustawa (Kelas)
+        $mustawas = Mustawa::where('pondok_id', $pondokId)
+            ->where('is_active', true) // Filter hanya kelas aktif
+            ->orderBy('tingkat')
+            ->get();
 
-        $mustawas->map(function ($m) use ($semester, $tahunAjaran, $pondokId) {
+        // 2. Loop untuk hitung progress di setiap kelas
+        foreach ($mustawas as $m) {
             
-            $totalSantri = Santri::where('mustawa_id', $m->id)->where('status', 'active')->count();
+            // Hitung Santri Aktif
+            $totalSantri = Santri::where('mustawa_id', $m->id)
+                ->where('status', 'active')
+                ->count();
 
+            // Jika tidak ada santri, progress 0
             if ($totalSantri == 0) {
                 $m->progress = 0;
-                return $m;
+                continue; // Lanjut ke kelas berikutnya
             }
 
-            // 1. Ambil Mapel yang RELEVAN untuk kelas ini
+            // Cari Mapel yang relevan untuk kelas ini (Ada Jadwal ATAU Ada Nilai)
             $relevantMapels = MapelDiniyah::where('pondok_id', $pondokId)
                 ->where(function($q) use ($m) {
                     $q->whereHas('jadwals', function($subQ) use ($m) {
@@ -55,63 +65,66 @@ class MonitoringNilaiUjianController extends Controller
                     ->orWhereIn('id', NilaiPesantren::where('mustawa_id', $m->id)
                         ->select('mapel_diniyah_id'));
                 })
-                ->get(); // Kita butuh detail kolom (uji_tulis, uji_lisan, dll)
+                ->get();
 
+            // Jika tidak ada mapel, progress 0
             if ($relevantMapels->isEmpty()) {
                 $m->progress = 0;
-                return $m;
+                continue;
             }
 
-            // 2. Ambil SEMUA data nilai kelas ini sekaligus (Eager Loading untuk performa)
-            // Agar tidak query berulang-ulang di dalam loop mapel
+            // Ambil semua nilai di kelas ini sekaligus (Optimasi Query)
             $allNilai = NilaiPesantren::where('mustawa_id', $m->id)
                 ->where('semester', $semester)
                 ->where('tahun_ajaran', $tahunAjaran)
                 ->get()
                 ->groupBy('mapel_diniyah_id');
 
-            // 3. Hitung Progress Per Mapel secara Real
+            // Hitung Rata-rata Progress Semua Mapel
             $totalProgressSemuaMapel = 0;
 
             foreach ($relevantMapels as $mapel) {
-                // Ambil nilai khusus mapel ini dari koleksi di atas
-                $nilaiMapelIni = $allNilai->get($mapel->id); // Collection of Nilai
+                $nilaiMapelIni = $allNilai->get($mapel->id); // Ambil data nilai mapel ini dari koleksi
                 
                 $activeComponents = 0;
                 $currentMapelProgress = 0;
 
-                // Cek Komponen & Hitung dari Collection (Memory) bukan DB Query lagi
+                // Logika: Jumlah Santri yg Nilainya TIDAK NULL / Total Santri
+                
+                // 1. Komponen Tulis
                 if ($mapel->uji_tulis) {
                     $activeComponents++;
                     $filled = $nilaiMapelIni ? $nilaiMapelIni->whereNotNull('nilai_tulis')->count() : 0;
                     $currentMapelProgress += ($filled / $totalSantri) * 100;
                 }
+                
+                // 2. Komponen Lisan
                 if ($mapel->uji_lisan) {
                     $activeComponents++;
                     $filled = $nilaiMapelIni ? $nilaiMapelIni->whereNotNull('nilai_lisan')->count() : 0;
                     $currentMapelProgress += ($filled / $totalSantri) * 100;
                 }
+                
+                // 3. Komponen Praktek
                 if ($mapel->uji_praktek) {
                     $activeComponents++;
                     $filled = $nilaiMapelIni ? $nilaiMapelIni->whereNotNull('nilai_praktek')->count() : 0;
                     $currentMapelProgress += ($filled / $totalSantri) * 100;
                 }
 
-                // Persentase mapel ini
+                // Rata-rata progress mapel ini
                 $finalMapelProg = $activeComponents > 0 ? ($currentMapelProgress / $activeComponents) : 0;
                 $totalProgressSemuaMapel += min($finalMapelProg, 100);
             }
 
-            // 4. Rata-rata Akhir = (Total Progress Mapel / Jumlah Mapel)
+            // Progress Akhir Kelas = Rata-rata progress seluruh mapel
             $m->progress = round($totalProgressSemuaMapel / $relevantMapels->count());
-            
-            return $m;
-        });
+        }
 
         return view('pendidikan.admin.monitoring.ujian.index', compact('mustawas', 'semester', 'tahunAjaran'));
     }
 
-    // === LEVEL 2: LIST MAPEL (PER KELAS) ===
+    // === LEVEL 2: LIST MAPEL ===
     public function showMapel(Request $request, $mustawaId)
     {
         $pondokId = $this->getPondokId();
@@ -120,6 +133,7 @@ class MonitoringNilaiUjianController extends Controller
         
         $mustawa = Mustawa::where('pondok_id', $pondokId)->findOrFail($mustawaId);
         
+        // Ambil Mapel Relevan
         $mapels = MapelDiniyah::where('pondok_id', $pondokId)
             ->where(function($q) use ($mustawaId) {
                 $q->whereHas('jadwals', function($subQ) use ($mustawaId) {
@@ -133,10 +147,11 @@ class MonitoringNilaiUjianController extends Controller
 
         $santriCount = Santri::where('mustawa_id', $mustawaId)->where('status', 'active')->count();
 
-        $mapels->map(function ($mapel) use ($mustawaId, $semester, $tahunAjaran, $santriCount) {
+        // Hitung progress per mapel untuk tampilan detail
+        foreach($mapels as $mapel) {
             if ($santriCount == 0) {
                 $mapel->progress = 0;
-                return $mapel;
+                continue;
             }
 
             $activeComponents = 0;
@@ -147,34 +162,27 @@ class MonitoringNilaiUjianController extends Controller
                 ->where('semester', $semester)
                 ->where('tahun_ajaran', $tahunAjaran);
 
-            // Cek Tulis
             if ($mapel->uji_tulis) {
                 $activeComponents++;
-                // Karena sekarang NULLABLE, whereNotNull akan bekerja sempurna
                 $filled = (clone $baseQuery)->whereNotNull('nilai_tulis')->count();
                 $totalProgress += ($filled / $santriCount) * 100;
             }
 
-            // Cek Lisan
             if ($mapel->uji_lisan) {
                 $activeComponents++;
                 $filled = (clone $baseQuery)->whereNotNull('nilai_lisan')->count();
                 $totalProgress += ($filled / $santriCount) * 100;
             }
 
-            // Cek Praktek
             if ($mapel->uji_praktek) {
                 $activeComponents++;
                 $filled = (clone $baseQuery)->whereNotNull('nilai_praktek')->count();
                 $totalProgress += ($filled / $santriCount) * 100;
             }
 
-            // Rata-rata progress
             $mapel->progress = $activeComponents > 0 ? round($totalProgress / $activeComponents) : 0;
             $mapel->progress = min($mapel->progress, 100);
-            
-            return $mapel;
-        });
+        }
 
         return view('pendidikan.admin.monitoring.ujian.mapel', compact('mustawa', 'mapels', 'semester', 'tahunAjaran'));
     }
@@ -258,7 +266,6 @@ class MonitoringNilaiUjianController extends Controller
 
             foreach ($request->nilai as $santriId => $val) {
                 
-                // Cari atau Buat Record Baru
                 $record = NilaiPesantren::firstOrNew([
                     'santri_id' => $santriId,
                     'mapel_diniyah_id' => $mapelId,
@@ -269,11 +276,9 @@ class MonitoringNilaiUjianController extends Controller
                 if (!$record->exists) {
                     $record->mustawa_id = $mustawaId;
                     $record->jenis_ujian = 'uas';
-                    // Karena di migration sudah NULLABLE, 
-                    // nilai_tulis, nilai_lisan, dll otomatis NULL jika tidak diisi.
                 }
 
-                // Update Nilai Sesuai Jenis (Jika input kosong, simpan NULL)
+                // Update Nilai Sesuai Jenis
                 if ($jenis == 'tulis') {
                     $record->nilai_tulis = $val; 
                     if ($request->has("kehadiran.$santriId")) {
@@ -285,11 +290,12 @@ class MonitoringNilaiUjianController extends Controller
                     $record->nilai_praktek = $val;
                 }
 
-                // Hitung Rata-rata Akhir
+                // Hitung Rata-rata Akhir (Otomatis NULL jika input belum lengkap, atau sesuai kebijakan)
                 $cols = 0; 
                 $sum = 0;
                 
-                // Gunakan coalesce (?? 0) hanya untuk hitungan rata-rata, bukan untuk cek null
+                // Gunakan ?? 0 agar null dianggap 0 saat perhitungan rata-rata, 
+                // TAPI tetap simpan data asli sebagai null di kolom masing-masing
                 if ($mapel->uji_tulis) { 
                     $sum += $record->nilai_tulis ?? 0; 
                     $cols++; 
