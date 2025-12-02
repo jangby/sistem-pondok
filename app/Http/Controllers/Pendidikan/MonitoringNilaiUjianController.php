@@ -15,7 +15,6 @@ class MonitoringNilaiUjianController extends Controller
 {
     private function getPondokId()
     {
-        // Pastikan user punya relasi ke pondok
         return auth()->user()->pondokStaff->pondok_id;
     }
 
@@ -29,95 +28,101 @@ class MonitoringNilaiUjianController extends Controller
         return request('tahun_ajaran', date('Y') . '/' . (date('Y') + 1));
     }
 
-    // === LEVEL 1: DASHBOARD MUSTAWA (PERBAIKAN FINAL) ===
+    // === LEVEL 1: DASHBOARD MUSTAWA ===
     public function index(Request $request)
     {
         $pondokId = $this->getPondokId();
         $semester = $this->getActiveSemester();
         $tahunAjaran = $this->getActiveTahunAjaran();
 
-        // 1. Ambil Semua Mustawa (Kelas)
+        // 1. Ambil Semua Mustawa (Kelas) Aktif
         $mustawas = Mustawa::where('pondok_id', $pondokId)
-            ->where('is_active', true) // Filter hanya kelas aktif
+            ->where('is_active', true)
             ->orderBy('tingkat')
             ->get();
 
-        // 2. Loop untuk hitung progress di setiap kelas
         foreach ($mustawas as $m) {
             
-            // Hitung Santri Aktif
             $totalSantri = Santri::where('mustawa_id', $m->id)
                 ->where('status', 'active')
                 ->count();
 
-            // Jika tidak ada santri, progress 0
             if ($totalSantri == 0) {
                 $m->progress = 0;
-                continue; // Lanjut ke kelas berikutnya
+                continue;
             }
 
-            // Cari Mapel yang relevan untuk kelas ini (Ada Jadwal ATAU Ada Nilai)
+            // --- [PERBAIKAN] LOGIKA PENGAMBILAN MAPEL ---
+            // Mapel diambil jika:
+            // 1. Ada di Jadwal Harian (JadwalDiniyah)
+            // 2. ATAU Ada di Jadwal Ujian (JadwalUjianDiniyah) -> INI YANG DITAMBAHKAN
+            // 3. ATAU Sudah ada nilainya (NilaiPesantren)
+            
             $relevantMapels = MapelDiniyah::where('pondok_id', $pondokId)
-                ->where(function($q) use ($m) {
+                ->where(function($q) use ($m, $semester, $tahunAjaran) {
+                    // Cek Jadwal Harian
                     $q->whereHas('jadwals', function($subQ) use ($m) {
                         $subQ->where('mustawa_id', $m->id);
                     })
+                    // [BARU] Cek Jadwal Ujian
+                    ->orWhereIn('id', function($subQ) use ($m, $semester, $tahunAjaran) {
+                        $subQ->select('mapel_diniyah_id')
+                             ->from('jadwal_ujian_diniyahs')
+                             ->where('mustawa_id', $m->id)
+                             ->where('semester', $semester)
+                             ->where('tahun_ajaran', $tahunAjaran);
+                    })
+                    // Cek Nilai Existing
                     ->orWhereIn('id', NilaiPesantren::where('mustawa_id', $m->id)
                         ->select('mapel_diniyah_id'));
                 })
                 ->get();
 
-            // Jika tidak ada mapel, progress 0
             if ($relevantMapels->isEmpty()) {
                 $m->progress = 0;
                 continue;
             }
 
-            // Ambil semua nilai di kelas ini sekaligus (Optimasi Query)
+            // Ambil semua nilai (Optimasi)
             $allNilai = NilaiPesantren::where('mustawa_id', $m->id)
                 ->where('semester', $semester)
                 ->where('tahun_ajaran', $tahunAjaran)
                 ->get()
                 ->groupBy('mapel_diniyah_id');
 
-            // Hitung Rata-rata Progress Semua Mapel
             $totalProgressSemuaMapel = 0;
 
             foreach ($relevantMapels as $mapel) {
-                $nilaiMapelIni = $allNilai->get($mapel->id); // Ambil data nilai mapel ini dari koleksi
+                $nilaiMapelIni = $allNilai->get($mapel->id);
                 
                 $activeComponents = 0;
                 $currentMapelProgress = 0;
-
-                // Logika: Jumlah Santri yg Nilainya TIDAK NULL / Total Santri
                 
-                // 1. Komponen Tulis
+                // Hitung Tulis
                 if ($mapel->uji_tulis) {
                     $activeComponents++;
                     $filled = $nilaiMapelIni ? $nilaiMapelIni->whereNotNull('nilai_tulis')->count() : 0;
                     $currentMapelProgress += ($filled / $totalSantri) * 100;
                 }
                 
-                // 2. Komponen Lisan
+                // Hitung Lisan
                 if ($mapel->uji_lisan) {
                     $activeComponents++;
                     $filled = $nilaiMapelIni ? $nilaiMapelIni->whereNotNull('nilai_lisan')->count() : 0;
                     $currentMapelProgress += ($filled / $totalSantri) * 100;
                 }
                 
-                // 3. Komponen Praktek
+                // Hitung Praktek
                 if ($mapel->uji_praktek) {
                     $activeComponents++;
                     $filled = $nilaiMapelIni ? $nilaiMapelIni->whereNotNull('nilai_praktek')->count() : 0;
                     $currentMapelProgress += ($filled / $totalSantri) * 100;
                 }
 
-                // Rata-rata progress mapel ini
                 $finalMapelProg = $activeComponents > 0 ? ($currentMapelProgress / $activeComponents) : 0;
                 $totalProgressSemuaMapel += min($finalMapelProg, 100);
             }
 
-            // Progress Akhir Kelas = Rata-rata progress seluruh mapel
             $m->progress = round($totalProgressSemuaMapel / $relevantMapels->count());
         }
 
@@ -133,12 +138,22 @@ class MonitoringNilaiUjianController extends Controller
         
         $mustawa = Mustawa::where('pondok_id', $pondokId)->findOrFail($mustawaId);
         
-        // Ambil Mapel Relevan
+        // --- [PERBAIKAN] Query Mapel Konsisten dengan Index ---
         $mapels = MapelDiniyah::where('pondok_id', $pondokId)
-            ->where(function($q) use ($mustawaId) {
+            ->where(function($q) use ($mustawaId, $semester, $tahunAjaran) {
+                // 1. Jadwal Harian
                 $q->whereHas('jadwals', function($subQ) use ($mustawaId) {
                     $subQ->where('mustawa_id', $mustawaId);
                 })
+                // 2. [BARU] Jadwal Ujian
+                ->orWhereIn('id', function($subQ) use ($mustawaId, $semester, $tahunAjaran) {
+                    $subQ->select('mapel_diniyah_id')
+                            ->from('jadwal_ujian_diniyahs')
+                            ->where('mustawa_id', $mustawaId)
+                            ->where('semester', $semester)
+                            ->where('tahun_ajaran', $tahunAjaran);
+                })
+                // 3. Nilai Existing
                 ->orWhereIn('id', NilaiPesantren::where('mustawa_id', $mustawaId)
                     ->select('mapel_diniyah_id'));
             })
@@ -147,7 +162,6 @@ class MonitoringNilaiUjianController extends Controller
 
         $santriCount = Santri::where('mustawa_id', $mustawaId)->where('status', 'active')->count();
 
-        // Hitung progress per mapel untuk tampilan detail
         foreach($mapels as $mapel) {
             if ($santriCount == 0) {
                 $mapel->progress = 0;
@@ -278,7 +292,6 @@ class MonitoringNilaiUjianController extends Controller
                     $record->jenis_ujian = 'uas';
                 }
 
-                // Update Nilai Sesuai Jenis
                 if ($jenis == 'tulis') {
                     $record->nilai_tulis = $val; 
                     if ($request->has("kehadiran.$santriId")) {
@@ -290,12 +303,10 @@ class MonitoringNilaiUjianController extends Controller
                     $record->nilai_praktek = $val;
                 }
 
-                // Hitung Rata-rata Akhir (Otomatis NULL jika input belum lengkap, atau sesuai kebijakan)
+                // Kalkulasi Nilai Akhir
                 $cols = 0; 
                 $sum = 0;
                 
-                // Gunakan ?? 0 agar null dianggap 0 saat perhitungan rata-rata, 
-                // TAPI tetap simpan data asli sebagai null di kolom masing-masing
                 if ($mapel->uji_tulis) { 
                     $sum += $record->nilai_tulis ?? 0; 
                     $cols++; 
