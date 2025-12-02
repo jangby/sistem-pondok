@@ -39,39 +39,72 @@ class MonitoringNilaiUjianController extends Controller
 
         $mustawas->map(function ($m) use ($semester, $tahunAjaran, $pondokId) {
             
-            // --- [PERBAIKAN] Hitung Total Mapel KHUSUS Mustawa ini ---
-            // Kita ambil mapel yang punya jadwal di mustawa ini ATAU sudah ada nilai yang terinput
-            // Agar akurat sesuai kurikulum kelas tersebut
-            $relevantMapelCount = MapelDiniyah::where('pondok_id', $pondokId)
+            $totalSantri = Santri::where('mustawa_id', $m->id)->where('status', 'active')->count();
+
+            if ($totalSantri == 0) {
+                $m->progress = 0;
+                return $m;
+            }
+
+            // 1. Ambil Mapel yang RELEVAN untuk kelas ini
+            $relevantMapels = MapelDiniyah::where('pondok_id', $pondokId)
                 ->where(function($q) use ($m) {
-                    // Cek via Jadwal Pelajaran
                     $q->whereHas('jadwals', function($subQ) use ($m) {
                         $subQ->where('mustawa_id', $m->id);
                     })
-                    // Atau Cek via Nilai (jika jadwal dihapus tapi nilai sudah ada)
                     ->orWhereIn('id', NilaiPesantren::where('mustawa_id', $m->id)
                         ->select('mapel_diniyah_id'));
                 })
-                ->count();
+                ->get(); // Kita butuh detail kolom (uji_tulis, uji_lisan, dll)
 
-            $totalSantri = Santri::where('mustawa_id', $m->id)->where('status', 'active')->count();
-            
-            if ($relevantMapelCount == 0 || $totalSantri == 0) {
+            if ($relevantMapels->isEmpty()) {
                 $m->progress = 0;
-            } else {
-                $totalExpected = $totalSantri * $relevantMapelCount; 
-                
-                // Hitung record nilai yang 'Selesai' (Nilai Akhir terisi)
-                $actualFilled = NilaiPesantren::where('mustawa_id', $m->id)
-                    ->where('semester', $semester)
-                    ->where('tahun_ajaran', $tahunAjaran)
-                    ->whereNotNull('nilai_akhir') // Hanya hitung yang sudah final
-                    ->count();
-                
-                // Kalkulasi Persen
-                $m->progress = round(($actualFilled / $totalExpected) * 100);
-                $m->progress = min($m->progress, 100);
+                return $m;
             }
+
+            // 2. Ambil SEMUA data nilai kelas ini sekaligus (Eager Loading untuk performa)
+            // Agar tidak query berulang-ulang di dalam loop mapel
+            $allNilai = NilaiPesantren::where('mustawa_id', $m->id)
+                ->where('semester', $semester)
+                ->where('tahun_ajaran', $tahunAjaran)
+                ->get()
+                ->groupBy('mapel_diniyah_id');
+
+            // 3. Hitung Progress Per Mapel secara Real
+            $totalProgressSemuaMapel = 0;
+
+            foreach ($relevantMapels as $mapel) {
+                // Ambil nilai khusus mapel ini dari koleksi di atas
+                $nilaiMapelIni = $allNilai->get($mapel->id); // Collection of Nilai
+                
+                $activeComponents = 0;
+                $currentMapelProgress = 0;
+
+                // Cek Komponen & Hitung dari Collection (Memory) bukan DB Query lagi
+                if ($mapel->uji_tulis) {
+                    $activeComponents++;
+                    $filled = $nilaiMapelIni ? $nilaiMapelIni->whereNotNull('nilai_tulis')->count() : 0;
+                    $currentMapelProgress += ($filled / $totalSantri) * 100;
+                }
+                if ($mapel->uji_lisan) {
+                    $activeComponents++;
+                    $filled = $nilaiMapelIni ? $nilaiMapelIni->whereNotNull('nilai_lisan')->count() : 0;
+                    $currentMapelProgress += ($filled / $totalSantri) * 100;
+                }
+                if ($mapel->uji_praktek) {
+                    $activeComponents++;
+                    $filled = $nilaiMapelIni ? $nilaiMapelIni->whereNotNull('nilai_praktek')->count() : 0;
+                    $currentMapelProgress += ($filled / $totalSantri) * 100;
+                }
+
+                // Persentase mapel ini
+                $finalMapelProg = $activeComponents > 0 ? ($currentMapelProgress / $activeComponents) : 0;
+                $totalProgressSemuaMapel += min($finalMapelProg, 100);
+            }
+
+            // 4. Rata-rata Akhir = (Total Progress Mapel / Jumlah Mapel)
+            $m->progress = round($totalProgressSemuaMapel / $relevantMapels->count());
+            
             return $m;
         });
 
