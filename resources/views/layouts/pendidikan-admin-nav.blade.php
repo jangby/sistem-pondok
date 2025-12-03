@@ -189,6 +189,7 @@
                 <div class="px-4 text-xs font-semibold text-emerald-200 uppercase">Monitoring</div>
             </div>
             <x-responsive-nav-link :href="route('pendidikan.admin.absensi.rekap')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Rekap Absensi') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('pendidikan.admin.monitoring.ujian.index')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Monitoring Nilai Ujian') }}</x-responsive-nav-link>
         </div>
 
         <div class="pt-4 pb-1 border-t border-emerald-500">
