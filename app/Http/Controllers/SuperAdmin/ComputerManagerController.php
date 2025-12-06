@@ -46,53 +46,36 @@ class ComputerManagerController extends Controller
     public function checkCommand(Request $request)
     {
         try {
-            // 1. Ambil input nama PC dari Python
-            $pcName = $request->input('pc_name'); 
+            $pcName = $request->input('pc_name');
             
             if (!$pcName) {
-                return response()->json(['command' => null, 'message' => 'PC Name tidak dikirim'], 400);
+                return response()->json(['command' => null], 400);
             }
 
-            // 2. Cari PC di Database
+            // Cari PC
             $pc = ComputerLog::where('pc_name', $pcName)->first();
 
-            // Jika PC tidak ditemukan, berikan respon 404 (aman, tidak akan bikin script crash)
-            if (!$pc) {
-                return response()->json(['command' => null, 'message' => 'PC belum terdaftar'], 404);
+            if ($pc) {
+                // PENTING: Update last_seen setiap kali Python nanya ("Ping")
+                // Ini yang membuat status jadi "ONLINE" di dashboard
+                $pc->update(['last_seen' => now()]); 
+
+                // Cek apakah ada perintah pending (shutdown/logout)
+                if ($pc->pending_command) {
+                    $command = $pc->pending_command;
+                    
+                    // Reset perintah agar tidak dieksekusi berulang
+                    $pc->update(['pending_command' => null]);
+                    
+                    return response()->json(['command' => $command]);
+                }
             }
 
-            // 3. Update status 'last_seen' agar kita tahu PC ini sedang online
-            $pc->update(['last_seen' => now()]);
-
-            // 4. Cek apakah Admin mengirim perintah (pending_command)
-            $pendingCommand = $pc->pending_command;
-
-            if ($pendingCommand) {
-                // PENTING: Hapus perintah setelah diambil agar tidak dieksekusi berkali-kali
-                $pc->update(['pending_command' => null]);
-
-                // Kirim perintah ke Python (shutdown/logout)
-                return response()->json([
-                    'status' => 'success',
-                    'command' => $pendingCommand
-                ]);
-            }
-
-            // Jika tidak ada perintah, kirim null
-            return response()->json([
-                'status' => 'success',
-                'command' => null
-            ]);
+            return response()->json(['command' => null]);
 
         } catch (\Exception $e) {
-            // Log error untuk developer
             Log::error("API Check Command Error: " . $e->getMessage());
-            
-            // Return JSON error agar Python bisa membacanya
-            return response()->json([
-                'status' => 'error', 
-                'message' => $e->getMessage()
-            ], 500);
+            return response()->json(['command' => null], 500);
         }
     }
 }
