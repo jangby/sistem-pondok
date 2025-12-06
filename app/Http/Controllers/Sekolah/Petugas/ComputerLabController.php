@@ -93,6 +93,27 @@ class ComputerLabController extends Controller
         return redirect()->route('petugas-lab.dashboard')->with('success', 'Password SEMUA komputer berhasil diubah.');
     }
 
+    /**
+     * Mengirim perintah (Shutdown/Logout) untuk SATU komputer spesifik
+     */
+    public function sendCommand(Request $request, $id)
+    {
+        $computer = ComputerLog::findOrFail($id);
+
+        $request->validate([
+            'command' => 'required|in:shutdown,logout,restart',
+        ]);
+
+        // Simpan perintah ke database
+        $computer->update([
+            'pending_command' => $request->command
+        ]);
+
+        $aksi = $request->command == 'shutdown' ? 'dimatikan' : ($request->command == 'restart' ? 'direstart' : 'dilogout');
+        
+        return back()->with('success', "Perintah terkirim! PC {$computer->pc_name} akan segera $aksi.");
+    }
+
     // ... method jadwal dan laporan biarkan seperti sebelumnya atau kembangkan nanti
     public function jadwal() { return view('sekolah.petugas.lab-komputer.jadwal'); }
     public function laporan() { return view('sekolah.petugas.lab-komputer.laporan'); }

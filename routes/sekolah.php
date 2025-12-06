@@ -210,6 +210,7 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:petugas_perpus'])
     
     // Menu 1: Data PC
     Route::get('/komputer', [ComputerLabController::class, 'listKomputer'])->name('komputer.index');
+    Route::post('/komputer/{id}/command', [ComputerLabController::class, 'sendCommand'])->name('komputer.command');
     
     // Menu 2: Shutdown All
     Route::post('/shutdown-all', [ComputerLabController::class, 'shutdownAll'])->name('shutdown.all');
