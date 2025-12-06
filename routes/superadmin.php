@@ -41,5 +41,5 @@ Route::middleware(['auth', 'role:super-admin'])
         Route::get('/computer-manager', [ComputerManagerController::class, 'index'])
     ->name('computer.index'); // <-- Cukup begini
         Route::post('/computer-manager/{id}/command', [ComputerManagerController::class, 'sendCommand'])
-    ->name('superadmin.computer.command');
+    ->name('computer.command');
     });
