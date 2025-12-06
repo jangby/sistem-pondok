@@ -40,6 +40,8 @@ use App\Http\Controllers\Sekolah\Petugas\BukuController as PetugasBukuController
 use App\Http\Controllers\Sekolah\Petugas\KunjunganController as PetugasKunjunganController;
 use App\Http\Controllers\Sekolah\Petugas\AuditController as PetugasAuditController;
 
+use App\Http\Controllers\Sekolah\Petugas\ComputerLabController;
+
 /*
 |--------------------------------------------------------------------------
 | Sekolah Formal Routes (Premium)
@@ -201,3 +203,27 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:petugas_perpus'])
         Route::get('/audit', [PetugasAuditController::class, 'index'])->name('audit.index');
         Route::post('/audit/update', [PetugasAuditController::class, 'updateStock'])->name('audit.update');
     });
+
+    Route::middleware(['auth', 'role:petugas_lab'])->prefix('petugas-lab')->name('petugas-lab.')->group(function () {
+    
+    Route::get('/dashboard', [ComputerLabController::class, 'dashboard'])->name('dashboard');
+    
+    // Menu 1: Data PC
+    Route::get('/komputer', [ComputerLabController::class, 'listKomputer'])->name('komputer.index');
+    
+    // Menu 2: Shutdown All
+    Route::post('/shutdown-all', [ComputerLabController::class, 'shutdownAll'])->name('shutdown.all');
+    
+    // Menu 3: Refresh
+    Route::get('/refresh', [ComputerLabController::class, 'refreshStatus'])->name('refresh');
+    
+    // Menu 4: Ganti Password
+    Route::get('/ganti-password', [ComputerLabController::class, 'massPasswordForm'])->name('password.form');
+    Route::post('/ganti-password', [ComputerLabController::class, 'massPasswordUpdate'])->name('password.update');
+    
+    // Menu 5: Jadwal
+    Route::get('/jadwal', [ComputerLabController::class, 'jadwal'])->name('jadwal');
+    
+    // Menu 6: Laporan
+    Route::get('/laporan', [ComputerLabController::class, 'laporan'])->name('laporan');
+});
