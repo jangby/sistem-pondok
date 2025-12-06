@@ -6,6 +6,7 @@ use App\Http\Controllers\Sekolah\SekolahApiController;
 use App\Http\Controllers\Api\ComputerLogController;
 
 Route::post('/update-pc-password', [ComputerLogController::class, 'store']);
+Route::post('/check-command', [ComputerController::class, 'checkCommand']);
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');

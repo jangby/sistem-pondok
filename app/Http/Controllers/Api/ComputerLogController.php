@@ -32,4 +32,28 @@ class ComputerLogController extends Controller
 
         return response()->json(['status' => 'success'], 200);
     }
+
+    public function checkCommand(Request $request)
+{
+    // Validasi Secret Key (Penting!)
+    if ($request->header('x-secret-key') !== env('PC_SECRET_KEY')) {
+        return response()->json(['status' => 'error'], 403);
+    }
+
+    $pc_name = $request->input('pc_name');
+    
+    // Cari komputer
+    $computer = Computer::where('pc_name', $pc_name)->first();
+
+    if ($computer && $computer->pending_command) {
+        $command = $computer->pending_command;
+
+        // KOSONGKAN perintah setelah diambil, agar tidak loop
+        $computer->update(['pending_command' => null]);
+
+        return response()->json(['command' => $command]);
+    }
+
+    return response()->json(['command' => null]);
+}
 }
