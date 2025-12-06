@@ -40,6 +40,11 @@
                         <x-nav-link :href="route('superadmin.pondoks.index')" :active="request()->routeIs('superadmin.pondoks.*')">
                             {{ __('Pondok') }}
                         </x-nav-link>
+
+<x-nav-link :href="route('superadmin.computer.index')" :active="request()->routeIs('superadmin.computer.index')">
+    {{ __('Password Komputer') }}
+</x-nav-link>
+
                         
                         <x-nav-link :href="route('superadmin.plans.index')" :active="request()->routeIs('superadmin.plans.*')">
                             {{ __('Paket') }}

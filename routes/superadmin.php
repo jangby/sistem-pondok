@@ -9,6 +9,7 @@ use App\Http\Controllers\SuperAdmin\SubscriptionController;
 use App\Http\Controllers\SuperAdmin\MidtransReportController;
 use App\Http\Controllers\SuperAdmin\PayoutController as SuperAdminPayoutController;
 use App\Http\Controllers\SuperAdmin\UujPayoutController;
+use App\Http\Controllers\SuperAdmin\ComputerManagerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,4 +37,7 @@ Route::middleware(['auth', 'role:super-admin'])
 
         Route::get('uuj-payouts', [UujPayoutController::class, 'index'])->name('uuj-payout.index');
         Route::put('uuj-payouts/{id}', [UujPayoutController::class, 'update'])->name('uuj-payout.update');
+
+        Route::get('/computer-manager', [ComputerManagerController::class, 'index'])
+    ->name('computer.index'); // <-- Cukup begini
     });
