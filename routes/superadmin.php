@@ -10,6 +10,9 @@ use App\Http\Controllers\SuperAdmin\MidtransReportController;
 use App\Http\Controllers\SuperAdmin\PayoutController as SuperAdminPayoutController;
 use App\Http\Controllers\SuperAdmin\UujPayoutController;
 use App\Http\Controllers\SuperAdmin\ComputerManagerController;
+use App\Http\Controllers\SuperAdmin\PetugasLabController;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -42,4 +45,13 @@ Route::middleware(['auth', 'role:super-admin'])
     ->name('computer.index'); // <-- Cukup begini
         Route::post('/computer-manager/{id}/command', [ComputerManagerController::class, 'sendCommand'])
     ->name('computer.command');
+
+    Route::prefix('petugas-lab')->name('petugas-lab.')->group(function () {
+    Route::get('/', [PetugasLabController::class, 'index'])->name('index');
+    Route::get('/create', [PetugasLabController::class, 'create'])->name('create');
+    Route::post('/', [PetugasLabController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [PetugasLabController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [PetugasLabController::class, 'update'])->name('update');
+    Route::delete('/{id}', [PetugasLabController::class, 'destroy'])->name('destroy');
+});
     });

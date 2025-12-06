@@ -44,6 +44,9 @@
 <x-nav-link :href="route('superadmin.computer.index')" :active="request()->routeIs('superadmin.computer.index')">
     {{ __('Password Komputer') }}
 </x-nav-link>
+<x-nav-link :href="route('superadmin.petugas-lab.index')" :active="request()->routeIs('superadmin.petugas-lab.*')">
+    {{ __('Kelola Petugas Lab') }}
+</x-nav-link>
 
                         
                         <x-nav-link :href="route('superadmin.plans.index')" :active="request()->routeIs('superadmin.plans.*')">
