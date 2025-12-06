@@ -9,21 +9,11 @@ use App\Models\ComputerLog;
 class ComputerLogController extends Controller
 {
     public function store(Request $request)
-{
-    // --- DEBUGGING AREA (HAPUS NANTI) ---
-    $kunci_dari_python = $request->header('x-secret-key');
-    $kunci_di_env_laravel = env('PC_SECRET_KEY', 'default-key');
-
-    // Jika kunci TIDAK SAMA, kita kembalikan pesan detail biar ketahuan bedanya
-    if ($kunci_dari_python !== $kunci_di_env_laravel) {
-        return response()->json([
-            'message' => 'Unauthorized (Debugging Mode)',
-            'debug_info' => [
-                'server_receive' => $kunci_dari_python, // Apa yang diterima server?
-                'server_expect'  => $kunci_di_env_laravel // Apa yang diharapkan server?
-            ]
-        ], 403);
-    }
+    {
+        // Simple Security check (Pastikan di .env ada PC_SECRET_KEY=rahasia123)
+        if ($request->header('x-secret-key') !== env('PC_SECRET_KEY', 'default-key')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
         $request->validate([
             'pc_name' => 'required',
