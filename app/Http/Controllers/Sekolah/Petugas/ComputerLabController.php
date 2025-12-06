@@ -10,22 +10,29 @@ use Carbon\Carbon;
 class ComputerLabController extends Controller
 {
     /**
-     * Dashboard Utama (Launcher)
+     * Dashboard Utama (Mobile Friendly UI)
      */
     public function dashboard()
     {
+        // Statistik
         $totalKomputer = ComputerLog::count();
+        
         // Dianggap online jika last_seen < 2 menit yang lalu
         $komputerOnline = ComputerLog::where('last_seen', '>=', now()->subMinutes(2))->count();
         $komputerOffline = $totalKomputer - $komputerOnline;
 
-        // Ambil 5 aktivitas terakhir (log sederhana dari update terakhir)
+        // Ambil 5 aktivitas terakhir (Komputer yang baru saja connect/update status)
         $recentActivities = ComputerLog::whereNotNull('last_seen')
                             ->orderBy('last_seen', 'desc')
-                            ->take(5)
+                            ->take(10) // Ambil 10 biar listnya agak panjang di HP
                             ->get();
 
-        return view('sekolah.petugas.lab-komputer.dashboard', compact('totalKomputer', 'komputerOnline', 'komputerOffline', 'recentActivities'));
+        return view('sekolah.petugas.lab-komputer.dashboard', compact(
+            'totalKomputer', 
+            'komputerOnline', 
+            'komputerOffline', 
+            'recentActivities'
+        ));
     }
 
     /**
@@ -43,20 +50,22 @@ class ComputerLabController extends Controller
     public function shutdownAll()
     {
         // Hanya kirim perintah ke komputer yang sedang Online
-        $onlinePCs = ComputerLog::where('last_seen', '>=', now()->subMinutes(2))->update([
+        $affected = ComputerLog::where('last_seen', '>=', now()->subMinutes(2))->update([
             'pending_command' => 'shutdown'
         ]);
 
-        return back()->with('success', "Perintah SHUTDOWN dikirim ke $onlinePCs komputer yang aktif.");
+        if($affected == 0) {
+            return back()->with('error', "Tidak ada komputer online yang bisa dimatikan.");
+        }
+
+        return back()->with('success', "Perintah SHUTDOWN berhasil dikirim ke $affected komputer yang aktif.");
     }
 
     /**
      * Menu 3: Refresh / Ping Status
-     * (Sebenarnya status update otomatis via Python, tapi ini untuk force check di DB)
      */
     public function refreshStatus()
     {
-        // Kita hanya redirect back, karena update status dilakukan oleh script Python di client
         return back()->with('success', 'Data status komputer berhasil diperbarui.');
     }
 
@@ -75,30 +84,16 @@ class ComputerLabController extends Controller
     {
         $request->validate([
             'password' => 'required|min:6',
+        ], [
+            'password.min' => 'Password minimal 6 karakter'
         ]);
 
-        // Update password di database untuk SEMUA komputer
-        // Script Python nanti akan mengambil password ini saat cek server
         ComputerLog::query()->update(['password' => $request->password]);
 
-        return redirect()->route('petugas-lab.dashboard')->with('success', 'Password SEMUA komputer berhasil diubah. Script Client akan segera sinkronisasi.');
+        return redirect()->route('petugas-lab.dashboard')->with('success', 'Password SEMUA komputer berhasil diubah.');
     }
 
-    /**
-     * Menu 5: Jadwal Lab
-     */
-    public function jadwal()
-    {
-        // Di sini Anda bisa menghubungkan dengan Model JadwalPelajaran jika sudah siap.
-        // Untuk sekarang kita tampilkan view jadwal statis/dummy yang rapi.
-        return view('sekolah.petugas.lab-komputer.jadwal');
-    }
-
-    /**
-     * Menu 6: Laporan Harian
-     */
-    public function laporan()
-    {
-        return view('sekolah.petugas.lab-komputer.laporan');
-    }
+    // ... method jadwal dan laporan biarkan seperti sebelumnya atau kembangkan nanti
+    public function jadwal() { return view('sekolah.petugas.lab-komputer.jadwal'); }
+    public function laporan() { return view('sekolah.petugas.lab-komputer.laporan'); }
 }

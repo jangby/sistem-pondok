@@ -26,7 +26,7 @@ Route::get('/dashboard', function () {
     if ($user->hasRole('admin-pendidikan')) return redirect()->route('pendidikan.admin.dashboard');
     if ($user->hasRole('ustadz')) return redirect()->route('ustadz.dashboard');
     if ($user->hasRole('petugas_perpus')) return redirect()->route('sekolah.petugas.dashboard');
-    //if ($user->hasRole('petugas_lab')) return redirect()->route('sekolah.petugas.lab-komputer.dashboard');
+    if ($user->hasRole('petugas_lab')) return redirect()->route('petugas-lab.dashboard');
 
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
