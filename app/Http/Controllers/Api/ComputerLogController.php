@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\ComputerLog; // Pastikan menggunakan Model yang benar
-use Illuminate\Support\Facades\Log;
+use App\Models\ComputerLog;
+use Illuminate\Support\Facades\Log; // PERBAIKAN 1: Import Class Log
 
 class ComputerLogController extends Controller
 {
@@ -16,11 +16,9 @@ class ComputerLogController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Cek Security Key (Wajib sama dengan di Python)
-        // Pastikan SECRET_KEY di file .env atau hardcoded di sini sama dengan di script Python
+        // 1. Cek Security Key
         $secretKey = $request->header('x-secret-key');
         
-        // Ganti 'rahasia123' dengan key yang Anda pakai di script Python
         if ($secretKey !== 'rahasia123') { 
             return response()->json([
                 'status' => 'error', 
@@ -28,35 +26,40 @@ class ComputerLogController extends Controller
             ], 403);
         }
 
-        // 2. Validasi Input dari Python
+        // 2. Validasi Input
         $request->validate([
             'pc_name' => 'required|string',
-            'password' => 'nullable|string', // Password opsional (dikirim saat ganti pass)
+            'password' => 'nullable|string',
         ]);
 
         try {
-            // 3. Logic Inti: Cari atau Buat Komputer Baru
-            // updateOrCreate akan mencari berdasarkan 'pc_name'.
-            // Jika ketemu -> Update data. Jika tidak -> Buat baru.
-            $pc = ComputerLog::updateOrCreate(
-                ['pc_name' => $request->pc_name], // Kunci pencarian (WHERE)
-                [
-                    'ip_address' => $request->ip(),   // Update IP terbaru
-                    'last_seen'  => now(),            // PENTING: Update waktu agar status jadi ONLINE
-                ]
-            );
+            // PERBAIKAN 2 (CARA 1): Siapkan data dulu sebelum disimpan
+            // Ini mencegah error MySQL karena kolom password tidak boleh kosong saat Create
+            
+            $dataToSave = [
+                'ip_address' => $request->ip(),
+                'last_seen'  => now(),
+            ];
 
-            // 4. Update Password (Hanya jika Python mengirim password baru)
-            // Ini menangani kasus rotasi password otomatis
+            // Jika Python mengirim password, masukkan ke array data utama
             if ($request->filled('password')) {
-                $pc->update([
-                    'password' => $request->password
-                ]);
-                
-                Log::info("Password untuk PC {$request->pc_name} berhasil diperbarui via API.");
+                $dataToSave['password'] = $request->password;
             }
 
-            // 5. Berikan Respon Sukses ke Python
+            // 3. Eksekusi Create atau Update
+            // Laravel akan otomatis menggunakan 'password' jika ini data baru (Create)
+            // Atau mengupdate 'password' jika data lama (Update) dan password ada di array
+            $pc = ComputerLog::updateOrCreate(
+                ['pc_name' => $request->pc_name], // Kunci pencarian
+                $dataToSave                       // Data yang disimpan
+            );
+
+            // Log info (Opsional)
+            if ($request->filled('password')) {
+                Log::info("Password untuk PC {$request->pc_name} berhasil disinkronkan.");
+            }
+
+            // 4. Berikan Respon Sukses
             return response()->json([
                 'status' => 'success',
                 'message' => 'Sinkronisasi berhasil',
@@ -68,7 +71,7 @@ class ComputerLogController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
-            // Catat error di storage/logs/laravel.log untuk debugging
+            // Catat error ke file log Laravel
             Log::error("API Error [ComputerLog]: " . $e->getMessage());
             
             return response()->json([
@@ -81,36 +84,34 @@ class ComputerLogController extends Controller
     /**
      * Fungsi 2: Cek Perintah (Polling)
      * Endpoint: POST /api/check-command
-     * Dipanggil oleh Python setiap beberapa detik (Looping).
+     * Dipanggil oleh Python setiap beberapa detik.
      */
     public function checkCommand(Request $request)
     {
-        // 1. Cek Kunci Keamanan
+        // PERBAIKAN 3: Konsistensi Secret Key (Samakan dengan fungsi store)
         if ($request->header('x-secret-key') !== 'rahasia123') {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $pc_name = $request->input('pc_name');
-
-        // 2. Cari Komputer di Database
+        
+        // Cari PC
         $computer = ComputerLog::where('pc_name', $pc_name)->first();
 
-        // 3. Cek apakah ada perintah (shutdown/logout) yang menunggu?
+        // Cek perintah
         if ($computer && $computer->pending_command) {
             $command = $computer->pending_command;
 
-            // PENTING: Kosongkan kolom pending_command setelah dibaca
-            // Agar komputer tidak mati terus-menerus saat dinyalakan lagi.
+            // Hapus perintah agar tidak dijalankan berulang kali
             $computer->update([
                 'pending_command' => null,
-                'last_seen' => now() // Sekalian update status online
+                'last_seen' => now()
             ]);
 
-            // Kirim perintah ke Python
             return response()->json(['command' => $command]);
         }
 
-        // Jika tidak ada perintah, update saja status 'last_seen' biar ketahuan Online
+        // Update status online
         if ($computer) {
             $computer->update(['last_seen' => now()]);
         }
