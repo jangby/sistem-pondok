@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\ComputerLog; // Pastikan menggunakan Model yang benar
+use Illuminate\Support\Facades\Log;
 
 class ComputerLogController extends Controller
 {
@@ -85,7 +86,7 @@ class ComputerLogController extends Controller
     public function checkCommand(Request $request)
     {
         // 1. Cek Kunci Keamanan
-        if ($request->header('x-secret-key') !== env('PC_SECRET_KEY', 'default-key')) {
+        if ($request->header('x-secret-key') !== 'rahasia123') {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
