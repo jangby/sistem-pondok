@@ -109,6 +109,7 @@
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Santri</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nilai {{ ucfirst(request('kategori')) }}</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Defisit</th>
+                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -123,6 +124,12 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $item->santri->full_name }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-bold">{{ $nilai }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">- {{ $kkm - $nilai }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                <a href="{{ route('pendidikan.admin.monitoring.remedial.edit', ['id' => $item->id, 'kategori' => request('kategori')]) }}" 
+                   class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-md transition">
+                    Input Remedial
+                </a>
+            </td>
                                     </tr>
                                 @empty
                                     <tr>

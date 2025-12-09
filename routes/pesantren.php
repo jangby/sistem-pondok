@@ -92,6 +92,8 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-pendidikan'
         Route::prefix('monitoring/remedial')->name('monitoring.remedial.')->group(function () {
     Route::get('/', [RemedialController::class, 'index'])->name('index');
     Route::get('/pdf', [RemedialController::class, 'downloadPdf'])->name('pdf');
+    Route::get('/{id}/input', [RemedialController::class, 'edit'])->name('edit');
+Route::put('/{id}/update', [RemedialController::class, 'update'])->name('update');
 });
     });
 
