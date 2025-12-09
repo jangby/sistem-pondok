@@ -163,16 +163,17 @@ class JadwalUjianController extends Controller
 
         $request->validate([
             'grades.*' => 'nullable|numeric|min:0|max:100',
-            'total_meetings' => 'nullable|numeric|min:1', // Validasi input ini
+            'total_meetings' => 'nullable|numeric|min:1',
         ]);
 
         DB::transaction(function() use ($jadwal, $request, $kategori) {
             
-            // 1. SIMPAN TOTAL PERTEMUAN KE JADWAL (WAJIB)
+            // 1. UPDATE TOTAL PERTEMUAN (Hanya jika kategori tulis/utama)
             if ($kategori == 'tulis' && $request->has('total_meetings')) {
                 $totalMeetings = $request->input('total_meetings');
                 $jadwal->update(['total_pertemuan' => $totalMeetings]);
             } else {
+                // Ambil default atau yang sudah tersimpan
                 $totalMeetings = $jadwal->total_pertemuan > 0 ? $jadwal->total_pertemuan : 14;
             }
 
@@ -189,34 +190,75 @@ class JadwalUjianController extends Controller
 
                 $record->mustawa_id = $jadwal->mustawa_id;
 
-                // Update Nilai Ujian
+                // 2. MAPPING NILAI SESUAI KATEGORI
                 if ($kategori == 'tulis') {
                     $record->nilai_tulis = $val;
                     
-                    // Simpan Kehadiran (Convert Count -> Percent)
+                    // Simpan Kehadiran (Hanya diinput saat ujian tulis)
+                    // Logic: Count -> Percent
                     $hadirCount = $request->input('attendance_count.'.$santriId, 0);
-                    $persenKehadiran = ($hadirCount / $totalMeetings) * 100;
+                    $persenKehadiran = ($totalMeetings > 0) ? ($hadirCount / $totalMeetings) * 100 : 0;
                     $record->nilai_kehadiran = min($persenKehadiran, 100);
                     
                 } elseif ($kategori == 'lisan') {
                     $record->nilai_lisan = $val;
                 } elseif ($kategori == 'praktek') {
                     $record->nilai_praktek = $val;
+                } elseif ($kategori == 'hafalan') { // [BARU] Logic Hafalan
+                    $record->nilai_hafalan = $val;
                 }
 
-                // Hitung Rata-rata Akhir
-                $cols = 0; $sum = 0;
-                if($record->nilai_tulis > 0 || $kategori == 'tulis') { $sum += $record->nilai_tulis; $cols++; }
-                if($record->nilai_lisan > 0 || $kategori == 'lisan') { $sum += $record->nilai_lisan; $cols++; }
-                if($record->nilai_praktek > 0 || $kategori == 'praktek') { $sum += $record->nilai_praktek; $cols++; }
-                if($record->nilai_kehadiran > 0) { $sum += $record->nilai_kehadiran; $cols++; }
+                // 3. HITUNG RATA-RATA AKHIR (DINAMIS)
+                // Kita cek komponen mana saja yang "active" di Mapel ini atau sudah terisi
+                // Agar pembaginya (denominator) sesuai.
                 
-                $record->nilai_akhir = $cols > 0 ? ($sum / $cols) : 0;
+                $mapel = $jadwal->mapel; // Pastikan relasi mapel ter-load
+                $components = 0; 
+                $sum = 0;
+
+                // Cek komponen Tulis
+                if($record->nilai_tulis !== null || $mapel->uji_tulis || $kategori == 'tulis') { 
+                   $valTulis = $record->nilai_tulis ?? 0;
+                   $sum += $valTulis; 
+                   $components++; 
+                }
+
+                // Cek komponen Lisan
+                if($record->nilai_lisan !== null || $mapel->uji_lisan || $kategori == 'lisan') { 
+                   $valLisan = $record->nilai_lisan ?? 0;
+                   $sum += $valLisan; 
+                   $components++; 
+                }
+
+                // Cek komponen Praktek
+                if($record->nilai_praktek !== null || $mapel->uji_praktek || $kategori == 'praktek') { 
+                   $valPraktek = $record->nilai_praktek ?? 0;
+                   $sum += $valPraktek; 
+                   $components++; 
+                }
+
+                // [BARU] Cek komponen Hafalan
+                if($record->nilai_hafalan !== null || $mapel->uji_hafalan || $kategori == 'hafalan') { 
+                   $valHafalan = $record->nilai_hafalan ?? 0;
+                   $sum += $valHafalan; 
+                   $components++; 
+                }
+
+                // Cek komponen Kehadiran (Selalu dihitung jika > 0 atau jika ini ujian tulis)
+                // Asumsi bobot kehadiran setara dengan 1 komponen ujian. 
+                // Jika ingin bobot berbeda (misal 10%), rumusnya perlu diubah.
+                // Disini saya pakai rata-rata murni sesuai kode awal.
+                if($record->nilai_kehadiran !== null && $record->nilai_kehadiran > 0) { 
+                   $sum += $record->nilai_kehadiran; 
+                   $components++; 
+                }
+                
+                $record->nilai_akhir = $components > 0 ? ($sum / $components) : 0;
                 $record->save();
             }
         });
 
-        return back()->with('success', 'Nilai ujian dan parameter kehadiran berhasil disimpan.');
+        return back()->with('success', 'Nilai ujian berhasil disimpan.');
     }
 
     public function storeAttendance(Request $request, $id)

@@ -16,6 +16,7 @@ class MapelDiniyah extends Model
         'uji_tulis' => 'boolean',
         'uji_lisan' => 'boolean',
         'uji_praktek' => 'boolean',
+        'uji_hafalan' => 'boolean',
     ];
 
     public function jadwals()

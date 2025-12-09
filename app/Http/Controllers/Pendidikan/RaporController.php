@@ -182,12 +182,29 @@ class RaporController extends Controller
             if (str_contains($konten, 'tabel_nilai_praktek')) {
                 $konten = $this->replaceVar($konten, 'tabel_nilai_praktek', $this->generateTabelKategori($santri->id, $request->mustawa_id, 'praktek'));
             }
+            if (str_contains($konten, 'tabel_nilai_hafalan')) {
+                $konten = $this->replaceVar($konten, 'tabel_nilai_hafalan', $this->generateTabelKategori($santri->id, $request->mustawa_id, 'hafalan'));
+            }
+            if (str_contains($konten, 'nilai_kehadiran_total')) {
+                $maxKehadiran = NilaiPesantren::where('santri_id', $santri->id)
+                    ->where('mustawa_id', $request->mustawa_id)
+                    // Anda bisa tambahkan where('semester', ...) jika variabel semester tersedia di scope ini
+                    ->max('nilai_kehadiran');
+                
+                $nilaiKehadiranFinal = $maxKehadiran ? round($maxKehadiran) : 0;
+                $predikatKehadiran = $this->getPredikat($nilaiKehadiranFinal);
+
+                // Jika template rapor meminta angka tunggal (bukan tabel)
+                $konten = $this->replaceVar($konten, 'nilai_kehadiran_total', $nilaiKehadiranFinal);
+                $konten = $this->replaceVar($konten, 'predikat_kehadiran_total', $predikatKehadiran);
+            }
             if (str_contains($konten, 'tabel_nilai_absensi')) {
                 $konten = $this->replaceVar($konten, 'tabel_nilai_absensi', $this->generateTabelKategori($santri->id, $request->mustawa_id, 'absensi'));
             }
             if (str_contains($konten, 'tabel_nilai')) { 
                  $konten = str_replace('{{tabel_nilai}}', $this->generateTabelKategori($santri->id, $request->mustawa_id, 'lengkap'), $konten);
             }
+            
 
             // Data Rekap Absensi Default
             $konten = $this->replaceVar($konten, 'sakit', '0');
@@ -196,7 +213,7 @@ class RaporController extends Controller
 
             // Tanda Tangan
             $tglCetak = Carbon::now()->translatedFormat('d F Y');
-            $konten = $this->replaceVar($konten, 'titimangsa', ($pondok->kota ?? 'Tasikmalaya') . ', ' . $tglCetak);
+            $konten = $this->replaceVar($konten, 'titimangsa', ($pondok->kota ?? 'Garut') . ', ' . $tglCetak);
             
             $namaWaliKelas = ($santri->mustawa && $santri->mustawa->waliUstadz) 
                             ? $santri->mustawa->waliUstadz->nama_lengkap 
@@ -242,6 +259,8 @@ class RaporController extends Controller
             $query->whereHas('mapel', function($q) { $q->where('uji_lisan', true); });
         } elseif ($kategori == 'praktek') {
             $query->whereHas('mapel', function($q) { $q->where('uji_praktek', true); });
+        } elseif ($kategori == 'hafalan') { // [BARU] Filter Hafalan
+            $query->whereHas('mapel', function($q) { $q->where('uji_hafalan', true); });
         }
 
         $nilais = $query->get();
@@ -277,7 +296,11 @@ class RaporController extends Controller
             if ($kategori == 'tulis') $angka = $nilai->nilai_tulis;
             elseif ($kategori == 'lisan') $angka = $nilai->nilai_lisan;
             elseif ($kategori == 'praktek') $angka = $nilai->nilai_praktek;
-            elseif ($kategori == 'absensi') $angka = $nilai->nilai_kehadiran ?? 100;
+            elseif ($kategori == 'hafalan') $angka = $nilai->nilai_hafalan; // [BARU]
+            elseif ($kategori == 'absensi') {
+                 // LOGIKA LAMA (Per Mapel), nanti kita handle "Single Source" di function generate() utama
+                 $angka = $nilai->nilai_kehadiran ?? 0;
+            }
             else $angka = $nilai->nilai_akhir;
 
             $predikat = $this->getPredikat($angka);

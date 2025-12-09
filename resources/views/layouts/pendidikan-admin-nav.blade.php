@@ -97,6 +97,7 @@
         <x-slot name="content">
             <div class="px-4 py-2 text-xs text-gray-400 uppercase border-b border-gray-100">Ujian & Nilai</div>
                                 <x-dropdown-link :href="route('pendidikan.admin.monitoring.ujian.index')">Monitoring Input Nilai</x-dropdown-link>
+                                <x-dropdown-link :href="route('pendidikan.admin.monitoring.remedial.index')">Data Remedial</x-dropdown-link>
                                 
                                 <div class="border-t border-gray-100"></div>
             <div class="px-4 py-2 text-xs text-gray-400 uppercase border-b border-gray-100">Jurnal</div>
@@ -190,6 +191,8 @@
             </div>
             <x-responsive-nav-link :href="route('pendidikan.admin.absensi.rekap')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Rekap Absensi') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('pendidikan.admin.monitoring.ujian.index')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Monitoring Nilai Ujian') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('pendidikan.admin.monitoring.remedial.index')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Data Remedial') }}</x-responsive-nav-link>
+
         </div>
 
         <div class="pt-4 pb-1 border-t border-emerald-500">

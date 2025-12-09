@@ -67,6 +67,7 @@
                                         <label class="flex items-center text-sm"><input type="radio" name="kategori_tes" value="tulis" checked class="mr-2 text-emerald-600"> Tulis</label>
                                         <label class="flex items-center text-sm"><input type="radio" name="kategori_tes" value="lisan" class="mr-2 text-emerald-600"> Lisan</label>
                                         <label class="flex items-center text-sm"><input type="radio" name="kategori_tes" value="praktek" class="mr-2 text-emerald-600"> Praktek</label>
+                                        <label class="flex items-center text-sm"><input type="radio" name="kategori_tes" value="hafalan" class="mr-2 text-emerald-600"> Hafalan</label>
                                     </div>
                                 </div>
                             </div>

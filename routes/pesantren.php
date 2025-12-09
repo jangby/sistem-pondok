@@ -17,6 +17,7 @@ use App\Http\Controllers\Pendidikan\AbsensiController;
 use App\Http\Controllers\Pendidikan\JurnalMonitoringController;
 use App\Http\Controllers\Pendidikan\JurnalHafalanMonitoringController;
 use App\Http\Controllers\Pendidikan\MonitoringNilaiUjianController;
+use App\Http\Controllers\Pendidikan\RemedialController;
 
 // Ustadz
 use App\Http\Controllers\Ustadz\DashboardController as UstadzDashboardController;
@@ -87,6 +88,11 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-pendidikan'
             Route::get('/{mustawa}/mapel/{mapel}/input/{jenis}', [MonitoringNilaiUjianController::class, 'showInput'])->name('input');
             Route::post('/{mustawa}/mapel/{mapel}/update/{jenis}', [MonitoringNilaiUjianController::class, 'updateNilai'])->name('update');
         });
+
+        Route::prefix('monitoring/remedial')->name('monitoring.remedial.')->group(function () {
+    Route::get('/', [RemedialController::class, 'index'])->name('index');
+    Route::get('/pdf', [RemedialController::class, 'downloadPdf'])->name('pdf');
+});
     });
 
 // 2. AREA USTADZ

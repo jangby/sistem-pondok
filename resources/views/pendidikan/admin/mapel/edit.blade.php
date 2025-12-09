@@ -50,6 +50,10 @@
                                 <input type="checkbox" name="uji_praktek" value="1" class="rounded border-gray-300 text-emerald-600 shadow-sm focus:ring-emerald-500" {{ $mapel->uji_praktek ? 'checked' : '' }}>
                                 <span class="ml-2 text-gray-600">Ujian Praktek</span>
                             </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="uji_hafalan" value="1" class="rounded border-gray-300 text-emerald-600 shadow-sm focus:ring-emerald-500" {{ $mapel->uji_praktek ? 'checked' : '' }}>
+                                <span class="ml-2 text-gray-600">Ujian Hafalan</span>
+                            </label>
                         </div>
                     </div>
 

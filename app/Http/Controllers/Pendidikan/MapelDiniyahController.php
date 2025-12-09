@@ -48,6 +48,8 @@ class MapelDiniyahController extends Controller
             'uji_tulis' => 'nullable', 
             'uji_lisan' => 'nullable',
             'uji_praktek' => 'nullable',
+            'uji_hafalan' => 'nullable',
+
         ]);
 
         $validated['pondok_id'] = $this->getPondokId();
@@ -56,6 +58,7 @@ class MapelDiniyahController extends Controller
         $validated['uji_tulis'] = $request->has('uji_tulis');
         $validated['uji_lisan'] = $request->has('uji_lisan');
         $validated['uji_praktek'] = $request->has('uji_praktek');
+        $validated['uji_hafalan'] = $request->has('uji_hafalan');
 
         MapelDiniyah::create($validated);
 
@@ -90,6 +93,7 @@ class MapelDiniyahController extends Controller
             'uji_tulis' => $request->has('uji_tulis'),
             'uji_lisan' => $request->has('uji_lisan'),
             'uji_praktek' => $request->has('uji_praktek'),
+            'uji_hafalan' => $request->has('uji_hafalan'),
         ]);
 
         return redirect()->route('pendidikan.admin.mapel.index')
