@@ -123,6 +123,119 @@
                 </div>
             </div>
 
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+    <div class="p-6 border-b border-gray-200">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">
+            <i class="fas fa-camera mr-2"></i> Pendaftaran Wajah (Face Recognition)
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 p-4 rounded-lg bg-gray-50">
+                <div id="my_camera" class="w-full h-64 bg-black rounded-lg mb-4 overflow-hidden shadow-inner"></div>
+                
+                <div class="flex space-x-2">
+                    <button type="button" onclick="setupCamera()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                        <i class="fas fa-power-off mr-1"></i> Buka Kamera
+                    </button>
+                    <button type="button" onclick="takeSnapshot()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition" id="btn-snap" style="display:none;">
+                        <i class="fas fa-camera mr-1"></i> Ambil Foto
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center justify-center p-4">
+                <div id="results" class="w-full h-48 flex items-center justify-center bg-gray-100 border border-gray-200 rounded-lg mb-4 text-gray-400">
+                    <span class="text-sm">Preview foto akan muncul di sini</span>
+                </div>
+
+                <div class="w-full">
+                    <div id="status-message" class="hidden mb-4 p-3 rounded text-sm text-center"></div>
+                    
+                    <button type="button" onclick="saveFace()" id="btn-save" class="w-full px-4 py-3 bg-indigo-600 text-white font-bold rounded shadow hover:bg-indigo-700 disabled:opacity-50 transition" disabled>
+                        <i class="fas fa-save mr-2"></i> SIMPAN WAJAH KE DATABASE
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    let tempImage = '';
+
+    function setupCamera() {
+        Webcam.set({
+            width: 320,
+            height: 240,
+            image_format: 'jpeg',
+            jpeg_quality: 90
+        });
+        Webcam.attach('#my_camera');
+        
+        // Tampilkan tombol snap, sembunyikan tombol buka kamera (opsional)
+        document.getElementById('btn-snap').style.display = 'inline-block';
+    }
+
+    function takeSnapshot() {
+        Webcam.snap(function(data_uri) {
+            tempImage = data_uri;
+            document.getElementById('results').innerHTML = 
+                '<img src="'+data_uri+'" class="rounded shadow-sm border border-gray-300" style="max-height: 100%;"/>';
+            
+            // Aktifkan tombol simpan
+            document.getElementById('btn-save').disabled = false;
+        });
+    }
+
+    function saveFace() {
+        if (!tempImage) return alert('Silakan ambil foto terlebih dahulu!');
+
+        let btn = document.getElementById('btn-save');
+        let statusDiv = document.getElementById('status-message');
+        
+        // UI Loading State
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Memproses AI...';
+        btn.disabled = true;
+        statusDiv.className = 'hidden mb-4 p-3 rounded text-sm text-center'; // Reset status
+
+        $.ajax({
+            url: "{{ route('pengurus.santri.store_face') }}",
+            type: "POST",
+            data: {
+                _token: "{{ csrf_token() }}",
+                santri_id: "{{ $santri->id }}", // ID Santri dari Controller
+                image: tempImage
+            },
+            success: function(response) {
+                if (response.status == 'success') {
+                    statusDiv.innerHTML = response.message;
+                    statusDiv.className = 'mb-4 p-3 rounded text-sm text-center bg-green-100 text-green-700 border border-green-200';
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i> Tersimpan';
+                } else {
+                    statusDiv.innerHTML = response.message;
+                    statusDiv.className = 'mb-4 p-3 rounded text-sm text-center bg-red-100 text-red-700 border border-red-200';
+                    btn.innerHTML = '<i class="fas fa-save mr-2"></i> Coba Lagi';
+                    btn.disabled = false;
+                }
+                // Tampilkan status div
+                statusDiv.classList.remove('hidden');
+            },
+            error: function(xhr) {
+                console.log(xhr);
+                statusDiv.innerHTML = "Terjadi kesalahan server/koneksi.";
+                statusDiv.className = 'mb-4 p-3 rounded text-sm text-center bg-red-100 text-red-700 border border-red-200';
+                statusDiv.classList.remove('hidden');
+                
+                btn.innerHTML = '<i class="fas fa-save mr-2"></i> Simpan Wajah';
+                btn.disabled = false;
+            }
+        });
+    }
+</script>
+
             {{-- 3. Data Ayah --}}
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
                 <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">

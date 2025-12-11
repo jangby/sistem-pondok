@@ -42,6 +42,9 @@ use App\Http\Controllers\Sekolah\Petugas\AuditController as PetugasAuditControll
 
 use App\Http\Controllers\Sekolah\Petugas\ComputerLabController;
 
+use App\Http\Controllers\FaceRegistrationController;
+use App\Http\Controllers\Sekolah\Guru\AbsensiWajahController;
+
 /*
 |--------------------------------------------------------------------------
 | Sekolah Formal Routes (Premium)
@@ -172,6 +175,9 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:guru'])
         Route::get('izin', [IzinController::class, 'index'])->name('izin.index');
         Route::get('izin/create', [IzinController::class, 'create'])->name('izin.create');
         Route::post('izin', [IzinController::class, 'store'])->name('izin.store');
+
+        Route::get('absensi-wajah/{jadwal_id}', [AbsensiWajahController::class, 'index'])->name('absensi_wajah.scan');
+    Route::post('absensi-wajah/proses', [AbsensiWajahController::class, 'proses'])->name('absensi_wajah.proses');
     });
 
 // 4. PETUGAS PERPUSTAKAAN (MOBILE FRIENDLY)

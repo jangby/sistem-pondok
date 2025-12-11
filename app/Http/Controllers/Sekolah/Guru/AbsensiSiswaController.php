@@ -44,16 +44,16 @@ class AbsensiSiswaController extends Controller
         $this->checkOwnership($absensiPelajaran);
         
         $absensiPelajaran->load([
-            'jadwalPelajaran.mataPelajaran', //
-            'jadwalPelajaran.kelas.santris' //
+            'jadwalPelajaran.mataPelajaran', 
+            'jadwalPelajaran.kelas.santris' 
         ]);
         
         $jadwal = $absensiPelajaran->jadwalPelajaran;
-        // Ambil santri aktif di kelas ini
-        $santris = $jadwal->kelas->santris()->where('status', 'active')->get() ?? collect(); //
+        $santris = $jadwal->kelas->santris()->where('status', 'active')->get() ?? collect(); 
         $tanggal = $absensiPelajaran->tanggal;
 
-        $absensiTersimpan = AbsensiSiswaPelajaran::where('absensi_pelajaran_id', $absensiPelajaran->id) //
+        // Ambil status yang tersimpan di DB (key: santri_id, value: status)
+        $absensiTersimpan = AbsensiSiswaPelajaran::where('absensi_pelajaran_id', $absensiPelajaran->id) 
                             ->pluck('status', 'santri_id');
                             
         $santriList = [];
@@ -61,8 +61,8 @@ class AbsensiSiswaController extends Controller
         foreach ($santris as $santri) {
             $statusIntegrasi = null; 
             
-            // 1. (INTEGRASI) Cek ke modul UKS (Kesehatan)
-            $isSakit = KesehatanSantri::where('santri_id', $santri->id) //
+            // 1. Cek UKS
+            $isSakit = KesehatanSantri::where('santri_id', $santri->id)
                         ->where('status', '!=', 'sembuh')
                         ->whereDate('tanggal_sakit', '<=', $tanggal)
                         ->where(function ($q) use ($tanggal) {
@@ -70,41 +70,49 @@ class AbsensiSiswaController extends Controller
                               ->orWhereNull('tanggal_sembuh');
                         })
                         ->exists();
-            if ($isSakit) $statusIntegrasi = 'Sakit';
+            if ($isSakit) $statusIntegrasi = 'sakit'; // Gunakan huruf kecil
 
-            // 2. (INTEGRASI) Cek ke modul Perizinan
+            // 2. Cek Perizinan
             if (!$statusIntegrasi) {
-                $isIzin = Perizinan::where('santri_id', $santri->id) //
+                $isIzin = Perizinan::where('santri_id', $santri->id)
                             ->where('status', 'disetujui')
                             ->whereDate('tgl_mulai', '<=', $tanggal)
                             ->whereDate('tgl_selesai_rencana', '>=', $tanggal)
                             ->exists();
-                if ($isIzin) $statusIntegrasi = 'Izin';
+                if ($isIzin) $statusIntegrasi = 'izin'; // Gunakan huruf kecil
             }
 
-            // 3. Tentukan status absensi (Hadir/Alpa/Sakit/Izin)
-            $statusAbsensi = 'alpa'; // Default
+            // 3. LOGIKA PENENTUAN STATUS (DIPERBAIKI)
+            // Default awal
+            $statusAbsensi = 'alpa'; 
+
+            // Cek apakah ada data di database absensi pelajaran
             if (isset($absensiTersimpan[$santri->id])) {
-                $statusMap = ['H' => 'hadir', 'S' => 'sakit', 'I' => 'izin', 'A' => 'alpa'];
-                $statusAbsensi = $statusMap[$absensiTersimpan[$santri->id]] ?? 'alpa';
+                // Langsung pakai data dari DB karena formatnya sudah 'hadir', 'sakit', dll.
+                $statusAbsensi = strtolower($absensiTersimpan[$santri->id]);
             }
-            // Jika status integrasi ada, timpa status absensi
+
+            // Jika ada status integrasi (Sakit/Izin dr sistem lain), timpa status manual
             if ($statusIntegrasi) {
-                $statusAbsensi = strtolower($statusIntegrasi);
+                $statusAbsensi = $statusIntegrasi;
             }
 
             $santriList[] = [
                 'santri_id' => $santri->id,
                 'full_name' => $santri->full_name,
                 'nis' => $santri->nis,
-                'status_absensi' => $statusAbsensi, // 'hadir', 'alpa', 'sakit', 'izin'
+                'status_absensi' => $statusAbsensi, 
             ];
         }
         
-        // Sortir: Sakit/Izin/Alpa di atas, Hadir di bawah
+        // Sortir agar status Hadir di paling bawah, yang bermasalah di atas
         usort($santriList, function($a, $b) {
             $order = ['sakit' => 1, 'izin' => 2, 'alpa' => 3, 'hadir' => 4];
-            return $order[$a['status_absensi']] <=> $order[$b['status_absensi']];
+            
+            $valA = $order[$a['status_absensi']] ?? 99;
+            $valB = $order[$b['status_absensi']] ?? 99;
+            
+            return $valA <=> $valB;
         });
         
         return view('sekolah.guru.absensi-siswa.index', compact(

@@ -14,6 +14,7 @@ use App\Exports\Pengurus\SantriTemplateExport;
 use App\Imports\Pengurus\SantriImport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\Pengurus\SantriExport; // <--- Tambahkan ini
+use Illuminate\Support\Facades\Http;
 
 class SantriController extends Controller
 {
@@ -273,5 +274,58 @@ public function update(Request $request, Santri $santri)
         $fileName = 'Data_Santri_' . date('d-m-Y_H-i') . '.xlsx';
 
         return Excel::download(new SantriExport($pondokId, $filters), $fileName);
+    }
+
+    public function storeFace(Request $request)
+    {
+        $request->validate([
+            'santri_id' => 'required|exists:santris,id',
+            'image'     => 'required' // Base64 string dari webcam
+        ]);
+
+        $santri = Santri::findOrFail($request->santri_id);
+
+        // 1. Decode Image Base64 ke File Temporary
+        try {
+            $image_parts = explode(";base64,", $request->image);
+            $image_base64 = base64_decode($image_parts[1]);
+            $fileName = 'face_reg_' . time() . '.jpg';
+            $filePath = sys_get_temp_dir() . '/' . $fileName;
+            file_put_contents($filePath, $image_base64);
+
+            // 2. Kirim ke Python Service (Port 5000)
+            // Pastikan service python (app.py) sudah jalan
+            $response = Http::attach(
+                'image', file_get_contents($filePath), $fileName
+            )->post('http://127.0.0.1:5000/get-embedding');
+
+            // Hapus file temp agar server bersih
+            unlink($filePath);
+
+            $result = $response->json();
+
+            if (isset($result['status']) && $result['status'] == 'success') {
+                // 3. Simpan Encoding Wajah ke Database
+                $santri->update([
+                    'face_embedding' => $result['embedding'] // Ini JSON string dari Python
+                ]);
+
+                return response()->json([
+                    'status' => 'success', 
+                    'message' => 'Wajah berhasil didaftarkan! Sistem siap mengenali santri ini.'
+                ]);
+            } else {
+                return response()->json([
+                    'status' => 'error', 
+                    'message' => 'Gagal mendeteksi wajah. Pastikan wajah terlihat jelas dan pencahayaan cukup.'
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error', 
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
+            ]);
+        }
     }
 }
