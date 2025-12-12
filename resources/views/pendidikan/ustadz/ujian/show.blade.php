@@ -76,6 +76,7 @@
                                     if(strtolower($jadwal->kategori_tes) == 'tulis') $val = $record->nilai_tulis;
                                     elseif(strtolower($jadwal->kategori_tes) == 'lisan') $val = $record->nilai_lisan;
                                     elseif(strtolower($jadwal->kategori_tes) == 'praktek') $val = $record->nilai_praktek;
+                                    elseif(strtolower($jadwal->kategori_tes) == 'hafalan') $val = $record->nilai_hafalan;
                                 }
                                 $val = $val == 0 ? '' : $val;
 

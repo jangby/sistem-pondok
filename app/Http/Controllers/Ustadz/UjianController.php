@@ -130,6 +130,8 @@ class UjianController extends Controller
                     $record->nilai_lisan = $val;
                 } elseif ($kategori == 'praktek') {
                     $record->nilai_praktek = $val;
+                } elseif ($kategori == 'hafalan') {
+                    $record->nilai_hafalan = $val;
                 }
 
                 // Hitung Rata-rata
@@ -139,6 +141,7 @@ class UjianController extends Controller
                 if($record->nilai_tulis > 0 || $kategori == 'tulis') { $total += $record->nilai_tulis; $pembagi++; }
                 if($record->nilai_lisan > 0 || $kategori == 'lisan') { $total += $record->nilai_lisan; $pembagi++; }
                 if($record->nilai_praktek > 0 || $kategori == 'praktek') { $total += $record->nilai_praktek; $pembagi++; }
+                if($record->nilai_hafalan > 0 || $kategori == 'hafalan') { $total += $record->nilai_hafalan; $pembagi++; }
                 if($record->nilai_kehadiran > 0) { $total += $record->nilai_kehadiran; $pembagi++; }
                 
                 $record->nilai_akhir = $pembagi > 0 ? ($total / $pembagi) : 0;

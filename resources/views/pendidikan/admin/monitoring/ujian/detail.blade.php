@@ -65,6 +65,23 @@
                 </a>
                 @endif
 
+                {{-- KARTU HAFALAN --}}
+                @if($mapel->uji_hafalan)
+                <a href="{{ route('pendidikan.admin.monitoring.ujian.input', ['mustawa' => $mustawa->id, 'mapel' => $mapel->id, 'jenis' => 'hafalan', 'semester' => $semester, 'tahun_ajaran' => $tahunAjaran]) }}" 
+                   class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition border-l-4 border-amber-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="text-xl font-bold text-gray-800">Ujian Hafalan</h4>
+                            <p class="text-sm text-gray-500 mt-1">Input nilai hafalan (tahfidz)</p>
+                        </div>
+                        <div class="text-2xl font-bold text-amber-600">{{ $progress['hafalan'] ?? 0 }}%</div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-100 text-sm text-amber-600 font-semibold">
+                        Kelola Nilai &rarr;
+                    </div>
+                </a>
+                @endif
+
             </div>
         </div>
     </div>
