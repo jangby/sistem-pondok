@@ -83,4 +83,4 @@ def compare_face():
         return jsonify({'status': 'no_match', 'message': 'Wajah tidak dikenali'}), 200
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=False)
+    app.run(port=5000, debug=True)
