@@ -43,10 +43,10 @@
                     <p id="status-scan" class="text-sm font-bold text-gray-500 animate-pulse">
                         Siap memindai kartu...
                     </p>
-                    <p class="text-[10px] text-gray-400">Tempelkan kartu RFID atau gunakan opsi kamera di bawah</p>
+                    <p class="text-[10px] text-gray-400">Tempelkan kartu RFID atau gunakan kamera</p>
                 </div>
 
-                {{-- Input RFID (Hidden but Focusable) --}}
+                {{-- Input RFID (Disembunyikan visualnya tapi tetap fokus) --}}
                 <div class="relative mb-4">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
@@ -56,26 +56,14 @@
                            placeholder="Klik di sini untuk input manual/RFID" autofocus>
                 </div>
 
-                {{-- Grid Tombol Scan --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {{-- 1. Tombol QR Scan --}}
-                    <button type="button" id="btn-qr-scan" 
-                            class="flex items-center justify-center gap-2 py-3 bg-gray-800 text-white rounded-xl font-bold text-sm hover:bg-gray-700 active:scale-[0.98] transition-all shadow-sm">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4c1 0 2-1 2-2v-4c0-1-1-2-2-2h-4c-1 0-2 1-2 2v4c0 1 1 2 2 2zm0 0c-1 0-2 1-2 2v4c0 1 1 2 2 2h4c1 0 2-1 2-2v-4c0-1-1-2-2-2h-4z"></path></svg>
-                        <span>Scan QR Code</span>
-                    </button>
+                {{-- Tombol QR Scan --}}
+                <button type="button" id="btn-qr-scan" 
+                        class="w-full flex items-center justify-center gap-2 py-3 bg-gray-800 text-white rounded-xl font-bold text-sm hover:bg-gray-700 active:scale-[0.98] transition-all shadow-lg shadow-gray-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4c1 0 2-1 2-2v-4c0-1-1-2-2-2h-4c-1 0-2 1-2 2v4c0 1 1 2 2 2zm0 0c-1 0-2 1-2 2v4c0 1 1 2 2 2h4c1 0 2-1 2-2v-4c0-1-1-2-2-2h-4z"></path></svg>
+                    <span>Scan QR Code</span>
+                </button>
 
-                    {{-- 2. Tombol Absensi Wajah --}}
-                    <a href="{{ route('sekolah.guru.absensi_wajah.scan', $absensiPelajaran->jadwalPelajaran->id) }}" 
-                       class="flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 active:scale-[0.98] transition-all shadow-sm">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>Scan Wajah</span>
-                    </a>
-                </div>
-
-                {{-- Area Kamera QR (Hidden Default) --}}
+                {{-- Area Kamera --}}
                 <div id="qr-reader" class="w-full rounded-xl overflow-hidden hidden mt-4 border-2 border-emerald-500"></div>
             </div>
 
@@ -141,213 +129,227 @@
     </div>
 
     @push('scripts')
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <script>
-        // --- KONFIGURASI ---
-        const ABSENSI_PELAJARAN_ID = {{ $absensiPelajaran->id }};
-        const STORE_URL = "{{ route('sekolah.guru.absensi.siswa.store') }}";
-        const CSRF_TOKEN = "{{ csrf_token() }}";
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script>
+    // --- KONFIGURASI ---
+    const ABSENSI_PELAJARAN_ID = {{ $absensiPelajaran->id }};
+    const STORE_URL = "{{ route('sekolah.guru.absensi.siswa.store') }}";
+    const CSRF_TOKEN = "{{ csrf_token() }}";
 
-        // --- ELEMEN DOM ---
-        const rfidInput = document.getElementById('rfid-input');
-        const btnQrScan = document.getElementById('btn-qr-scan');
-        const qrReaderElement = document.getElementById('qr-reader');
-        const statusScan = document.getElementById('status-scan');
-        
-        // --- SISTEM ANTRIAN (QUEUE) ---
-        let scanQueue = [];
-        let isProcessing = false;
-        let scannedCodes = new Set(); 
-        let isScanning = false; // Status kamera QR
-        let html5QrCode = null;
+    // --- ELEMEN DOM ---
+    const rfidInput = document.getElementById('rfid-input');
+    const btnQrScan = document.getElementById('btn-qr-scan');
+    const qrReaderElement = document.getElementById('qr-reader');
+    const statusScan = document.getElementById('status-scan');
+    
+    // --- SISTEM ANTRIAN (QUEUE) ---
+    let scanQueue = [];
+    let isProcessing = false;
+    let scannedCodes = new Set(); 
+    let isScanning = false; // Status kamera QR
+    let html5QrCode = null;
 
-        // ============================================================
-        // 1. LOGIKA DETEKSI "ENTER" DARI ALAT RFID/BARCODE
-        // ============================================================
-        rfidInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.keyCode === 13) {
-                e.preventDefault(); 
-                const kodeKartu = rfidInput.value.trim();
-                if (kodeKartu) {
-                    tambahKeAntrian(kodeKartu);
-                }
-            }
-        });
-
-        // ============================================================
-        // 2. AUTO-FOCUS AGRESIF (PENTING UNTUK ALAT USB)
-        // ============================================================
-        document.addEventListener('click', (e) => {
-            const target = e.target;
-            const isInteractive = target.closest('button') || target.closest('a') || target.closest('input');
+    // ============================================================
+    // 1. LOGIKA DETEKSI "ENTER" DARI ALAT RFID/BARCODE
+    // ============================================================
+    rfidInput.addEventListener('keydown', (e) => {
+        // Deteksi tombol "Enter" (Baik dari keyboard atau alat scan)
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            e.preventDefault(); // Mencegah submit form bawaan browser
             
-            if (!isInteractive && !isScanning) {
-                rfidInput.focus();
-            }
-        });
-
-        window.onload = () => rfidInput.focus();
-
-        // ============================================================
-        // 3. FUNGSI ANTRIAN & PEMROSESAN
-        // ============================================================
-        function tambahKeAntrian(kartuId) {
-            if (scannedCodes.has(kartuId)) {
-                updateStatusUI('Kartu ini sudah absen.', 'text-orange-500');
-                rfidInput.value = ''; 
-                return;
-            }
+            const kodeKartu = rfidInput.value.trim();
             
-            scannedCodes.add(kartuId);
-            scanQueue.push(kartuId);
-
-            updateStatusUI(`Memproses antrian (${scanQueue.length})...`, 'text-blue-600 font-bold animate-pulse');
-
-            rfidInput.value = '';
-            rfidInput.focus();
-
-            if (!isProcessing) {
-                prosesAntrian();
+            if (kodeKartu) {
+                tambahKeAntrian(kodeKartu);
             }
         }
+    });
 
-        async function prosesAntrian() {
-            if (scanQueue.length === 0) {
-                isProcessing = false;
-                updateStatusUI('Siap memindai kartu...', 'text-gray-500');
-                return;
-            }
+    // ============================================================
+    // 2. AUTO-FOCUS AGRESIF (PENTING UNTUK ALAT USB)
+    // ============================================================
+    // Pastikan kursor selalu kembali ke kotak input agar alat bisa membaca
+    // kapan saja, bahkan jika guru tidak sengaja klik tempat lain.
+    document.addEventListener('click', (e) => {
+        const target = e.target;
+        
+        // Jangan ambil fokus jika user sedang klik tombol/link/kamera
+        const isInteractive = target.closest('button') || target.closest('a') || target.closest('input');
+        
+        if (!isInteractive && !isScanning) {
+            rfidInput.focus();
+        }
+    });
 
-            isProcessing = true;
-            const kartuId = scanQueue[0]; 
+    // Fokus saat halaman dimuat
+    window.onload = () => rfidInput.focus();
 
-            try {
-                const response = await fetch(STORE_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': CSRF_TOKEN,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({
-                        absensi_pelajaran_id: ABSENSI_PELAJARAN_ID,
-                        kartu_id: kartuId
-                    })
-                });
+    // ============================================================
+    // 3. FUNGSI ANTRIAN & PEMROSESAN
+    // ============================================================
+    function tambahKeAntrian(kartuId) {
+        // Cek Duplikasi Lokal (Cegah scan berulang dalam sesi ini)
+        if (scannedCodes.has(kartuId)) {
+            updateStatusUI('Kartu ini sudah absen.', 'text-orange-500');
+            rfidInput.value = ''; // Reset input segera
+            return;
+        }
+        
+        // Tambahkan ke antrian
+        scannedCodes.add(kartuId);
+        scanQueue.push(kartuId);
 
-                const data = await response.json();
+        updateStatusUI(`Memproses antrian (${scanQueue.length})...`, 'text-blue-600 font-bold animate-pulse');
 
-                if (!response.ok) throw new Error(data.message || 'Gagal');
+        // Reset input segera agar alat siap menerima scan berikutnya (BEEP.. BEEP..)
+        rfidInput.value = '';
+        rfidInput.focus();
 
-                // SUKSES
-                updateTampilanBarisSantri(data.santri_id);
-                tampilkanToastSuccess(data.nama_santri);
-                
-                scanQueue.shift(); 
-
-            } catch (error) {
-                console.error('Gagal:', error);
-                
-                scanQueue.shift(); 
-                scannedCodes.delete(kartuId); 
-
-                Swal.fire({
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'error',
-                    title: 'Gagal Scan',
-                    text: error.message,
-                    showConfirmButton: false,
-                    timer: 2000
-                });
-            }
-
+        if (!isProcessing) {
             prosesAntrian();
         }
+    }
 
-        // ============================================================
-        // 4. FUNGSI HELPER UI
-        // ============================================================
-        function updateStatusUI(text, className) {
-            statusScan.textContent = text;
-            statusScan.className = 'text-center text-sm mb-2 ' + className;
+    async function prosesAntrian() {
+        if (scanQueue.length === 0) {
+            isProcessing = false;
+            updateStatusUI('Siap memindai kartu...', 'text-gray-500');
+            return;
         }
 
-        function updateTampilanBarisSantri(santriId) {
-            const row = document.getElementById(`santri-${santriId}`);
-            if (row) {
-                row.className = 'flex items-center justify-between p-3 bg-green-100 border border-green-300 rounded-xl shadow-sm transition-all duration-500 transform scale-105';
-                
-                setTimeout(() => {
-                    row.classList.remove('scale-105');
-                    row.classList.add('bg-green-50'); 
-                }, 300);
+        isProcessing = true;
+        const kartuId = scanQueue[0]; 
 
-                const avatar = row.querySelector('.rounded-full');
-                if(avatar) avatar.className = 'w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-green-600 text-white';
+        try {
+            const response = await fetch(STORE_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': CSRF_TOKEN,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    absensi_pelajaran_id: ABSENSI_PELAJARAN_ID,
+                    kartu_id: kartuId
+                })
+            });
 
-                const badgeDiv = row.querySelector('.flex-shrink-0');
-                badgeDiv.innerHTML = `
-                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-green-600 text-white shadow-sm">
-                        HADIR
-                    </span>
-                `;
-            }
-        }
+            const data = await response.json();
 
-        function tampilkanToastSuccess(nama) {
-            const Toast = Swal.mixin({
+            if (!response.ok) throw new Error(data.message || 'Gagal');
+
+            // SUKSES
+            updateTampilanBarisSantri(data.santri_id);
+            tampilkanToastSuccess(data.nama_santri);
+            
+            // Hapus dari antrian
+            scanQueue.shift(); 
+
+        } catch (error) {
+            console.error('Gagal:', error);
+            
+            // Gagal: Hapus dari antrian & izinkan scan ulang
+            scanQueue.shift(); 
+            scannedCodes.delete(kartuId); 
+
+            Swal.fire({
                 toast: true,
                 position: 'top-end',
+                icon: 'error',
+                title: 'Gagal Scan',
+                text: error.message,
                 showConfirmButton: false,
-                timer: 1500,
-                timerProgressBar: true
-            })
-            Toast.fire({ icon: 'success', title: 'Hadir: ' + nama })
-        }
-
-        // ============================================================
-        // 5. LOGIKA QR CODE
-        // ============================================================
-        btnQrScan.addEventListener('click', () => {
-            if (isScanning) stopQrScan();
-            else startQrScan();
-        });
-
-        function startQrScan() {
-            html5QrCode = new Html5Qrcode("qr-reader");
-            qrReaderElement.classList.remove('hidden');
-            btnQrScan.textContent = 'Tutup Kamera';
-            btnQrScan.className = 'w-full flex items-center justify-center gap-2 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 shadow-lg';
-            
-            isScanning = true;
-            rfidInput.disabled = true;
-
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 250, height: 250 } }, 
-                (decodedText) => {
-                    tambahKeAntrian(decodedText);
-                }
-            ).catch(err => {
-                Swal.fire('Error', 'Gagal akses kamera', 'error');
-                stopQrScan();
+                timer: 2000
             });
         }
 
-        function stopQrScan() {
-            if (html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    qrReaderElement.classList.add('hidden');
-                    btnQrScan.textContent = 'Scan QR Code';
-                    btnQrScan.className = 'w-full flex items-center justify-center gap-2 py-3 bg-gray-800 text-white rounded-xl font-bold text-sm hover:bg-gray-700 active:scale-[0.98] transition-all shadow-lg shadow-gray-200';
-                    
-                    isScanning = false;
-                    rfidInput.disabled = false;
-                    rfidInput.focus();
-                });
-            }
+        // Lanjut ke antrian berikutnya
+        prosesAntrian();
+    }
+
+    // ============================================================
+    // 4. FUNGSI HELPER UI
+    // ============================================================
+    function updateStatusUI(text, className) {
+        statusScan.textContent = text;
+        statusScan.className = 'text-center text-sm mb-2 ' + className;
+    }
+
+    function updateTampilanBarisSantri(santriId) {
+        const row = document.getElementById(`santri-${santriId}`);
+        if (row) {
+            row.className = 'flex items-center justify-between p-3 bg-green-100 border border-green-300 rounded-xl shadow-sm transition-all duration-500 transform scale-105';
+            
+            setTimeout(() => {
+                row.classList.remove('scale-105');
+                row.classList.add('bg-green-50'); 
+            }, 300);
+
+            const avatar = row.querySelector('.rounded-full');
+            if(avatar) avatar.className = 'w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0 bg-green-600 text-white';
+
+            const badgeDiv = row.querySelector('.flex-shrink-0');
+            badgeDiv.innerHTML = `
+                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-green-600 text-white shadow-sm">
+                    HADIR
+                </span>
+            `;
         }
-    </script>
-    @endpush
+    }
+
+    function tampilkanToastSuccess(nama) {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 1500,
+            timerProgressBar: true
+        })
+        Toast.fire({ icon: 'success', title: 'Hadir: ' + nama })
+    }
+
+    // ============================================================
+    // 5. LOGIKA QR CODE (OPSIONAL JIKA KAMERA DIPAKAI)
+    // ============================================================
+    btnQrScan.addEventListener('click', () => {
+        if (isScanning) stopQrScan();
+        else startQrScan();
+    });
+
+    function startQrScan() {
+        html5QrCode = new Html5Qrcode("qr-reader");
+        qrReaderElement.classList.remove('hidden');
+        btnQrScan.textContent = 'Tutup Kamera';
+        btnQrScan.className = 'w-full flex items-center justify-center gap-2 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 shadow-lg';
+        
+        isScanning = true;
+        rfidInput.disabled = true; // Matikan input manual saat kamera nyala
+
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            { fps: 10, qrbox: { width: 250, height: 250 } }, 
+            (decodedText) => {
+                tambahKeAntrian(decodedText);
+            }
+        ).catch(err => {
+            Swal.fire('Error', 'Gagal akses kamera', 'error');
+            stopQrScan();
+        });
+    }
+
+    function stopQrScan() {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                qrReaderElement.classList.add('hidden');
+                btnQrScan.textContent = 'Scan QR Code';
+                btnQrScan.className = 'w-full flex items-center justify-center gap-2 py-3 bg-gray-800 text-white rounded-xl font-bold text-sm hover:bg-gray-700 active:scale-[0.98] transition-all shadow-lg shadow-gray-200';
+                
+                isScanning = false;
+                rfidInput.disabled = false;
+                rfidInput.focus();
+            });
+        }
+    }
+</script>
+@endpush
 </x-app-layout>

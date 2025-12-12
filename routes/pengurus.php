@@ -20,7 +20,6 @@ use App\Http\Controllers\Pengurus\Inventaris\KerusakanController;
 use App\Http\Controllers\Pengurus\Inventaris\PeminjamanController;
 use App\Http\Controllers\Pengurus\Inventaris\AuditController;
 
-
 /*
 |--------------------------------------------------------------------------
 | Pengurus Pondok (Kesantrian) Routes
@@ -34,7 +33,6 @@ Route::middleware(['auth', 'role:pengurus_pondok'])->prefix('pengurus')->name('p
     // --- PERBAIKAN DI SINI (Hapus 'pengurus.') ---
     Route::get('/santri/export', [SantriController::class, 'export'])->name('santri.export'); 
     // Hasil akhirnya otomatis jadi: pengurus.santri.export
-    Route::post('/santri/simpan-wajah', [SantriController::class, 'storeFace'])->name('santri.store_face');
     
     Route::post('santri/{santri}/regenerate-qr', [SantriController::class, 'regenerateQR'])->name('santri.regenerate-qr');
     Route::get('santri/template/download', [SantriController::class, 'downloadTemplate'])->name('santri.template');

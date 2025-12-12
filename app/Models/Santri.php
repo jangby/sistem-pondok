@@ -30,7 +30,7 @@ class Santri extends Model
     // --- TAMBAHAN BARU ---
     'alamat', 'rt', 'rw', 'desa', 'kecamatan', 'kode_pos',
     'nama_ayah', 'thn_lahir_ayah', 'pendidikan_ayah', 'pekerjaan_ayah', 'penghasilan_ayah', 'nik_ayah',
-    'nama_ibu', 'thn_lahir_ibu', 'pendidikan_ibu', 'pekerjaan_ibu', 'penghasilan_ibu', 'nik_ibu', 'face_embedding',
+    'nama_ibu', 'thn_lahir_ibu', 'pendidikan_ibu', 'pekerjaan_ibu', 'penghasilan_ibu', 'nik_ibu',
 ];
 
     protected $casts = [
