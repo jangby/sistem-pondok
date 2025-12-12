@@ -59,7 +59,7 @@ class AbsensiWajahController extends Controller
             // 5. Kirim ke Python
             $response = Http::timeout(60) 
                 ->attach('image', file_get_contents($filePath), $fileName)
-                ->post('http://72.61.208.130:5000/compare', [
+                ->post('http://127.0.0.1:5000/compare', [
                     'known_faces' => json_encode($known_faces)
                 ]);
             
