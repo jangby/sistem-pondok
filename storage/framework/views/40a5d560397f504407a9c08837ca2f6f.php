@@ -36,6 +36,7 @@
                                 <?php if($mapel->uji_tulis): ?> <span class="border px-1 rounded">Tulis</span> <?php endif; ?>
                                 <?php if($mapel->uji_lisan): ?> <span class="border px-1 rounded">Lisan</span> <?php endif; ?>
                                 <?php if($mapel->uji_praktek): ?> <span class="border px-1 rounded">Praktek</span> <?php endif; ?>
+                                <?php if($mapel->uji_hafalan): ?> <span class="border px-1 rounded">Hafalan</span> <?php endif; ?>
                             </div>
 
                             <div class="w-full bg-gray-200 rounded-full h-1.5 mb-1">

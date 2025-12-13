@@ -60,6 +60,7 @@
                                             if($jenis == 'tulis') $val = $nilai->nilai_tulis;
                                             elseif($jenis == 'lisan') $val = $nilai->nilai_lisan;
                                             elseif($jenis == 'praktek') $val = $nilai->nilai_praktek;
+                                            elseif($jenis == 'hafalan') $val = $nilai->nilai_hafalan;
                                         }
                                     ?>
                                     <tr>

@@ -1,36 +1,47 @@
-<x-app-layout>
-    <x-slot name="header">
+<?php if (isset($component)) { $__componentOriginal9ac128a9029c0e4701924bd2d73d7f54 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54 = $attributes; } ?>
+<?php $component = App\View\Components\AppLayout::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('app-layout'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\App\View\Components\AppLayout::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+     <?php $__env->slot('header', null, []); ?> 
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Kelola Ujian: {{ $jadwal->mapel->nama_mapel }}
+                Kelola Ujian: <?php echo e($jadwal->mapel->nama_mapel); ?>
+
             </h2>
-            <a href="{{ route('pendidikan.admin.ujian.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Kembali</a>
+            <a href="<?php echo e(route('pendidikan.admin.ujian.index')); ?>" class="text-sm text-gray-600 hover:text-gray-900">Kembali</a>
         </div>
-    </x-slot>
+     <?php $__env->endSlot(); ?>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="{ tab: 'nilai' }"> {{-- Default Tab Nilai agar langsung fokus --}}
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="{ tab: 'nilai' }"> 
             
-            {{-- INFO JADWAL --}}
+            
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-6 flex justify-between items-center">
                 <div>
-                    <h3 class="text-lg font-bold text-gray-800">{{ $jadwal->mapel->nama_kitab }}</h3>
+                    <h3 class="text-lg font-bold text-gray-800"><?php echo e($jadwal->mapel->nama_kitab); ?></h3>
                     <p class="text-sm text-gray-500">
-                        {{ $jadwal->mustawa->nama }} • 
-                        {{ ucfirst($jadwal->jenis_ujian) }} {{ ucfirst($jadwal->semester) }} •
-                        {{ \Carbon\Carbon::parse($jadwal->tanggal)->isoFormat('D MMMM Y') }}
+                        <?php echo e($jadwal->mustawa->nama); ?> • 
+                        <?php echo e(ucfirst($jadwal->jenis_ujian)); ?> <?php echo e(ucfirst($jadwal->semester)); ?> •
+                        <?php echo e(\Carbon\Carbon::parse($jadwal->tanggal)->isoFormat('D MMMM Y')); ?>
+
                     </p>
                 </div>
                 <div class="text-right">
                     <span class="block text-xs text-gray-400 uppercase font-bold">Pengawas</span>
-                    <span class="block font-bold text-emerald-600">{{ $jadwal->pengawas->nama_lengkap ?? '-' }}</span>
+                    <span class="block font-bold text-emerald-600"><?php echo e($jadwal->pengawas->nama_lengkap ?? '-'); ?></span>
                 </div>
             </div>
 
-            {{-- TABS NAVIGASI --}}
+            
             <div class="flex gap-4 mb-6 border-b border-gray-200">
                 <button @click="tab = 'nilai'" :class="tab === 'nilai' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'" class="pb-2 px-4 border-b-2 font-bold text-sm transition">
-                    Input Nilai ({{ ucfirst($jadwal->kategori_tes) }})
+                    Input Nilai (<?php echo e(ucfirst($jadwal->kategori_tes)); ?>)
                 </button>
                 <button @click="tab = 'absensi'" :class="tab === 'absensi' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700'" class="pb-2 px-4 border-b-2 font-bold text-sm transition">
                     Absensi Ujian
@@ -40,14 +51,14 @@
                 </button>
             </div>
 
-            {{-- TAB 1: INPUT NILAI --}}
+            
             <div x-show="tab === 'nilai'" class="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-gray-100 p-6">
                 
-                <form action="{{ route('pendidikan.admin.ujian.grades', $jadwal->id) }}" method="POST">
-                    @csrf
+                <form action="<?php echo e(route('pendidikan.admin.ujian.grades', $jadwal->id)); ?>" method="POST">
+                    <?php echo csrf_field(); ?>
                     
-                    {{-- [LOGIKA BARU] TOTAL PERTEMUAN (KHUSUS UJIAN TULIS) --}}
-                    @if($jadwal->kategori_tes == 'tulis')
+                    
+                    <?php if($jadwal->kategori_tes == 'tulis'): ?>
                     <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-center justify-between mb-6">
                         <div>
                             <h4 class="text-sm font-bold text-blue-800">Parameter Kehadiran (Semester Ini)</h4>
@@ -55,39 +66,39 @@
                         </div>
                         <div class="flex items-center gap-3">
                             <label class="text-xs font-bold text-blue-700 uppercase">Total Tatap Muka:</label>
-                            {{-- Nilai default 14 jika belum ada data, atau ambil dari controller --}}
-                            <input type="number" name="total_meetings" value="{{ $totalPertemuan > 0 ? $totalPertemuan : 14 }}" 
+                            
+                            <input type="number" name="total_meetings" value="<?php echo e($totalPertemuan > 0 ? $totalPertemuan : 14); ?>" 
                                 class="w-24 text-center font-bold text-blue-700 border-blue-200 rounded-lg focus:border-blue-500 focus:ring-blue-500"
                                 min="1" required>
                         </div>
                     </div>
-                    @else
-                    {{-- Pesan untuk ujian non-tulis --}}
+                    <?php else: ?>
+                    
                     <div class="mb-6 bg-gray-50 p-4 rounded-lg text-gray-600 text-sm border border-gray-100 flex items-start gap-3">
                         <svg class="w-5 h-5 mt-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         <div>
-                            <p class="font-bold">Input Nilai: Kategori {{ strtoupper($jadwal->kategori_tes) }}</p>
+                            <p class="font-bold">Input Nilai: Kategori <?php echo e(strtoupper($jadwal->kategori_tes)); ?></p>
                             <p class="opacity-80 mt-1">Hanya input nilai ujian. Nilai kehadiran diambil dari data ujian Tulis.</p>
                         </div>
                     </div>
-                    @endif
+                    <?php endif; ?>
 
-                    {{-- Header Tabel --}}
+                    
                     <div class="flex justify-between items-center px-4 mb-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
                         <span class="w-1/2">Identitas Santri</span>
                         <div class="flex gap-4 w-1/2 justify-end">
-                            <span class="w-32 text-center">Nilai {{ ucfirst($jadwal->kategori_tes) }}</span>
+                            <span class="w-32 text-center">Nilai <?php echo e(ucfirst($jadwal->kategori_tes)); ?></span>
                             
-                            {{-- Header Kolom Hadir HANYA MUNCUL JIKA TULIS --}}
-                            @if($jadwal->kategori_tes == 'tulis')
+                            
+                            <?php if($jadwal->kategori_tes == 'tulis'): ?>
                                 <span class="w-32 text-center text-emerald-600">Jml Hadir</span>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
 
                     <div class="space-y-3">
-                        @foreach($santris as $santri)
-                            @php 
+                        <?php $__currentLoopData = $santris; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $santri): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php 
                                 $record = $nilai[$santri->id] ?? null; // Variabel dari controller admin biasanya $nilai atau $nilaiData
                                 
                                 // 1. Nilai Ujian Utama
@@ -103,36 +114,36 @@
                                 // 2. Nilai Kehadiran (Raw Count)
                                 // Kita ambil dari variabel $dataKehadiran yang dikirim controller
                                 $valHadir = $dataKehadiran[$santri->id] ?? 0;
-                            @endphp
+                            ?>
 
                             <div class="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-white hover:border-emerald-300 transition shadow-sm">
-                                {{-- Identitas --}}
+                                
                                 <div class="w-1/2 pr-4">
-                                    <div class="font-bold text-gray-800">{{ $santri->full_name }}</div>
-                                    <div class="text-xs text-gray-500 mt-0.5">NIS: {{ $santri->nis }}</div>
+                                    <div class="font-bold text-gray-800"><?php echo e($santri->full_name); ?></div>
+                                    <div class="text-xs text-gray-500 mt-0.5">NIS: <?php echo e($santri->nis); ?></div>
                                 </div>
 
-                                {{-- Input Area --}}
+                                
                                 <div class="flex gap-4 w-1/2 justify-end">
-                                    {{-- Input Nilai Ujian --}}
+                                    
                                     <div class="w-32">
-                                        <input type="number" name="grades[{{ $santri->id }}]" value="{{ $nilaiAwal }}" min="0" max="100" step="0.01"
+                                        <input type="number" name="grades[<?php echo e($santri->id); ?>]" value="<?php echo e($nilaiAwal); ?>" min="0" max="100" step="0.01"
                                             class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-center font-bold text-gray-700 bg-gray-50 py-2"
                                             placeholder="0">
                                     </div>
 
-                                    {{-- Input Kehadiran (HANYA MUNCUL JIKA TULIS) --}}
-                                    @if($jadwal->kategori_tes == 'tulis')
+                                    
+                                    <?php if($jadwal->kategori_tes == 'tulis'): ?>
                                     <div class="w-32 relative">
-                                        <input type="number" name="attendance_count[{{ $santri->id }}]" value="{{ $valHadir }}" min="0"
+                                        <input type="number" name="attendance_count[<?php echo e($santri->id); ?>]" value="<?php echo e($valHadir); ?>" min="0"
                                             class="w-full rounded-lg border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500 text-center font-bold text-emerald-700 bg-emerald-50 py-2"
                                             placeholder="0">
                                         <div class="absolute right-2 top-2.5 text-[10px] text-emerald-400 pointer-events-none">Hari</div>
                                     </div>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
                             </div>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </div>
 
                     <div class="flex justify-end mt-8 border-t border-gray-100 pt-6">
@@ -144,12 +155,12 @@
                 </form>
             </div>
 
-            {{-- TAB 2: ABSENSI (SAAT UJIAN) --}}
+            
             <div x-show="tab === 'absensi'" class="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-gray-100 p-6" style="display: none;">
-                <form action="{{ route('pendidikan.admin.ujian.attendance', $jadwal->id) }}" method="POST">
-                    @csrf
+                <form action="<?php echo e(route('pendidikan.admin.ujian.attendance', $jadwal->id)); ?>" method="POST">
+                    <?php echo csrf_field(); ?>
                     <div class="mb-4 text-sm text-gray-500">
-                        Absensi kehadiran peserta pada saat pelaksanaan ujian <b>{{ $jadwal->mapel->nama_mapel }}</b>.
+                        Absensi kehadiran peserta pada saat pelaksanaan ujian <b><?php echo e($jadwal->mapel->nama_mapel); ?></b>.
                     </div>
                     <table class="min-w-full divide-y divide-gray-200 mb-4">
                         <thead>
@@ -162,16 +173,16 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($santris as $santri)
-                                @php $status = $absensi[$santri->id] ?? 'A'; @endphp {{-- Pastikan variabel controller konsisten $absensi atau $absensiData --}}
+                            <?php $__currentLoopData = $santris; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $santri): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php $status = $absensi[$santri->id] ?? 'A'; ?> 
                                 <tr class="hover:bg-gray-50">
-                                    <td class="py-2 text-sm font-bold">{{ $santri->full_name }}</td>
-                                    <td class="text-center"><input type="radio" name="attendance[{{ $santri->id }}]" value="H" {{ $status == 'H' ? 'checked' : '' }} class="text-emerald-600 focus:ring-emerald-500"></td>
-                                    <td class="text-center"><input type="radio" name="attendance[{{ $santri->id }}]" value="I" {{ $status == 'I' ? 'checked' : '' }} class="text-blue-600 focus:ring-blue-500"></td>
-                                    <td class="text-center"><input type="radio" name="attendance[{{ $santri->id }}]" value="S" {{ $status == 'S' ? 'checked' : '' }} class="text-orange-600 focus:ring-orange-500"></td>
-                                    <td class="text-center"><input type="radio" name="attendance[{{ $santri->id }}]" value="A" {{ $status == 'A' ? 'checked' : '' }} class="text-red-600 focus:ring-red-500"></td>
+                                    <td class="py-2 text-sm font-bold"><?php echo e($santri->full_name); ?></td>
+                                    <td class="text-center"><input type="radio" name="attendance[<?php echo e($santri->id); ?>]" value="H" <?php echo e($status == 'H' ? 'checked' : ''); ?> class="text-emerald-600 focus:ring-emerald-500"></td>
+                                    <td class="text-center"><input type="radio" name="attendance[<?php echo e($santri->id); ?>]" value="I" <?php echo e($status == 'I' ? 'checked' : ''); ?> class="text-blue-600 focus:ring-blue-500"></td>
+                                    <td class="text-center"><input type="radio" name="attendance[<?php echo e($santri->id); ?>]" value="S" <?php echo e($status == 'S' ? 'checked' : ''); ?> class="text-orange-600 focus:ring-orange-500"></td>
+                                    <td class="text-center"><input type="radio" name="attendance[<?php echo e($santri->id); ?>]" value="A" <?php echo e($status == 'A' ? 'checked' : ''); ?> class="text-red-600 focus:ring-red-500"></td>
                                 </tr>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                     <div class="flex justify-end">
@@ -180,37 +191,37 @@
                 </form>
             </div>
 
-            {{-- TAB 3: LEDGER & EXPORT --}}
+            
             <div x-show="tab === 'ledger'" class="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-gray-100 p-6" style="display: none;">
                 
-                {{-- Bagian 1: Dokumen Kelengkapan (Untuk Dibawa ke Kelas) --}}
+                
                 <div class="mb-8 border-b border-gray-100 pb-8 text-center">
                     <h3 class="text-md font-bold text-gray-700 mb-2">Dokumen Kelengkapan Ujian</h3>
                     <p class="text-gray-400 text-sm mb-4">Cetak dokumen ini untuk pegangan pengawas saat ujian berlangsung.</p>
                     
                     <div class="flex justify-center gap-3">
-                        <a href="{{ route('pendidikan.admin.ujian.format-nilai', $jadwal->id) }}" target="_blank" class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-indigo-100 transition text-sm">
+                        <a href="<?php echo e(route('pendidikan.admin.ujian.format-nilai', $jadwal->id)); ?>" target="_blank" class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-indigo-100 transition text-sm">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                             Cetak Blangko Nilai
                         </a>
-                        <a href="{{ route('pendidikan.admin.ujian.daftar-hadir', $jadwal->id) }}" target="_blank" class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-indigo-100 transition text-sm">
+                        <a href="<?php echo e(route('pendidikan.admin.ujian.daftar-hadir', $jadwal->id)); ?>" target="_blank" class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-indigo-100 transition text-sm">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                             Cetak Absensi Ujian
                         </a>
                     </div>
                 </div>
 
-                {{-- Bagian 2: Export Data (Setelah Nilai Masuk) --}}
+                
                 <div class="text-center">
                     <h3 class="text-md font-bold text-gray-700 mb-2">Export Ledger Nilai</h3>
                     <p class="text-gray-400 text-sm mb-4">Unduh rekapitulasi nilai yang sudah diinput ke sistem.</p>
                     
                     <div class="flex justify-center gap-4">
-                        <a href="{{ route('pendidikan.admin.ujian.pdf', $jadwal->id) }}" class="bg-red-500 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-red-600 transition shadow-lg shadow-red-200">
+                        <a href="<?php echo e(route('pendidikan.admin.ujian.pdf', $jadwal->id)); ?>" class="bg-red-500 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-red-600 transition shadow-lg shadow-red-200">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                             Download PDF
                         </a>
-                        <a href="{{ route('pendidikan.admin.ujian.excel', $jadwal->id) }}" class="bg-green-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-green-700 transition shadow-lg shadow-green-200">
+                        <a href="<?php echo e(route('pendidikan.admin.ujian.excel', $jadwal->id)); ?>" class="bg-green-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-green-700 transition shadow-lg shadow-green-200">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                             Export Excel
                         </a>
@@ -220,4 +231,13 @@
 
         </div>
     </div>
-</x-app-layout>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54)): ?>
+<?php $attributes = $__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54; ?>
+<?php unset($__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9ac128a9029c0e4701924bd2d73d7f54)): ?>
+<?php $component = $__componentOriginal9ac128a9029c0e4701924bd2d73d7f54; ?>
+<?php unset($__componentOriginal9ac128a9029c0e4701924bd2d73d7f54); ?>
+<?php endif; ?><?php /**PATH C:\laragon\www\keuangan-pesantren\resources\views/pendidikan/admin/ujian/show.blade.php ENDPATH**/ ?>
