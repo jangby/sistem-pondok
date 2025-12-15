@@ -79,6 +79,19 @@
                         <h3 class="font-bold text-lg mb-4 text-gray-800">Panel Variabel</h3>
                         <p class="text-xs text-gray-500 mb-4">Klik tombol di bawah untuk menyisipkan data otomatis.</p>
 
+                        <div class="mb-4 border-b pb-4 bg-blue-50 p-2 rounded border border-blue-100">
+                            <h4 class="font-bold text-sm text-blue-700 mb-2 uppercase">Nilai Tambahan & Keputusan</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" onclick="insertVar('{{nilai_sikap}}')" class="btn-var text-blue-800 border-blue-200">Nilai Sikap</button>
+                                <button type="button" onclick="insertVar('{{predikat_sikap}}')" class="btn-var text-blue-800 border-blue-200">Predikat Sikap</button>
+                                <button type="button" onclick="insertVar('{{nilai_keterampilan}}')" class="btn-var text-blue-800 border-blue-200">Nilai Keterampilan</button>
+                                <button type="button" onclick="insertVar('{{predikat_keterampilan}}')" class="btn-var text-blue-800 border-blue-200">Predikat Ket.</button>
+                                <button type="button" onclick="insertVar('{{nilai_kehadiran_total}}')" class="btn-var text-blue-800 border-blue-200">Nilai Kehadiran</button>
+                                <button type="button" onclick="insertVar('{{predikat_kehadiran_total}}')" class="btn-var text-blue-800 border-blue-200">Predikat Hadir</button>
+                                <button type="button" onclick="insertVar('{{keputusan}}')" class="btn-var font-bold text-red-600 border-red-200 bg-red-50">Keputusan Naik</button>
+                            </div>
+                        </div>
+
                         <div class="mb-4 border-b pb-4">
                             <h4 class="font-semibold text-sm text-gray-600 mb-2 uppercase">Biodata Santri</h4>
                             <div class="flex flex-wrap gap-2">
@@ -121,10 +134,13 @@
                                     + Tabel Ujian Tulis
                                 </button>
                                 <button type="button" onclick="insertVar('{{tabel_nilai_lisan}}')" class="text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-2 rounded hover:bg-indigo-100 text-left">
-                                    + Tabel Ujian Lisan (Hafalan)
+                                    + Tabel Ujian Lisan
+                                </button>
+                                <button type="button" onclick="insertVar('{{tabel_nilai_hafalan}}')" class="text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-2 rounded hover:bg-indigo-100 text-left font-bold">
+                                    + Tabel Ujian Hafalan (Khusus)
                                 </button>
                                 <button type="button" onclick="insertVar('{{tabel_nilai_praktek}}')" class="text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-2 rounded hover:bg-indigo-100 text-left">
-                                    + Tabel Ujian Praktek (Ibadah)
+                                    + Tabel Ujian Praktek
                                 </button>
                                 <button type="button" onclick="insertVar('{{tabel_nilai_absensi}}')" class="text-xs bg-indigo-50 border border-indigo-200 text-indigo-700 px-2 py-2 rounded hover:bg-indigo-100 text-left">
                                     + Tabel Kehadiran Mapel

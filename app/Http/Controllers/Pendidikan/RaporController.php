@@ -8,6 +8,7 @@ use App\Models\Mustawa;
 use App\Models\Pendidikan\RaporTemplate;
 use App\Models\Santri;
 use App\Models\NilaiPesantren;
+use App\Models\MapelDiniyah; 
 use App\Models\Pondok;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -62,19 +63,19 @@ class RaporController extends Controller
             // Ambil konten HTML template
             $konten = $template->konten_html;
 
-            // --- 1. PREPARE DATA ---
+            // --- 1. PREPARE DATA IDENTITAS ---
             
-            // Data Santri (Prioritas ambil dari tabel santris kolom baru)
+            // Data Santri
             $namaSantri = $santri->full_name;
             $nis        = $santri->nis ?? '-';
-            $nisn       = $santri->nisn ?? '-'; // Jika kolom nisn sudah ditambahkan
-            $nik        = $santri->nik ?? '-';  // Jika kolom nik sudah ditambahkan
+            $nisn       = $santri->nisn ?? '-';
+            $nik        = $santri->nik ?? '-';
             
-            // Alamat & Domisili (Ambil dari tabel Santri update terbaru)
+            // Alamat
             $alamat     = $santri->alamat ?? '-';
-            $kota       = $santri->kabupaten ?? $santri->kota ?? $santri->desa ?? '-'; // Sesuaikan dengan struktur baru
+            $kota       = $santri->kabupaten ?? $santri->kota ?? $santri->desa ?? '-';
             
-            // Tempat Tanggal Lahir
+            // TTL
             $tmpLahir   = $santri->tempat_lahir ?? '-';
             $tglLahirRaw= $santri->tanggal_lahir;
             $tglLahir   = $tglLahirRaw ? Carbon::parse($tglLahirRaw)->translatedFormat('d F Y') : '-';
@@ -84,15 +85,10 @@ class RaporController extends Controller
             $jkCode     = $santri->jenis_kelamin;
             $jk         = ($jkCode == 'L' || $jkCode == 'Laki-laki') ? 'Laki-laki' : 'Perempuan';
 
-            // --- DATA ORANG TUA (PERBAIKAN DISINI) ---
-            // Kita ambil langsung dari tabel santris (data EMIS)
-            // Jika kosong, baru kita coba ambil dari relasi orangTua (akun login)
-            
+            // Data Orang Tua
             $namaAyah   = $santri->nama_ayah ?? '-';
             $namaIbu    = $santri->nama_ibu ?? '-';
             
-            // Logika Nama Wali di Rapor:
-            // Prioritas: Nama Ayah -> Nama Ibu -> Nama Akun Wali -> '-'
             if (!empty($santri->nama_ayah)) {
                 $namaWali = $santri->nama_ayah;
             } elseif (!empty($santri->nama_ibu)) {
@@ -101,14 +97,51 @@ class RaporController extends Controller
                 $namaWali = $santri->orangTua->name ?? '-';
             }
 
-            // Pekerjaan (Ambil dari tabel santris)
             $jobAyah    = $santri->pekerjaan_ayah ?? '-';
-            
-            // No HP (Biasanya masih tersimpan di tabel akun orang_tuas)
             $hpWali     = $santri->orangTua->phone ?? '-';
 
+            // --- 2. LOGIKA NILAI BARU (Sikap, Keterampilan, Kehadiran) ---
 
-            // --- 2. REPLACE VARIABLES ---
+            // A. Ambil Rata-rata Akademik (Nilai Akhir)
+            $avgAkademik = NilaiPesantren::where('santri_id', $santri->id)
+                ->where('mustawa_id', $request->mustawa_id)
+                ->avg('nilai_akhir') ?? 0;
+
+            $konten = $this->replaceVar($konten, 'ipk', round($avgAkademik, 2));
+
+            // B. Nilai Kehadiran (Kedisiplinan 0-100)
+            // Mengambil rata-rata input nilai kehadiran dari mapel yang diinput
+            $nilaiKehadiranRaw = NilaiPesantren::where('santri_id', $santri->id)
+                ->where('mustawa_id', $request->mustawa_id)
+                ->whereNotNull('nilai_kehadiran')
+                ->avg('nilai_kehadiran');
+            
+            $nilaiKehadiranFinal = $nilaiKehadiranRaw ? round($nilaiKehadiranRaw) : 0;
+            
+            // C. Nilai Sikap (Attitude)
+            // Rumus: (60% Nilai Kehadiran) + (40% Rata-rata Akademik)
+            $nilaiSikapScore = ($nilaiKehadiranFinal * 0.6) + ($avgAkademik * 0.4);
+            $nilaiSikapFinal = round($nilaiSikapScore);
+            $predikatSikap   = $this->getPredikat($nilaiSikapFinal);
+
+            // D. Nilai Keterampilan (Skill)
+            // Prioritas: Rata-rata Nilai Praktek -> Jika 0, ambil Rata-rata Nilai Lisan (Baca Kitab)
+            $avgPraktek = NilaiPesantren::where('santri_id', $santri->id)
+                ->where('mustawa_id', $request->mustawa_id)
+                ->avg('nilai_praktek');
+            
+            if ($avgPraktek > 0) {
+                $nilaiKeterampilanFinal = round($avgPraktek);
+            } else {
+                $avgLisan = NilaiPesantren::where('santri_id', $santri->id)
+                    ->where('mustawa_id', $request->mustawa_id)
+                    ->avg('nilai_lisan');
+                $nilaiKeterampilanFinal = $avgLisan ? round($avgLisan) : 0;
+            }
+            $predikatKeterampilan = $this->getPredikat($nilaiKeterampilanFinal);
+
+
+            // --- 3. REPLACE VARIABLES ---
             
             // Identitas
             $konten = $this->replaceVar($konten, 'nama_santri', strtoupper($namaSantri));
@@ -129,7 +162,7 @@ class RaporController extends Controller
             $konten = $this->replaceVar($konten, 'pekerjaan_ayah', $jobAyah);
             $konten = $this->replaceVar($konten, 'no_hp_wali', $hpWali);
 
-            // Akademik & Pondok
+            // Data Pondok & Kelas
             $namaKelas   = $santri->mustawa ? $santri->mustawa->nama : '-';
             $tahunAjaran = $santri->mustawa ? $santri->mustawa->tahun_ajaran : date('Y') . '/' . (date('Y')+1);
             
@@ -141,21 +174,27 @@ class RaporController extends Controller
             $konten = $this->replaceVar($konten, 'kota_pondok', $pondok->kota ?? 'Tasikmalaya');
 
             // Keputusan Naik Kelas
-            $nilaiAkhir = NilaiPesantren::where('santri_id', $santri->id)
-                ->where('mustawa_id', $request->mustawa_id)
-                ->avg('nilai_akhir');
-            
-            $keputusanText = ($nilaiAkhir >= 60) ? "NAIK KE TINGKAT BERIKUTNYA" : "TINGGAL DI KELAS YANG SAMA";
+            $keputusanText = ($avgAkademik >= 60 && $nilaiKehadiranFinal >= 50) 
+                             ? "NAIK KE TINGKAT BERIKUTNYA" 
+                             : "TINGGAL DI KELAS YANG SAMA";
             $konten = $this->replaceVar($konten, 'keputusan', $keputusanText);
 
-            // Logo
+            // Replace Nilai Tambahan
+            $konten = $this->replaceVar($konten, 'nilai_kehadiran_total', $nilaiKehadiranFinal);
+            $konten = $this->replaceVar($konten, 'predikat_kehadiran_total', $this->getPredikat($nilaiKehadiranFinal));
+            
+            $konten = $this->replaceVar($konten, 'nilai_sikap', $nilaiSikapFinal);
+            $konten = $this->replaceVar($konten, 'predikat_sikap', $predikatSikap);
+            
+            $konten = $this->replaceVar($konten, 'nilai_keterampilan', $nilaiKeterampilanFinal);
+            $konten = $this->replaceVar($konten, 'predikat_keterampilan', $predikatKeterampilan);
+
+            // Logo Pondok
             $logoHtml = '';
-            // Cek path storage (linked) dan public biasa
             $pathsToCheck = [
                 public_path('storage/' . $pondok->logo),
                 public_path($pondok->logo)
             ];
-
             foreach ($pathsToCheck as $path) {
                 if (!empty($pondok->logo) && file_exists($path)) {
                     try {
@@ -163,50 +202,35 @@ class RaporController extends Controller
                         $data = file_get_contents($path);
                         $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
                         $logoHtml = '<img src="' . $base64 . '" style="width: 100px; height: auto;">';
-                        break; // Berhenti jika ketemu
-                    } catch (\Exception $e) { 
-                        // silent error
-                    }
+                        break; 
+                    } catch (\Exception $e) {}
                 }
             }
             $konten = $this->replaceVar($konten, 'logo_pondok', $logoHtml);
 
 
-            // --- 3. GENERATE TABEL NILAI ---
+            // --- 4. GENERATE TABEL NILAI ---
+            
             if (str_contains($konten, 'tabel_nilai_tulis')) {
-                $konten = $this->replaceVar($konten, 'tabel_nilai_tulis', $this->generateTabelKategori($santri->id, $request->mustawa_id, 'tulis'));
+                $konten = $this->replaceVar($konten, 'tabel_nilai_tulis', $this->generateTabelMapel($santri->id, $request->mustawa_id, 'tulis'));
             }
             if (str_contains($konten, 'tabel_nilai_lisan')) {
-                $konten = $this->replaceVar($konten, 'tabel_nilai_lisan', $this->generateTabelKategori($santri->id, $request->mustawa_id, 'lisan'));
+                $konten = $this->replaceVar($konten, 'tabel_nilai_lisan', $this->generateTabelMapel($santri->id, $request->mustawa_id, 'lisan'));
             }
             if (str_contains($konten, 'tabel_nilai_praktek')) {
-                $konten = $this->replaceVar($konten, 'tabel_nilai_praktek', $this->generateTabelKategori($santri->id, $request->mustawa_id, 'praktek'));
+                $konten = $this->replaceVar($konten, 'tabel_nilai_praktek', $this->generateTabelMapel($santri->id, $request->mustawa_id, 'praktek'));
             }
             if (str_contains($konten, 'tabel_nilai_hafalan')) {
-                $konten = $this->replaceVar($konten, 'tabel_nilai_hafalan', $this->generateTabelKategori($santri->id, $request->mustawa_id, 'hafalan'));
-            }
-            if (str_contains($konten, 'nilai_kehadiran_total')) {
-                $maxKehadiran = NilaiPesantren::where('santri_id', $santri->id)
-                    ->where('mustawa_id', $request->mustawa_id)
-                    // Anda bisa tambahkan where('semester', ...) jika variabel semester tersedia di scope ini
-                    ->max('nilai_kehadiran');
-                
-                $nilaiKehadiranFinal = $maxKehadiran ? round($maxKehadiran) : 0;
-                $predikatKehadiran = $this->getPredikat($nilaiKehadiranFinal);
-
-                // Jika template rapor meminta angka tunggal (bukan tabel)
-                $konten = $this->replaceVar($konten, 'nilai_kehadiran_total', $nilaiKehadiranFinal);
-                $konten = $this->replaceVar($konten, 'predikat_kehadiran_total', $predikatKehadiran);
+                $konten = $this->replaceVar($konten, 'tabel_nilai_hafalan', $this->generateTabelMapel($santri->id, $request->mustawa_id, 'hafalan'));
             }
             if (str_contains($konten, 'tabel_nilai_absensi')) {
-                $konten = $this->replaceVar($konten, 'tabel_nilai_absensi', $this->generateTabelKategori($santri->id, $request->mustawa_id, 'absensi'));
+                $konten = $this->replaceVar($konten, 'tabel_nilai_absensi', $this->generateTabelMapel($santri->id, $request->mustawa_id, 'absensi'));
             }
             if (str_contains($konten, 'tabel_nilai')) { 
-                 $konten = str_replace('{{tabel_nilai}}', $this->generateTabelKategori($santri->id, $request->mustawa_id, 'lengkap'), $konten);
+                 $konten = str_replace('{{tabel_nilai}}', $this->generateTabelMapel($santri->id, $request->mustawa_id, 'lengkap'), $konten);
             }
-            
 
-            // Data Rekap Absensi Default
+            // Data Rekap Absensi
             $konten = $this->replaceVar($konten, 'sakit', '0');
             $konten = $this->replaceVar($konten, 'izin', '0');
             $konten = $this->replaceVar($konten, 'alpha', '0');
@@ -238,8 +262,6 @@ class RaporController extends Controller
 
         return view('pendidikan.admin.rapor.print', $data);
     }
-
-    // ... (Fungsi replaceVar, generateTabelKategori, dan getPredikat biarkan sama) ...
     
     private function replaceVar($content, $varName, $value)
     {
@@ -247,28 +269,37 @@ class RaporController extends Controller
         return $content;
     }
 
-    private function generateTabelKategori($santriId, $mustawaId, $kategori)
+    /**
+     * PERBAIKAN DI SINI:
+     * Menggunakan relasi 'jadwals' untuk menemukan Mapel yang diajarkan di Mustawa ini.
+     * Tidak lagi menggunakan 'where mustawa_id' langsung di tabel mapel.
+     */
+    private function generateTabelMapel($santriId, $mustawaId, $kategori)
     {
-        $query = NilaiPesantren::where('santri_id', $santriId)
-            ->where('mustawa_id', $mustawaId)
-            ->with('mapel');
+        // 1. Ambil Mata Pelajaran yang ADA DI JADWAL mustawa ini
+        // Kita menggunakan whereHas ke tabel 'jadwals'
+        $queryMapel = MapelDiniyah::whereHas('jadwals', function($q) use ($mustawaId) {
+            $q->where('mustawa_id', $mustawaId);
+        });
 
+        // 2. Filter Mapel sesuai Kategori Ujian
         if ($kategori == 'tulis') {
-            $query->whereHas('mapel', function($q) { $q->where('uji_tulis', true); });
+            $queryMapel->where('uji_tulis', true);
         } elseif ($kategori == 'lisan') {
-            $query->whereHas('mapel', function($q) { $q->where('uji_lisan', true); });
+            $queryMapel->where('uji_lisan', true);
         } elseif ($kategori == 'praktek') {
-            $query->whereHas('mapel', function($q) { $q->where('uji_praktek', true); });
-        } elseif ($kategori == 'hafalan') { // [BARU] Filter Hafalan
-            $query->whereHas('mapel', function($q) { $q->where('uji_hafalan', true); });
+            $queryMapel->where('uji_praktek', true);
+        } elseif ($kategori == 'hafalan') {
+            $queryMapel->where('uji_hafalan', true);
+        }
+        
+        $mapels = $queryMapel->orderBy('nama_mapel')->get();
+
+        if ($mapels->isEmpty()) {
+            return '<div style="text-align:center; font-style:italic; padding:10px; border:1px dashed #999; font-size:10pt;">- Tidak ada mata pelajaran kategori ini -</div>';
         }
 
-        $nilais = $query->get();
-
-        if ($nilais->isEmpty()) {
-            return '<div style="text-align:center; font-style:italic; padding:10px; border:1px dashed #999; font-size:10pt;">- Tidak ada nilai untuk kategori ini -</div>';
-        }
-
+        // 3. Header Tabel
         $html = '<table style="width:100%; border-collapse: collapse; border: 1px solid black; font-size: 11pt;">';
         $html .= '<thead>
                     <tr style="background-color: #e0e0e0;">
@@ -280,6 +311,7 @@ class RaporController extends Controller
         if ($kategori == 'tulis') $labelNilai = 'Nilai Tulis';
         elseif ($kategori == 'lisan') $labelNilai = 'Nilai Lisan';
         elseif ($kategori == 'praktek') $labelNilai = 'Nilai Praktek';
+        elseif ($kategori == 'hafalan') $labelNilai = 'Nilai Hafalan';
         elseif ($kategori == 'absensi') $labelNilai = 'Kehadiran';
 
         $html .= '<th style="border: 1px solid black; padding: 6px; width: 15%; text-align: center;">'.$labelNilai.'</th>';
@@ -291,29 +323,40 @@ class RaporController extends Controller
         $totalNilai = 0;
         $countMapel = 0;
 
-        foreach ($nilais as $nilai) {
-            $angka = 0;
-            if ($kategori == 'tulis') $angka = $nilai->nilai_tulis;
-            elseif ($kategori == 'lisan') $angka = $nilai->nilai_lisan;
-            elseif ($kategori == 'praktek') $angka = $nilai->nilai_praktek;
-            elseif ($kategori == 'hafalan') $angka = $nilai->nilai_hafalan; // [BARU]
-            elseif ($kategori == 'absensi') {
-                 // LOGIKA LAMA (Per Mapel), nanti kita handle "Single Source" di function generate() utama
-                 $angka = $nilai->nilai_kehadiran ?? 0;
-            }
-            else $angka = $nilai->nilai_akhir;
+        // 4. Loop Mapel (Agar nilai 0 tetap muncul)
+        foreach ($mapels as $mapel) {
+            // Cari nilai santri pada mapel ini
+            $nilaiData = NilaiPesantren::where('santri_id', $santriId)
+                        ->where('mapel_diniyah_id', $mapel->id) 
+                        ->first();
 
+            $angka = 0;
+            
+            // Ambil angka spesifik sesuai kategori
+            if ($nilaiData) {
+                if ($kategori == 'tulis') $angka = $nilaiData->nilai_tulis;
+                elseif ($kategori == 'lisan') $angka = $nilaiData->nilai_lisan;
+                elseif ($kategori == 'praktek') $angka = $nilaiData->nilai_praktek;
+                elseif ($kategori == 'hafalan') $angka = $nilaiData->nilai_hafalan; 
+                elseif ($kategori == 'absensi') $angka = $nilaiData->nilai_kehadiran;
+                else $angka = $nilaiData->nilai_akhir;
+            }
+
+            // Pastikan null menjadi 0
+            $angka = $angka ?? 0;
+            
             $predikat = $this->getPredikat($angka);
-            $namaMapel = $nilai->mapel->nama_mapel ?? 'Tanpa Nama';
+            $kkm = $mapel->kkm ?? 60;
 
             $html .= '<tr>
                         <td style="border: 1px solid black; padding: 4px; text-align: center;">' . $no++ . '</td>
-                        <td style="border: 1px solid black; padding: 4px 8px;">' . $namaMapel . '</td>
-                        <td style="border: 1px solid black; padding: 4px; text-align: center;">' . ($nilai->mapel->kkm ?? 60) . '</td>
+                        <td style="border: 1px solid black; padding: 4px 8px;">' . $mapel->nama_mapel . '</td>
+                        <td style="border: 1px solid black; padding: 4px; text-align: center;">' . $kkm . '</td>
                         <td style="border: 1px solid black; padding: 4px; text-align: center; font-weight: bold;">' . $angka . '</td>
                         <td style="border: 1px solid black; padding: 4px; text-align: center;">' . $predikat . '</td>
                       </tr>';
             
+            // Hitung rata-rata (termasuk nilai 0)
             $totalNilai += $angka;
             $countMapel++;
         }
