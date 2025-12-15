@@ -270,19 +270,35 @@ class RaporController extends Controller
     }
 
     /**
-     * PERBAIKAN DI SINI:
-     * Menggunakan relasi 'jadwals' untuk menemukan Mapel yang diajarkan di Mustawa ini.
-     * Tidak lagi menggunakan 'where mustawa_id' langsung di tabel mapel.
+     * GENERATE TABEL (LOGIKA FIX: JADWAL UJIAN + NILAI)
+     * Mengambil mapel dari JADWAL UJIAN (sesuai request) atau dari NILAI yang sudah ada.
      */
     private function generateTabelMapel($santriId, $mustawaId, $kategori)
     {
-        // 1. Ambil Mata Pelajaran yang ADA DI JADWAL mustawa ini
-        // Kita menggunakan whereHas ke tabel 'jadwals'
-        $queryMapel = MapelDiniyah::whereHas('jadwals', function($q) use ($mustawaId) {
-            $q->where('mustawa_id', $mustawaId);
-        });
+        // 1. Ambil ID Mapel dari JADWAL UJIAN (Perbaikan Disini)
+        // Kita cek tabel jadwal_ujian_diniyahs, bukan jadwal_diniyahs
+        $mapelIdsFromJadwal = \App\Models\JadwalUjianDiniyah::where('mustawa_id', $mustawaId)
+            ->pluck('mapel_diniyah_id')
+            ->toArray();
 
-        // 2. Filter Mapel sesuai Kategori Ujian
+        // 2. Ambil ID Mapel dari NILAI SANTRI (Backup)
+        // Tetap kita pertahankan agar jika ada mapel yg lupa dijadwalkan ujian tapi sudah dinilai, tetap muncul
+        $mapelIdsFromNilai = NilaiPesantren::where('santri_id', $santriId)
+            ->where('mustawa_id', $mustawaId)
+            ->pluck('mapel_diniyah_id')
+            ->toArray();
+
+        // Gabungkan kedua sumber ID (Hapus duplikat)
+        $allMapelIds = array_unique(array_merge($mapelIdsFromJadwal, $mapelIdsFromNilai));
+
+        if (empty($allMapelIds)) {
+            return '<div style="text-align:center; font-style:italic; padding:10px; border:1px dashed #999; font-size:10pt;">- Tidak ada mata pelajaran kategori ini -</div>';
+        }
+
+        // 3. Query Mapel berdasarkan ID gabungan tadi
+        $queryMapel = MapelDiniyah::whereIn('id', $allMapelIds);
+
+        // Filter Kategori Ujian
         if ($kategori == 'tulis') {
             $queryMapel->where('uji_tulis', true);
         } elseif ($kategori == 'lisan') {
@@ -292,14 +308,14 @@ class RaporController extends Controller
         } elseif ($kategori == 'hafalan') {
             $queryMapel->where('uji_hafalan', true);
         }
-        
+
         $mapels = $queryMapel->orderBy('nama_mapel')->get();
 
         if ($mapels->isEmpty()) {
             return '<div style="text-align:center; font-style:italic; padding:10px; border:1px dashed #999; font-size:10pt;">- Tidak ada mata pelajaran kategori ini -</div>';
         }
 
-        // 3. Header Tabel
+        // 4. Render Tabel HTML
         $html = '<table style="width:100%; border-collapse: collapse; border: 1px solid black; font-size: 11pt;">';
         $html .= '<thead>
                     <tr style="background-color: #e0e0e0;">
@@ -323,9 +339,8 @@ class RaporController extends Controller
         $totalNilai = 0;
         $countMapel = 0;
 
-        // 4. Loop Mapel (Agar nilai 0 tetap muncul)
         foreach ($mapels as $mapel) {
-            // Cari nilai santri pada mapel ini
+            // Cari Nilai Santri
             $nilaiData = NilaiPesantren::where('santri_id', $santriId)
                         ->where('mapel_diniyah_id', $mapel->id) 
                         ->first();
