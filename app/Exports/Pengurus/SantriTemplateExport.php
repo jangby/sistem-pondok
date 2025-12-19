@@ -7,40 +7,54 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 class SantriTemplateExport implements FromArray, WithHeadings, ShouldAutoSize, WithStyles
 {
     public function array(): array
     {
-        // Data contoh (Dummy) agar user paham formatnya
+        // Data Contoh (Dummy) agar user paham format pengisian
         return [
             [
                 '123456',           // NIS
-                '2025',
+                '0012345678',       // NISN
+                '3201012005100001', // NIK (16 Digit)
+                '3201012005100002', // No KK
+                '2024',             // Tahun Masuk
                 'Ahmad Santri',     // Nama Lengkap
                 'Laki-laki',        // Jenis Kelamin (Laki-laki/Perempuan)
                 'Jakarta',          // Tempat Lahir
                 '2010-05-20',       // Tanggal Lahir (YYYY-MM-DD)
-                '10A',              // Nama Kelas (Harus sesuai data kelas)
-                'Budi Wali',        // Nama Wali (Untuk Akun Aplikasi)
-                '081234567890',     // No HP Wali (PENTING: Unik untuk login)
+                '1',                // Anak Ke
+                '3',                // Jumlah Saudara
+                'O',                // Gol Darah
+                'Tidak ada',        // Riwayat Penyakit
+                '10A',              // Nama Kelas (Wajib sama dengan data Kelas)
+                'Asrama Al-Fatih',  // Nama Asrama (Opsional)
                 'Jl. Merdeka No 1', // Alamat
                 '001', '002',       // RT/RW
                 'Sukamaju',         // Desa
                 'Cilandak',         // Kecamatan
                 '12430',            // Kode Pos
-                'Ali Ayah',         // Nama Ayah (EMIS)
+                
+                // DATA AYAH
+                'Budi Ayah',        // Nama Ayah
                 '3201234567890001', // NIK Ayah
                 '1980',             // Thn Lahir Ayah
                 'S1',               // Pendidikan Ayah
                 'PNS',              // Pekerjaan Ayah
                 '3 - 5 Juta',       // Penghasilan Ayah
-                'Siti Ibu',         // Nama Ibu (EMIS)
+                '081234567890',     // No HP Ayah (WA)
+
+                // DATA IBU
+                'Siti Ibu',         // Nama Ibu
                 '3201234567890002', // NIK Ibu
                 '1982',             // Thn Lahir Ibu
                 'D3',               // Pendidikan Ibu
                 'Ibu Rumah Tangga', // Pekerjaan Ibu
                 '< 1 Juta',         // Penghasilan Ibu
+                '081234567891',     // No HP Ibu (WA)
             ]
         ];
     }
@@ -48,27 +62,34 @@ class SantriTemplateExport implements FromArray, WithHeadings, ShouldAutoSize, W
     public function headings(): array
     {
         return [
-            'NIS',
-            'Tahun Masuk',
-            'Nama Lengkap',
-            'Jenis Kelamin',
-            'Tempat Lahir',
-            'Tanggal Lahir (YYYY-MM-DD)',
-            'Nama Kelas',
-            'Nama Wali (Akun App)',
-            'No HP Wali (Wajib Unik)',
-            'Alamat',
-            'RT', 'RW',
-            'Desa', 'Kecamatan', 'Kode Pos',
-            'Nama Ayah', 'NIK Ayah', 'Thn Lahir Ayah', 'Pendidikan Ayah', 'Pekerjaan Ayah', 'Penghasilan Ayah',
-            'Nama Ibu', 'NIK Ibu', 'Thn Lahir Ibu', 'Pendidikan Ibu', 'Pekerjaan Ibu', 'Penghasilan Ibu',
+            'NIS', 'NISN', 'NIK', 'No KK', 
+            'Tahun Masuk', 'Nama Lengkap', 'Jenis Kelamin', 
+            'Tempat Lahir', 'Tanggal Lahir (YYYY-MM-DD)', 
+            'Anak Ke', 'Jumlah Saudara', 'Golongan Darah', 'Riwayat Penyakit',
+            'Nama Kelas', 'Nama Asrama',
+            'Alamat', 'RT', 'RW', 'Desa', 'Kecamatan', 'Kode Pos',
+            'Nama Ayah', 'NIK Ayah', 'Thn Lahir Ayah', 'Pendidikan Ayah', 'Pekerjaan Ayah', 'Penghasilan Ayah', 'No HP Ayah',
+            'Nama Ibu', 'NIK Ibu', 'Thn Lahir Ibu', 'Pendidikan Ibu', 'Pekerjaan Ibu', 'Penghasilan Ibu', 'No HP Ibu'
         ];
     }
 
     public function styles(Worksheet $sheet)
     {
-        return [
-            1 => ['font' => ['bold' => true]], // Baris header tebal
-        ];
+        // Styling Header agar terlihat jelas
+        $sheet->getStyle('A1:AI1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:AI1')->getFill()
+            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('FFD9D9D9'); // Abu-abu muda
+
+        // Border untuk semua sel yang ada datanya
+        $sheet->getStyle('A1:AI2')->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                ],
+            ],
+        ]);
+        
+        return [];
     }
 }

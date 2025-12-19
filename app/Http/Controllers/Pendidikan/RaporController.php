@@ -163,12 +163,41 @@ class RaporController extends Controller
             $konten = $this->replaceVar($konten, 'alamat_pondok', $pondok->alamat);
             $konten = $this->replaceVar($konten, 'kota_pondok', $pondok->kota ?? 'Tasikmalaya');
 
-            // KEPUTUSAN NAIK KELAS (FIX: HANYA CEK IPK)
-            // Syarat lulus: IPK >= 60 (Mengabaikan kehadiran jika belum lengkap)
-            $keputusanText = ($avgAkademik >= 60) 
-                             ? "NAIK KE TINGKAT BERIKUTNYA" 
-                             : "TINGGAL DI KELAS YANG SAMA";
+            // ==========================================================
+            // LOGIKA KEPUTUSAN (MENGGUNAKAN RUMUS RANKING)
+            // ==========================================================
+            
+            // 1. Hitung Skor Akhir (Bobot: 40% Akademik + 30% Disiplin + 20% Sikap + 10% Skill)
+            // Pastikan variabel-variabel ini sudah dihitung di baris-baris sebelumnya
+            $finalScore = ($avgAkademik * 0.40) + 
+                          ($nilaiKehadiranFinal * 0.30) + 
+                          ($nilaiSikapFinal * 0.20) + 
+                          ($nilaiKeterampilanFinal * 0.10);
+
+            // 2. Tentukan Teks Keputusan Berdasarkan Semester & Skor
+            $semester = $request->semester; // Ambil input semester dari Form
+            $kkm = 60; // Standar KKM Skor Akhir (Bisa disesuaikan)
+            
+            $keputusanText = "-";
+
+            if ($semester == 1) {
+                // Jika Semester 1: Selalu lanjut
+                $keputusanText = "DAPAT MELANJUTKAN KE SEMESTER 2";
+            } else {
+                // Jika Semester 2: Penentuan Naik/Tinggal berdasarkan Skor Akhir
+                if ($finalScore >= $kkm) {
+                    $keputusanText = "NAIK KE TINGKAT BERIKUTNYA";
+                } else {
+                    $keputusanText = "TINGGAL DI KELAS YANG SAMA";
+                }
+            }
+
+            // 3. Masukkan teks ke dalam variabel {{keputusan}} di desain
             $konten = $this->replaceVar($konten, 'keputusan', $keputusanText);
+            
+            // Opsional: Jika ingin menampilkan skor akhirnya juga di rapor untuk transparansi
+            // Anda bisa menambahkan variabel {{nilai_akhir_total}} di desain TinyMCE
+            $konten = $this->replaceVar($konten, 'nilai_akhir_total', round($finalScore, 2));
 
             // IPK & Nilai Lainnya
             $konten = $this->replaceVar($konten, 'ipk', round($avgAkademik, 2));

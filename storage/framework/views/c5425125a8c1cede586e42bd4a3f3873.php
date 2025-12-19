@@ -1,40 +1,50 @@
-<x-app-layout>
-    <x-slot name="header">
+<?php if (isset($component)) { $__componentOriginal9ac128a9029c0e4701924bd2d73d7f54 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54 = $attributes; } ?>
+<?php $component = App\View\Components\AppLayout::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('app-layout'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\App\View\Components\AppLayout::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+     <?php $__env->slot('header', null, []); ?> 
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Cetak Rapor Santri') }}
+            <?php echo e(__('Cetak Rapor Santri')); ?>
+
         </h2>
-    </x-slot>
+     <?php $__env->endSlot(); ?>
 
     <div class="py-12">
-        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8"> {{-- Diperlebar jadi max-w-6xl agar 3 kolom muat --}}
+        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8"> 
             
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 
                 <div class="flex justify-between items-center mb-6 border-b pb-4">
                     <h3 class="text-lg font-medium text-gray-900">Filter Cetak Rapor</h3>
-                    <a href="{{ route('pendidikan.admin.rapor-template.index') }}" class="text-sm text-blue-600 hover:underline">
+                    <a href="<?php echo e(route('pendidikan.admin.rapor-template.index')); ?>" class="text-sm text-blue-600 hover:underline">
                         &rarr; Kelola Desain Template
                     </a>
                 </div>
 
-                <form action="{{ route('pendidikan.admin.rapor.generate') }}" method="POST" target="_blank">
-                    @csrf
+                <form action="<?php echo e(route('pendidikan.admin.rapor.generate')); ?>" method="POST" target="_blank">
+                    <?php echo csrf_field(); ?>
                     
-                    {{-- UBAH JADI 3 KOLOM AGAR RAPI --}}
+                    
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         
-                        {{-- 1. PILIH KELAS --}}
+                        
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Kelas (Mustawa)</label>
                             <select name="mustawa_id" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">-- Pilih Kelas --</option>
-                                @foreach($mustawas as $m)
-                                    <option value="{{ $m->id }}">{{ $m->nama }} (Tingkat {{ $m->tingkat }})</option>
-                                @endforeach
+                                <?php $__currentLoopData = $mustawas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($m->id); ?>"><?php echo e($m->nama); ?> (Tingkat <?php echo e($m->tingkat); ?>)</option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
 
-                        {{-- 2. PILIH SEMESTER (BARU) --}}
+                        
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Semester</label>
                             <select name="semester" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
@@ -44,22 +54,22 @@
                             <p class="text-xs text-gray-500 mt-1">*Smt 2 menentukan naik/tinggal kelas.</p>
                         </div>
 
-                        {{-- 3. PILIH DESAIN --}}
+                        
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Desain Rapor</label>
                             <select name="template_id" required class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">-- Pilih Desain --</option>
-                                @foreach($templates as $t)
-                                    <option value="{{ $t->id }}">{{ $t->nama_template }} ({{ $t->ukuran_kertas }})</option>
-                                @endforeach
+                                <?php $__currentLoopData = $templates; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($t->id); ?>"><?php echo e($t->nama_template); ?> (<?php echo e($t->ukuran_kertas); ?>)</option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                             
-                            @if($templates->isEmpty())
+                            <?php if($templates->isEmpty()): ?>
                                 <p class="text-xs text-red-500 mt-1">
                                     Belum ada desain. 
-                                    <a href="{{ route('pendidikan.admin.rapor-template.create') }}" class="underline font-bold">Buat dulu di sini.</a>
+                                    <a href="<?php echo e(route('pendidikan.admin.rapor-template.create')); ?>" class="underline font-bold">Buat dulu di sini.</a>
                                 </p>
-                            @endif
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -90,4 +100,13 @@
             </div>
         </div>
     </div>
-</x-app-layout>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54)): ?>
+<?php $attributes = $__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54; ?>
+<?php unset($__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9ac128a9029c0e4701924bd2d73d7f54)): ?>
+<?php $component = $__componentOriginal9ac128a9029c0e4701924bd2d73d7f54; ?>
+<?php unset($__componentOriginal9ac128a9029c0e4701924bd2d73d7f54); ?>
+<?php endif; ?><?php /**PATH C:\laragon\www\keuangan-pesantren\resources\views/pendidikan/admin/rapor/index.blade.php ENDPATH**/ ?>

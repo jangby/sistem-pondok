@@ -4,189 +4,186 @@ namespace App\Imports\Pengurus;
 
 use App\Models\Santri;
 use App\Models\Kelas;
+use App\Models\Asrama;
 use App\Models\OrangTua;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
-use Maatwebsite\Excel\Concerns\WithChunkReading;
-use Carbon\Carbon;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows; // Tambahan penting
 
-class SantriImport implements ToModel, WithHeadingRow, WithValidation, WithChunkReading
+class SantriImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyRows
 {
     private $pondokId;
     private $passwordHash;
 
     public function __construct()
     {
-        $this->pondokId = Auth::user()->pondokStaff->pondok_id;
+        // Ambil ID Pondok (Support login sebagai Admin atau Staff)
+        $user = Auth::user();
+        $this->pondokId = $user->pondok_id ?? $user->pondokStaff->pondok_id ?? null;
         
-        // OPTIMASI: Hash password default '123456' sekali saja di awal
-        // Ini mencegah 'Time Limit Exceeded' karena bcrypt yang berat
+        // Hash password default sekali saja untuk performa
         $this->passwordHash = Hash::make('123456');
     }
 
     /**
-     * Helper: Ubah format tanggal Excel (Angka Serial) atau Teks menjadi objek Carbon
+     * Membersihkan format tanggal dari Excel
      */
     private function transformDate($value)
     {
-        if (empty($value)) return null;
+        if (!$value) return null;
         try {
-            // Jika format angka (Serial Number Excel, misal: 44567)
-            if (is_numeric($value)) {
-                return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value);
-            }
-            // Jika format teks biasa (YYYY-MM-DD)
-            return Carbon::parse($value);
+            return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)->format('Y-m-d');
         } catch (\Exception $e) {
-            return null;
+            return null; // Jika gagal parsing, biarkan null (jangan error)
         }
+    }
+
+    /**
+     * Membersihkan No HP (hapus spasi, strip, ubah 62 jadi 0)
+     */
+    private function normalizePhone($phone)
+    {
+        if (!$phone) return null;
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        if (str_starts_with($phone, '62')) {
+            $phone = '0' . substr($phone, 2);
+        }
+        return $phone;
     }
 
     public function model(array $row)
     {
-        // Bungkus dalam Transaksi Database agar Aman
-        return DB::transaction(function () use ($row) {
-            
-            // 1. Cari ID Kelas berdasarkan Nama Kelas
+        // Debugging: Cek apakah data masuk (bisa dilihat di storage/logs/laravel.log)
+        // Log::info('Importing Row:', $row);
+
+        // 1. Validasi Manual Sederhana
+        if (empty($row['nama_lengkap'])) {
+            return null; // Skip jika nama kosong
+        }
+
+        // 2. Logika Wali Santri (Cari atau Buat Baru)
+        $noHpWali = $this->normalizePhone($row['no_hp_ayah'] ?? $row['no_hp_ibu']);
+        // Jika HP kosong, gunakan format dummy agar unik: nis.random@no-hp.com
+        $nisDummy = $row['nis'] ?? rand(1000,9999);
+        
+        $orangTuaId = null;
+
+        // Jika ada No HP, kita coba cari data orang tua yang sudah ada
+        if ($noHpWali) {
+            $orangTua = OrangTua::where('pondok_id', $this->pondokId)
+                ->where('phone', $noHpWali)->first();
+
+            if (!$orangTua) {
+                // Buat User Login untuk Wali
+                $userWali = User::create([
+                    'name' => $row['nama_ayah'] ?? $row['nama_ibu'] ?? 'Wali Santri',
+                    'email' => $noHpWali . '@pondok.app', // Email dummy
+                    'password' => $this->passwordHash,
+                    'role' => 'wali_santri',
+                    'telepon' => $noHpWali,
+                ]);
+
+                // Buat Data Orang Tua
+                $orangTua = OrangTua::create([
+                    'user_id' => $userWali->id,
+                    'pondok_id' => $this->pondokId,
+                    'name' => $userWali->name,
+                    'phone' => $noHpWali,
+                    'address' => $row['alamat'] ?? '-',
+                    'pekerjaan' => $row['pekerjaan_ayah'] ?? '-',
+                    'nik' => $row['nik_ayah'] ?? null,
+                ]);
+            }
+            $orangTuaId = $orangTua->id;
+        }
+
+        // 3. Cari Kelas & Asrama (Berdasarkan Nama)
+        $kelasId = null;
+        if (!empty($row['nama_kelas'])) {
             $kelas = Kelas::where('pondok_id', $this->pondokId)
-                ->where('nama_kelas', $row['nama_kelas'])
-                ->first();
+                ->where('nama_kelas', $row['nama_kelas'])->first();
+            $kelasId = $kelas ? $kelas->id : null;
+        }
 
-            // ==================================================
-            // LOGIKA 1: NIS OTOMATIS (DENGAN LOCKING)
-            // ==================================================
-            $nis = $row['nis'];
-            $tahunMasuk = $row['tahun_masuk'] ?? date('Y'); // Default tahun sekarang
+        $asramaId = null;
+        if (!empty($row['nama_asrama'])) {
+            $asrama = Asrama::where('pondok_id', $this->pondokId)
+                ->where('nama_asrama', $row['nama_asrama'])->first();
+            $asramaId = $asrama ? $asrama->id : null;
+        }
 
-            // Jika kolom NIS kosong, sistem buatkan otomatis
-            if (empty($nis)) {
-                // Lock tabel untuk mencegah race condition (duplikasi nomor saat import barengan)
-                $lastSantri = Santri::where('pondok_id', $this->pondokId)
-                    ->where('nis', 'like', $tahunMasuk . '%')
-                    ->orderByRaw('LENGTH(nis) DESC') // Urutkan panjang string dulu (agar 100 > 99)
-                    ->orderBy('nis', 'desc')
-                    ->lockForUpdate() // <--- KUNCI RAHASIA ANTI BENTROK
-                    ->first();
+        // 4. Normalisasi Jenis Kelamin
+        $jk = 'Laki-laki'; // Default
+        if (!empty($row['jenis_kelamin'])) {
+            $val = strtolower($row['jenis_kelamin']);
+            if (str_contains($val, 'p') || str_contains($val, 'w')) $jk = 'Perempuan';
+        }
 
-                // Ambil 4 digit terakhir, ubah ke integer, tambah 1
-                $lastNo = $lastSantri ? intval(substr($lastSantri->nis, 4)) : 0;
-                $newNo = $lastNo + 1;
-                
-                // Format: TAHUN + 4 DIGIT URUT (Contoh: 20250001)
-                $nis = $tahunMasuk . str_pad($newNo, 4, '0', STR_PAD_LEFT);
-            }
+        // 5. Simpan Data Santri
+        return new Santri([
+            'pondok_id'     => $this->pondokId,
+            'orang_tua_id'  => $orangTuaId,
+            'kelas_id'      => $kelasId,
+            'asrama_id'     => $asramaId,
+            
+            // Data Utama
+            'nis'           => $row['nis'] ?? (date('ym') . rand(1000, 9999)), // Auto NIS jika kosong
+            'nisn'          => $row['nisn'],
+            'nik'           => $row['nik'],
+            'no_kk'         => $row['no_kk'],
+            'full_name'     => $row['nama_lengkap'],
+            'jenis_kelamin' => $jk,
+            'tempat_lahir'  => $row['tempat_lahir'],
+            'tanggal_lahir' => $this->transformDate($row['tanggal_lahir']),
+            'status'        => 'active',
+            'tahun_masuk'   => $row['tahun_masuk'] ?? date('Y'),
 
-            // ==================================================
-            // LOGIKA 2: USER & ORANG TUA (SAFE MODE)
-            // ==================================================
-            $orangTuaId = null;
-            $phoneInput = $row['no_hp_wali_wajib_unik'];
+            // Data Pelengkap
+            'anak_ke'       => is_numeric($row['anak_ke'] ?? null) ? $row['anak_ke'] : null,
+            'jumlah_saudara'=> is_numeric($row['jumlah_saudara'] ?? null) ? $row['jumlah_saudara'] : null,
+            'golongan_darah'=> $row['golongan_darah'],
+            'riwayat_penyakit'=> $row['riwayat_penyakit'],
 
-            // Hanya proses pembuatan akun jika No HP diisi
-            if (!empty($phoneInput)) {
-                // Bersihkan karakter non-angka
-                $phone = preg_replace('/[^0-9]/', '', $phoneInput);
-                
-                if (!empty($phone)) {
-                    $loginEmail = $phone . '@wali.santri';
+            // Alamat & Ortu (Tabel Santri Baru)
+            'alamat'        => $row['alamat'],
+            'rt'            => $row['rt'],
+            'rw'            => $row['rw'],
+            'desa'          => $row['desa'],
+            'kecamatan'     => $row['kecamatan'],
+            'kode_pos'      => $row['kode_pos'],
+            
+            'nama_ayah'         => $row['nama_ayah'],
+            'nik_ayah'          => $row['nik_ayah'],
+            'thn_lahir_ayah'    => is_numeric($row['thn_lahir_ayah'] ?? null) ? $row['thn_lahir_ayah'] : null,
+            'pendidikan_ayah'   => $row['pendidikan_ayah'],
+            'pekerjaan_ayah'    => $row['pekerjaan_ayah'],
+            'penghasilan_ayah'  => $row['penghasilan_ayah'],
+            'no_hp_ayah'        => $row['no_hp_ayah'], // Penting
 
-                    // Cek apakah data Orang Tua sudah ada?
-                    $orangTua = OrangTua::where('pondok_id', $this->pondokId)
-                        ->where('phone', $phone)
-                        ->lockForUpdate() // Lock juga baris ini
-                        ->first();
-
-                    if (!$orangTua) {
-                        // Cek apakah User Login sudah ada?
-                        $user = User::where('email', $loginEmail)->first();
-                        
-                        if (!$user) {
-                            // Buat User Baru
-                            $user = User::create([
-                                'name'     => $row['nama_wali_akun_app'] ?? 'Wali Santri',
-                                'email'    => $loginEmail,
-                                'password' => $this->passwordHash, // Pakai hash yang sudah disiapkan
-                            ]);
-                            $user->assignRole('orang-tua');
-                        }
-
-                        // Buat Profil Orang Tua linked ke User
-                        $orangTua = OrangTua::create([
-                            'pondok_id' => $this->pondokId,
-                            'user_id'   => $user->id,
-                            'name'      => $row['nama_wali_akun_app'] ?? 'Wali Santri',
-                            'phone'     => $phone,
-                            'address'   => $row['alamat'] ?? '-',
-                        ]);
-                    }
-                    $orangTuaId = $orangTua->id;
-                }
-            }
-
-            // ==================================================
-            // LOGIKA 3: SIMPAN DATA SANTRI
-            // ==================================================
-            // Gunakan create() langsung untuk memastikan data tersimpan sebelum lock dilepas
-            $santri = Santri::create([
-                'pondok_id' => $this->pondokId,
-                'nis' => $nis, // NIS Manual atau Otomatis
-                'tahun_masuk' => $tahunMasuk,
-                'full_name' => $row['nama_lengkap'],
-                'jenis_kelamin' => $row['jenis_kelamin'],
-                'tempat_lahir' => $row['tempat_lahir'],
-                'tanggal_lahir' => $this->transformDate($row['tanggal_lahir_yyyy_mm_dd']),
-                
-                'kelas_id' => $kelas ? $kelas->id : null,
-                'orang_tua_id' => $orangTuaId, // Bisa NULL jika No HP kosong
-                
-                'status' => 'active',
-                'qrcode_token' => 'S-' . time() . '-' . Str::random(8), // Token QR Unik
-
-                // Data Detail (Alamat & EMIS)
-                'alamat' => $row['alamat'],
-                'rt' => $row['rt'],
-                'rw' => $row['rw'],
-                'desa' => $row['desa'],
-                'kecamatan' => $row['kecamatan'],
-                'kode_pos' => $row['kode_pos'],
-
-                'nama_ayah' => $row['nama_ayah'],
-                'nik_ayah' => $row['nik_ayah'],
-                'thn_lahir_ayah' => $row['thn_lahir_ayah'],
-                'pendidikan_ayah' => $row['pendidikan_ayah'],
-                'pekerjaan_ayah' => $row['pekerjaan_ayah'],
-                'penghasilan_ayah' => $row['penghasilan_ayah'],
-
-                'nama_ibu' => $row['nama_ibu'],
-                'nik_ibu' => $row['nik_ibu'],
-                'thn_lahir_ibu' => $row['thn_lahir_ibu'],
-                'pendidikan_ibu' => $row['pendidikan_ibu'],
-                'pekerjaan_ibu' => $row['pekerjaan_ibu'],
-                'penghasilan_ibu' => $row['penghasilan_ibu'],
-            ]);
-
-            return $santri;
-        });
+            'nama_ibu'          => $row['nama_ibu'],
+            'nik_ibu'           => $row['nik_ibu'],
+            'thn_lahir_ibu'     => is_numeric($row['thn_lahir_ibu'] ?? null) ? $row['thn_lahir_ibu'] : null,
+            'pendidikan_ibu'    => $row['pendidikan_ibu'],
+            'pekerjaan_ibu'     => $row['pekerjaan_ibu'],
+            'penghasilan_ibu'   => $row['penghasilan_ibu'],
+            'no_hp_ibu'         => $row['no_hp_ibu'], // Penting
+        ]);
     }
 
+    /**
+     * Aturan Validasi (Longgar agar tidak mudah gagal)
+     */
     public function rules(): array
     {
         return [
-            // 'nis' => ['required'], // Dihapus agar boleh kosong (auto-generate)
-            'nama_lengkap' => ['required'],
-            'no_hp_wali_wajib_unik' => ['nullable'], // Boleh kosong (tanpa wali)
+            'nama_lengkap' => ['required'], // Hanya nama yang wajib
+            // 'nis' => ['unique:santris,nis'], // Matikan dulu unique check agar tidak error jika ada duplikat di Excel
         ];
-    }
-
-    // Proses per 100 baris untuk menghemat memori
-    public function chunkSize(): int
-    {
-        return 100;
     }
 }

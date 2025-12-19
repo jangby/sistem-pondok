@@ -14,6 +14,7 @@ use App\Exports\Pengurus\SantriTemplateExport;
 use App\Imports\Pengurus\SantriImport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\Pengurus\SantriExport; // <--- Tambahkan ini
+use Maatwebsite\Excel\Validators\ValidationException;
 
 class SantriController extends Controller
 {
@@ -72,6 +73,8 @@ public function store(Request $request)
     // 1. VALIDASI
     $validated = $request->validate([
         'nis' => ['nullable', Rule::unique('santris')->where('pondok_id', $pondokId)],
+        'nik'  => 'nullable|numeric|digits:16|unique:santris,nik', // Wajib angka, 16 digit, unik
+        'no_kk'=> 'nullable|numeric|digits:16',
         'tahun_masuk' => 'required|digits:4|integer|min:2000|max:'.(date('Y')+1),
         'rfid_uid' => ['nullable', 'string', Rule::unique('santris')->where('pondok_id', $pondokId)], 
         'full_name' => 'required|string|max:255',
@@ -121,56 +124,80 @@ public function store(Request $request)
 
 public function update(Request $request, Santri $santri)
 {
+    // 1. Cek Validasi Kepemilikan Data
     if ($santri->pondok_id != $this->getPondokId()) abort(404);
     $pondokId = $this->getPondokId();
 
-    $validated = $request->validate([
-        'nis' => ['nullable', Rule::unique('santris')->where('pondok_id', $pondokId)->ignore($santri->id)],
-        'tahun_masuk' => 'required|digits:4|integer|min:2000|max:'.(date('Y')+1),
-        'rfid_uid' => ['nullable', 'string', Rule::unique('santris')->where('pondok_id', $pondokId)->ignore($santri->id)],
-        'full_name' => 'required|string|max:255',
-        'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
-        'tempat_lahir' => 'nullable|string',
-        'tanggal_lahir' => 'nullable|date',
-        'golongan_darah' => 'nullable|in:A,B,AB,O',
-        'riwayat_penyakit' => 'nullable|string',
-        'kelas_id' => 'nullable|exists:kelas,id',
-        
-        // --- PERUBAHAN DISINI: Jadi nullable juga saat edit ---
-        'orang_tua_id' => 'nullable|exists:orang_tuas,id',
-        
-        'status' => 'required|in:active,graduated,moved',
-        
-        // Validasi Data Pelengkap
-        'alamat' => 'nullable|string',
-        'rt' => 'nullable|string|max:5',
-        'rw' => 'nullable|string|max:5',
-        'desa' => 'nullable|string',
-        'kecamatan' => 'nullable|string',
-        'kode_pos' => 'nullable|string|max:10',
-        'nama_ayah' => 'nullable|string',
-        'thn_lahir_ayah' => 'nullable|digits:4',
-        'pendidikan_ayah' => 'nullable|string',
-        'pekerjaan_ayah' => 'nullable|string',
-        'penghasilan_ayah' => 'nullable|string',
-        'nik_ayah' => 'nullable|string|max:20',
-        'nama_ibu' => 'nullable|string',
-        'thn_lahir_ibu' => 'nullable|digits:4',
-        'pendidikan_ibu' => 'nullable|string',
-        'pekerjaan_ibu' => 'nullable|string',
-        'penghasilan_ibu' => 'nullable|string',
-        'nik_ibu' => 'nullable|string|max:20',
+    // 2. Validasi Data (Dibuat Nullable agar tidak error validasi)
+    $request->validate([
+        'full_name'     => 'required|string|max:255',
+        'nis'           => 'required|numeric|unique:santris,nis,' . $santri->id,
+        'nik'           => 'nullable|numeric|unique:santris,nik,' . $santri->id,
+        'status'        => 'required',
+        // Validasi relasi (tidak wajib diisi)
+        'nama_ayah'     => 'nullable|string', 
+        'no_hp_ayah'    => 'nullable|string',
+        'alamat'        => 'nullable|string',
     ]);
-    
-    // Logika NIS otomatis jika dikosongkan saat edit (opsional, biasanya jarang berubah)
-    if (empty($validated['nis'])) {
-        // Gunakan NIS lama jika user mengosongkan field NIS saat edit
-        $validated['nis'] = $santri->nis; 
+
+    // 3. MULAI TRANSAKSI DATABASE (Agar data konsisten)
+    \DB::beginTransaction();
+    try {
+        // --- A. UPDATE DATA SANTRI ---
+        // Kita hanya ambil data yang benar-benar ada di tabel 'santris' Anda saat ini
+        $santri->update([
+            'full_name'         => $request->full_name,
+            'nis'               => $request->nis,
+            'nik'               => $request->nik,
+            'no_kk'             => $request->no_kk, // Pastikan kolom ini ada, jika tidak hapus baris ini
+            'jenis_kelamin'     => $request->jenis_kelamin,
+            'tempat_lahir'      => $request->tempat_lahir,
+            'tanggal_lahir'     => $request->tanggal_lahir,
+            'golongan_darah'    => $request->golongan_darah,
+            'riwayat_penyakit'  => $request->riwayat_penyakit,
+            'anak_ke'           => $request->anak_ke,
+            'jumlah_saudara'    => $request->jumlah_saudara,
+            'tahun_masuk'       => $request->tahun_masuk,
+            'status'            => $request->status,
+            'kelas_id'          => $request->kelas_id,
+            'asrama_id'         => $request->asrama_id,
+        ]);
+
+        // --- B. UPDATE DATA ORANG TUA (WALI) ---
+        // Logika: Input "Nama Ayah" di form akan kita simpan ke tabel 'orang_tuas'
+        // karena di database Anda belum ada kolom 'nama_ayah' di tabel santri.
+        
+        $dataOrangTua = [
+            'name'      => $request->nama_ayah ?? $request->nama_ibu ?? $santri->orangTua->name ?? 'Wali Santri',
+            'phone'     => $request->no_hp_ayah ?? $request->no_hp_ibu,
+            'address'   => $request->alamat, // Alamat disimpan di tabel orang_tuas
+            'pekerjaan' => $request->pekerjaan_ayah ?? $request->pekerjaan_ibu,
+            'nik'       => $request->nik_ayah ?? $request->nik_ibu,
+        ];
+
+        // Cek apakah santri sudah punya data orang tua?
+        if ($santri->orang_tua_id && $santri->orangTua) {
+            // Jika ada, UPDATE data yang ada
+            $santri->orangTua->update($dataOrangTua);
+        } else {
+            // Jika belum ada, BUAT BARU
+            $dataOrangTua['pondok_id'] = $pondokId;
+            $orangTuaBaru = OrangTua::create($dataOrangTua);
+            
+            // Hubungkan santri ke orang tua baru
+            $santri->update(['orang_tua_id' => $orangTuaBaru->id]);
+        }
+
+        \DB::commit(); // Simpan perubahan permanen
+        return redirect()->route('pengurus.santri.show', $santri->id)
+            ->with('success', 'Data santri & wali berhasil diperbarui.');
+
+    } catch (\Exception $e) {
+        \DB::rollback(); // Batalkan jika ada error
+        return redirect()->back()
+            ->withInput()
+            ->with('error', 'Gagal menyimpan: ' . $e->getMessage());
     }
-
-    $santri->update($validated);
-
-    return redirect()->route('pengurus.santri.index')->with('success', 'Data santri berhasil diperbarui.');
 }
 
     public function show(Santri $santri)
@@ -213,23 +240,41 @@ public function update(Request $request, Santri $santri)
         return Excel::download(new SantriTemplateExport, 'template_import_santri.xlsx');
     }
 
-    /**
-     * Proses Impor Data
-     */
     public function import(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv|max:2048',
-        ]);
+{
+    $request->validate([
+        'file' => 'required|mimes:xlsx,xls,csv'
+    ]);
 
-        try {
-            Excel::import(new SantriImport, $request->file('file'));
-            return redirect()->route('pengurus.santri.index')->with('success', 'Data Santri berhasil diimpor!');
-        } catch (\Exception $e) {
-            // Tangkap error jika format tanggal salah atau validasi gagal
-            return redirect()->back()->with('error', 'Gagal impor: ' . $e->getMessage());
+    try {
+        // Proses Import
+        Excel::import(new SantriImport, $request->file('file'));
+        
+        return redirect()->back()->with('success', 'Alhamdulillah, data santri berhasil diimport!');
+
+    } catch (ValidationException $e) {
+        // MENANGKAP ERROR VALIDASI EXCEL
+        $failures = $e->failures();
+        $errorMessages = [];
+        
+        foreach ($failures as $failure) {
+            $baris = $failure->row();
+            $kolom = $failure->attribute(); // Nama kolom yang error
+            $pesan = implode(', ', $failure->errors());
+            $errorMessages[] = "Baris {$baris} ({$kolom}): {$pesan}";
         }
+
+        // Tampilkan error ke user (batasi 5 error pertama agar tidak kepanjangan)
+        $errorString = implode('<br>', array_slice($errorMessages, 0, 5));
+        if (count($errorMessages) > 5) $errorString .= '<br>...dan kesalahan lainnya.';
+
+        return redirect()->back()->with('error', 'Gagal Import Data:<br>' . $errorString);
+
+    } catch (\Exception $e) {
+        // ERROR UMUM LAINNYA
+        return redirect()->back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
     }
+}
 
     /**
      * Fitur Darurat: Hapus data santri yang tidak punya kelas (akibat gagal import)

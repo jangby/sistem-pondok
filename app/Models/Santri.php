@@ -12,6 +12,8 @@ class Santri extends Model
 
     protected $fillable = [
     'nis',
+    'nik',
+    'no_kk',
     'tahun_masuk',
     'rfid_uid',
     'qrcode_token',
@@ -189,4 +191,28 @@ public function jurnalPendidikan()
     {
         return $this->belongsTo(Mustawa::class);
     }
+
+    /**
+ * Accessor untuk menghitung persentase kelengkapan data
+ * Cara panggil di blade: $santri->persentase_lengkap
+ */
+public function getPersentaseLengkapAttribute()
+{
+    // Daftar kolom yang dianggap penting/wajib
+    $fields = [
+        'nama_lengkap', 'nisn', 'nik', 'no_kk', 
+        'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'alamat',
+        'nama_ayah', 'nama_ibu', 'no_hp_ayah', // Sesuaikan dengan kolom real di DB Anda
+    ];
+
+    $filled = 0;
+    foreach ($fields as $field) {
+        // Cek apakah field ini ada isinya (tidak null dan tidak kosong)
+        if (!empty($this->{$field})) {
+            $filled++;
+        }
+    }
+
+    return count($fields) > 0 ? round(($filled / count($fields)) * 100) : 0;
+}
 }
