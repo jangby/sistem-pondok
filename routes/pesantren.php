@@ -18,6 +18,7 @@ use App\Http\Controllers\Pendidikan\JurnalMonitoringController;
 use App\Http\Controllers\Pendidikan\JurnalHafalanMonitoringController;
 use App\Http\Controllers\Pendidikan\MonitoringNilaiUjianController;
 use App\Http\Controllers\Pendidikan\RemedialController;
+use App\Http\Controllers\Pendidikan\RankingController;
 
 // Ustadz
 use App\Http\Controllers\Ustadz\DashboardController as UstadzDashboardController;
@@ -44,6 +45,12 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-pendidikan'
         Route::resource('mapel', MapelDiniyahController::class);
         Route::resource('ustadz', UstadzController::class);
         Route::resource('rapor-template', RaporTemplateController::class);
+
+        Route::get('/ranking', [\App\Http\Controllers\Pendidikan\RankingController::class, 'index'])
+            ->name('ranking.index');
+            
+        Route::get('/ranking/show', [\App\Http\Controllers\Pendidikan\RankingController::class, 'show'])
+            ->name('ranking.show');
         
         Route::resource('kartu-template', KartuUjianTemplateController::class);
         Route::get('kartu-ujian', [KartuUjianController::class, 'index'])->name('kartu.index');
