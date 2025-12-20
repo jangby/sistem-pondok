@@ -97,7 +97,7 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Gagal!',
-                    text: "{!! session('error') !!}",
+                    html: {!! json_encode(session('error')) !!},
                     showConfirmButton: true,
                     confirmButtonText: 'Tutup'
                 });

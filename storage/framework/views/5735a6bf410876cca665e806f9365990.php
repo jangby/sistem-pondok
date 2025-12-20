@@ -72,15 +72,29 @@
                     </div>
 
                     
-                    <div class="bg-white p-1.5 rounded-lg shadow-sm shrink-0">
-                        <?php if($santri->qrcode_token): ?>
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=<?php echo e($santri->qrcode_token); ?>" class="w-16 h-16">
-                        <?php else: ?>
-                            <div class="w-16 h-16 bg-gray-100 flex items-center justify-center text-[10px] text-gray-400 text-center font-bold">
-                                No QR
-                            </div>
-                        <?php endif; ?>
-                    </div>
+<div class="flex flex-col items-center gap-2 shrink-0">
+    
+    <div class="bg-white p-1.5 rounded-lg shadow-sm">
+        <?php if($santri->qrcode_token): ?>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=<?php echo e($santri->qrcode_token); ?>" class="w-16 h-16">
+        <?php else: ?>
+            <div class="w-16 h-16 bg-gray-100 flex items-center justify-center text-[10px] text-gray-400 text-center font-bold">
+                No QR
+            </div>
+        <?php endif; ?>
+    </div>
+
+    
+    <form action="<?php echo e(route('pengurus.santri.regenerate-qr', $santri->id)); ?>" method="POST" id="form-regen-qr">
+        <?php echo csrf_field(); ?>
+        
+        <button type="button" onclick="confirmRegenerate()" 
+            class="px-2 py-1 bg-white/20 hover:bg-white/30 text-white rounded-md text-[10px] font-bold border border-white/20 backdrop-blur transition flex items-center gap-1 shadow-sm group">
+            <svg class="w-3 h-3 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            Reset QR
+        </button>
+    </form>
+</div>
                 </div>
 
                 
@@ -281,6 +295,37 @@
 
         </div>
     </div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> 
+    
+    <script>
+        function confirmRegenerate() {
+            // Cek apakah Swal terbaca
+            if (typeof Swal === 'undefined') {
+                // Fallback jika SweetAlert gagal load: Pakai konfirmasi biasa
+                if (confirm("Reset Kode QR? Kode lama akan hangus. Lanjutkan?")) {
+                    document.getElementById('form-regen-qr').submit();
+                }
+                return;
+            }
+
+            // Tampilkan SweetAlert
+            Swal.fire({
+                title: 'Reset Kode QR?',
+                text: "Kode QR lama akan hangus dan tidak bisa digunakan absen lagi. Sistem akan membuat kode baru.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#059669', 
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, Reset Sekarang!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('form-regen-qr').submit();
+                }
+            });
+        }
+    </script>
+
  <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54)): ?>

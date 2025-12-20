@@ -36,11 +36,21 @@ class SantriImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmpt
      */
     private function transformDate($value)
     {
-        if (!$value) return null;
+        if (empty($value)) return null;
+
         try {
-            return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)->format('Y-m-d');
+            // Cek 1: Jika value adalah Angka (Serial Date Excel, misal: 44562)
+            if (is_numeric($value)) {
+                return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)->format('Y-m-d');
+            }
+
+            // Cek 2: Jika value adalah String Teks (misal: "2024-05-20" atau "20/05/2024")
+            // Gunakan Carbon untuk parsing teks tanggal
+            return \Carbon\Carbon::parse($value)->format('Y-m-d');
+
         } catch (\Exception $e) {
-            return null; // Jika gagal parsing, biarkan null (jangan error)
+            // Jika gagal parsing (format ngawur), kembalikan null agar tidak error sistem
+            return null;
         }
     }
 
@@ -126,54 +136,68 @@ class SantriImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmpt
         }
 
         // 5. Simpan Data Santri
-        return new Santri([
-            'pondok_id'     => $this->pondokId,
-            'orang_tua_id'  => $orangTuaId,
-            'kelas_id'      => $kelasId,
-            'asrama_id'     => $asramaId,
-            
-            // Data Utama
-            'nis'           => $row['nis'] ?? (date('ym') . rand(1000, 9999)), // Auto NIS jika kosong
-            'nisn'          => $row['nisn'],
-            'nik'           => $row['nik'],
-            'no_kk'         => $row['no_kk'],
-            'full_name'     => $row['nama_lengkap'],
-            'jenis_kelamin' => $jk,
-            'tempat_lahir'  => $row['tempat_lahir'],
-            'tanggal_lahir' => $this->transformDate($row['tanggal_lahir']),
-            'status'        => 'active',
-            'tahun_masuk'   => $row['tahun_masuk'] ?? date('Y'),
+        Santri::updateOrCreate(
+            [
+                'nis'       => $row['nis'],             // Kunci Unik: NIS
+                'pondok_id' => $this->pondokId          // Kunci Unik: Pondok
+            ],
+            [
+                // Update/Isi data lainnya
+                'orang_tua_id'  => $orangTuaId,
+                'kelas_id'      => $kelasId,
+                'asrama_id'     => $asramaId,
+                
+                'nisn'          => $row['nisn'] ?? null,
+                'nik'           => $row['nik'] ?? null,
+                'no_kk'         => $row['no_kk'] ?? null,
+                'full_name'     => $row['nama_lengkap'] ?? 'Tanpa Nama',
+                'jenis_kelamin' => $jk, // Pastikan variabel $jk dari logika di atasnya
+                'tempat_lahir'  => $row['tempat_lahir'] ?? null,
+                
+                // PENTING: Gunakan nama key sesuai fix sebelumnya (tanggal_lahir_yyyy_mm_dd atau tanggal_lahir)
+                // Sesuaikan dengan header Excel Anda. Jika pakai solusi saya sebelumnya, pakai key yang benar.
+                'tanggal_lahir' => $this->transformDate($row['tanggal_lahir_yyyy_mm_dd'] ?? $row['tanggal_lahir'] ?? null),
+                
+                'status'        => 'active',
+                'tahun_masuk'   => $row['tahun_masuk'] ?? date('Y'),
 
-            // Data Pelengkap
-            'anak_ke'       => is_numeric($row['anak_ke'] ?? null) ? $row['anak_ke'] : null,
-            'jumlah_saudara'=> is_numeric($row['jumlah_saudara'] ?? null) ? $row['jumlah_saudara'] : null,
-            'golongan_darah'=> $row['golongan_darah'],
-            'riwayat_penyakit'=> $row['riwayat_penyakit'],
+                // Data Pelengkap
+                'anak_ke'       => is_numeric($row['anak_ke'] ?? null) ? $row['anak_ke'] : null,
+                'jumlah_saudara'=> is_numeric($row['jumlah_saudara'] ?? null) ? $row['jumlah_saudara'] : null,
+                'golongan_darah'=> $row['golongan_darah'] ?? null,
+                'riwayat_penyakit'=> $row['riwayat_penyakit'] ?? null,
 
-            // Alamat & Ortu (Tabel Santri Baru)
-            'alamat'        => $row['alamat'],
-            'rt'            => $row['rt'],
-            'rw'            => $row['rw'],
-            'desa'          => $row['desa'],
-            'kecamatan'     => $row['kecamatan'],
-            'kode_pos'      => $row['kode_pos'],
-            
-            'nama_ayah'         => $row['nama_ayah'],
-            'nik_ayah'          => $row['nik_ayah'],
-            'thn_lahir_ayah'    => is_numeric($row['thn_lahir_ayah'] ?? null) ? $row['thn_lahir_ayah'] : null,
-            'pendidikan_ayah'   => $row['pendidikan_ayah'],
-            'pekerjaan_ayah'    => $row['pekerjaan_ayah'],
-            'penghasilan_ayah'  => $row['penghasilan_ayah'],
-            'no_hp_ayah'        => $row['no_hp_ayah'], // Penting
+                // Alamat
+                'alamat'        => $row['alamat'] ?? null,
+                'rt'            => $row['rt'] ?? null,
+                'rw'            => $row['rw'] ?? null,
+                'desa'          => $row['desa'] ?? null,
+                'kecamatan'     => $row['kecamatan'] ?? null,
+                'kode_pos'      => $row['kode_pos'] ?? null,
+                
+                // Data Ortu (untuk backup di tabel santri)
+                'nama_ayah'         => $row['nama_ayah'] ?? null,
+                'nik_ayah'          => $row['nik_ayah'] ?? null,
+                'thn_lahir_ayah'    => is_numeric($row['thn_lahir_ayah'] ?? null) ? $row['thn_lahir_ayah'] : null,
+                'pendidikan_ayah'   => $row['pendidikan_ayah'] ?? null,
+                'pekerjaan_ayah'    => $row['pekerjaan_ayah'] ?? null,
+                'penghasilan_ayah'  => $row['penghasilan_ayah'] ?? null,
+                'no_hp_ayah'        => $row['no_hp_ayah'] ?? null,
 
-            'nama_ibu'          => $row['nama_ibu'],
-            'nik_ibu'           => $row['nik_ibu'],
-            'thn_lahir_ibu'     => is_numeric($row['thn_lahir_ibu'] ?? null) ? $row['thn_lahir_ibu'] : null,
-            'pendidikan_ibu'    => $row['pendidikan_ibu'],
-            'pekerjaan_ibu'     => $row['pekerjaan_ibu'],
-            'penghasilan_ibu'   => $row['penghasilan_ibu'],
-            'no_hp_ibu'         => $row['no_hp_ibu'], // Penting
-        ]);
+                'nama_ibu'          => $row['nama_ibu'] ?? null,
+                'nik_ibu'           => $row['nik_ibu'] ?? null,
+                'thn_lahir_ibu'     => is_numeric($row['thn_lahir_ibu'] ?? null) ? $row['thn_lahir_ibu'] : null,
+                'pendidikan_ibu'    => $row['pendidikan_ibu'] ?? null,
+                'pekerjaan_ibu'     => $row['pekerjaan_ibu'] ?? null,
+                'penghasilan_ibu'   => $row['penghasilan_ibu'] ?? null,
+                'no_hp_ibu'         => $row['no_hp_ibu'] ?? null,
+            ]
+        );
+
+        // KEMBALIKAN NULL
+        // Karena kita sudah menyimpan data secara manual pakai updateOrCreate,
+        // kita return null agar library Excel tidak mencoba meng-insert ulang (yang bikin error duplicate).
+        return null;
     }
 
     /**
