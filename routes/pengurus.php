@@ -19,6 +19,7 @@ use App\Http\Controllers\Pengurus\Inventaris\BarangController;
 use App\Http\Controllers\Pengurus\Inventaris\KerusakanController;
 use App\Http\Controllers\Pengurus\Inventaris\PeminjamanController;
 use App\Http\Controllers\Pengurus\Inventaris\AuditController;
+use App\Http\Controllers\Pengurus\PerpulanganController;
 
 /*
 |--------------------------------------------------------------------------
@@ -149,4 +150,24 @@ Route::middleware(['auth', 'role:pengurus_pondok'])->prefix('pengurus')->name('p
         Route::post('rekap/{id}/reconcile', [AuditController::class, 'reconcile'])->name('rekap.reconcile'); 
         Route::get('rekap/pdf', [AuditController::class, 'downloadPDF'])->name('rekap.pdf');
     });
+
+    Route::prefix('perpulangan')->name('perpulangan.')->group(function () {
+    // Menu Utama & CRUD Event
+    Route::get('/', [PerpulanganController::class, 'index'])->name('index');
+    Route::get('/create', [PerpulanganController::class, 'create'])->name('create');
+    Route::post('/store', [PerpulanganController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [PerpulanganController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [PerpulanganController::class, 'update'])->name('update');
+    Route::delete('/{id}', [PerpulanganController::class, 'destroy'])->name('destroy');
+
+    // Menu Cetak Kartu (Tahap berikutnya)
+    Route::get('/{id}/pilih-santri', [PerpulanganController::class, 'pilihSantri'])->name('pilih-santri');
+    Route::post('/{id}/cetak', [PerpulanganController::class, 'cetakKartu'])->name('cetak');
+
+    // Halaman Scan
+    Route::get('/scan', [PerpulanganController::class, 'scanIndex'])->name('scan');
+    // Proses Ajax
+    Route::post('/scan/process', [PerpulanganController::class, 'scanProcess'])->name('scan.process');
+    Route::get('/{id}', [PerpulanganController::class, 'show'])->name('show');
+});
 });

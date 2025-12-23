@@ -122,6 +122,17 @@
                         </div>
                         <span class="text-[11px] font-medium text-gray-600 text-center leading-tight group-hover:text-emerald-600">Asrama</span>
                     </a>
+
+                    {{-- Menu 7: Perpulangan --}}
+                    <a href="{{ route('pengurus.perpulangan.index') }}" class="flex flex-col items-center gap-2 group">
+                        <div class="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center shadow-sm border border-rose-100 group-active:scale-95 transition duration-200">
+                            {{-- Icon Log Out / Pulang --}}
+                            <svg class="w-6 h-6 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                        </div>
+                        <span class="text-[11px] font-medium text-gray-600 text-center leading-tight group-hover:text-emerald-600">Pulang</span>
+                    </a>
                 </div>
             </div>
         </div>

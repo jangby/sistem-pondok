@@ -215,4 +215,12 @@ public function getPersentaseLengkapAttribute()
 
     return count($fields) > 0 ? round(($filled / count($fields)) * 100) : 0;
 }
+
+/**
+     * Relasi ke History Perpulangan
+     */
+    public function perpulanganRecords()
+    {
+        return $this->hasMany(\App\Models\PerpulanganRecord::class)->latest();
+    }
 }

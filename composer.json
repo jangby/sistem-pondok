@@ -16,6 +16,7 @@
         "maatwebsite/excel": "^3.1",
         "midtrans/midtrans-php": "^2.6",
         "picqer/php-barcode-generator": "^3.2",
+        "simplesoftwareio/simple-qrcode": "^4.2",
         "spatie/laravel-permission": "^6.23"
     },
     "require-dev": {
