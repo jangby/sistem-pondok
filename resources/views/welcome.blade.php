@@ -1,132 +1,168 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"> 
-        
-        <title>{{ config('app.name', 'Aplikasi Pondok') }}</title>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ config('app.name', 'Pondok Pesantren') }}</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,600,800,900" rel="stylesheet" />
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .bg-deep-navy { background-color: #0c0f1d; }
+        .glow-text { text-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
+    </style>
+</head>
+<body class="bg-deep-navy antialiased min-h-screen text-gray-100 font-sans selection:bg-emerald-500 selection:text-white">
 
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=instrument-sans:400,600,800,900" rel="stylesheet" />
-
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        
-        <style>
-            /* Custom styles for Deep Navy Background */
-            .bg-deep-navy {
-                background-color: #0c0f1d; 
-            }
-            .glow-ring {
-                box-shadow: 0 0 25px rgba(16, 185, 129, 0.4); 
-            }
-            .glow-effect-center {
-                background-image: radial-gradient(circle at center, rgba(16, 185, 129, 0.08) 0%, rgba(12, 15, 29, 0) 60%);
-            }
-            /* Media Query untuk ukuran Mobile (meniru ponsel) */
-            @media (max-width: 639px) {
-                .text-mobile-h1 { font-size: 2.2rem; line-height: 1.1; }
-                .text-mobile-lead { font-size: 1rem; }
-            }
-            /* Styling untuk Desktop (lebar lebih kecil dari sebelumnya, fokus ke konten) */
-            @media (min-width: 1024px) {
-                .container-desktop { max-width: 58rem; } /* Max-width sedikit lebih kecil */
-            }
-        </style>
-    </head>
-
-    <body class="bg-deep-navy antialiased min-h-screen text-white">
-        
-        {{-- 1. NAVIGATION BAR (Minimalis & Transparan) --}}
-        <header class="absolute top-0 left-0 right-0 p-4 lg:px-8 z-50">
-            <div class="flex items-center justify-between mx-auto container-desktop">
-                
-                {{-- Logo/App Name --}}
-                <div class="text-xl font-extrabold text-emerald-400">
-                    {{ config('app.name', 'Pondok Digital') }}
+    {{-- NAVBAR --}}
+    <nav class="fixed w-full z-50 bg-deep-navy/80 backdrop-blur-md border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex-shrink-0 flex items-center gap-2">
+                    {{-- Ganti src dengan logo pondok Anda --}}
+                    <span class="text-2xl font-black text-emerald-500 tracking-tighter">SISTEM PONDOK</span>
                 </div>
-
-                {{-- Auth Links (Kecil, Rapi) --}}
-                @if (Route::has('login'))
-                    <nav class="flex items-center justify-end gap-3">
-                        @auth
-                            <a href="{{ url('/dashboard') }}" class="text-sm font-semibold text-gray-300 hover:text-emerald-400 transition-colors px-3 py-1 border border-emerald-500 rounded-lg">
-                                Dashboard
+                <div class="hidden md:flex space-x-8">
+                    <a href="#" class="hover:text-emerald-400 transition">Beranda</a>
+                    <a href="#program" class="hover:text-emerald-400 transition">Program</a>
+                    <a href="#berita" class="hover:text-emerald-400 transition">Berita</a>
+                </div>
+                <div class="flex items-center gap-4">
+                    @auth
+                        <a href="{{ url('/dashboard') }}" class="px-4 py-2 text-sm font-semibold text-white bg-gray-800 rounded-full hover:bg-gray-700 border border-gray-700 transition">Dashboard</a>
+                    @else
+                        <a href="{{ route('login') }}" class="text-gray-300 hover:text-white transition font-medium">Masuk</a>
+                        {{-- Tombol Daftar hanya muncul jika ada gelombang aktif --}}
+                        @if(isset($ppdbActive) && $ppdbActive)
+                            <a href="{{ route('ppdb.register') }}" class="px-5 py-2 text-sm font-bold text-gray-900 bg-emerald-500 rounded-full hover:bg-emerald-400 shadow-lg shadow-emerald-500/20 transition transform hover:-translate-y-0.5">
+                                Daftar PPDB
                             </a>
-                        @else
-                            @if (Route::has('register'))
-                                <a href="{{ route('register') }}" class="text-xs font-medium text-gray-400 hover:text-white transition-colors py-1 hidden sm:inline-block">
-                                    Daftar
-                                </a>
-                            @endif
-                            <a href="{{ route('login') }}" class="inline-block px-4 py-2 bg-emerald-600 text-gray-900 font-bold rounded-lg shadow-md hover:bg-emerald-500 transition-colors text-sm">
-                                Masuk
-                            </a>
-                        @endauth
-                    </nav>
-                @endif
+                        @endif
+                    @endauth
+                </div>
             </div>
-        </header>
+        </div>
+    </nav>
 
-        {{-- 2. HERO SECTION (Fokus Sentral Mobile) --}}
-        <main class="min-h-screen flex items-center justify-center relative overflow-hidden glow-effect-center">
-            <div class="container-desktop mx-auto px-6 lg:px-8 py-24 max-w-lg lg:max-w-7xl flex flex-col items-center justify-center text-center">
-                
-                {{-- TOP ACCENT --}}
-                <p class="text-emerald-400 font-extrabold uppercase mb-3 text-sm tracking-widest px-3 py-1 bg-gray-800/50 rounded-full border border-emerald-500/50">
-                    #DigitalisasiPondok
-                </p>
+    {{-- HERO SECTION --}}
+    <section class="relative pt-32 pb-20 overflow-hidden">
+        {{-- Background Effect --}}
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl -z-10"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            @if(isset($ppdbActive) && $ppdbActive)
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-8 animate-pulse">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span class="text-sm font-bold tracking-wide uppercase">Pendaftaran Dibuka: {{ $ppdbActive->nama_gelombang }}</span>
+                </div>
+            @endif
 
-                {{-- HEADLINE (Ukuran Besar Dinamis) --}}
-                <h1 class="text-mobile-h1 md:text-5xl lg:text-7xl font-extrabold text-white leading-tight mb-4 tracking-tight">
-                    Kelola <span class="text-emerald-400">Santri & Sekolah</span> dengan Teknologi
-                </h1>
-                
-                {{-- SUBTITLE (Kecil, Jelas) --}}
-                <p class="text-mobile-lead md:text-lg text-gray-400 mb-10 max-w-md">
-                    Platform efisien untuk absensi *real-time*, manajemen perizinan, dan laporan keuangan terintegrasi.
-                </p>
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 leading-tight">
+                Membangun Generasi <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 glow-text">Qur'ani & Berteknologi</span>
+            </h1>
+            
+            <p class="text-lg text-gray-400 mb-10 max-w-2xl mx-auto">
+                Platform digital terintegrasi untuk manajemen pendidikan pesantren modern. Memudahkan pendaftaran, pemantauan hafalan, hingga laporan akademik.
+            </p>
 
-                {{-- CTA BLOCK (Focus on Login) --}}
-                <div class="flex flex-col sm:flex-row gap-4 justify-center w-full max-w-sm">
-                    <a href="{{ route('login') }}" class="flex-1 inline-flex items-center justify-center gap-2 px-8 py-3 bg-emerald-600 text-gray-900 font-extrabold rounded-xl shadow-lg glow-ring hover:bg-emerald-500 transition-all text-base active:scale-[0.98]">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
-                        Masuk ke Sistem
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                @if(isset($ppdbActive) && $ppdbActive)
+                    <a href="{{ route('ppdb.register') }}" class="px-8 py-4 text-lg font-bold text-gray-900 bg-emerald-500 rounded-xl hover:bg-emerald-400 shadow-xl shadow-emerald-500/20 transition hover:scale-105">
+                        Daftar Santri Baru Sekarang
                     </a>
+                @else
+                    <button disabled class="px-8 py-4 text-lg font-bold text-gray-500 bg-gray-800 rounded-xl cursor-not-allowed">
+                        Pendaftaran Belum Dibuka
+                    </button>
+                @endif
+                <a href="#info-ppdb" class="px-8 py-4 text-lg font-bold text-white bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-700 transition">
+                    Lihat Alur & Biaya
+                </a>
+            </div>
+        </div>
+    </section>
+
+    {{-- INFO PPDB SECTION --}}
+    @if(isset($ppdbActive) && $ppdbActive)
+    <section id="info-ppdb" class="py-20 bg-gray-900 border-y border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h2 class="text-3xl font-bold mb-6 text-white">Informasi Pendaftaran <span class="text-emerald-500">{{ $ppdbActive->tahun_ajaran }}</span></h2>
+                    <div class="space-y-6">
+                        <div class="flex gap-4">
+                            <div class="w-12 h-12 rounded-lg bg-gray-800 flex items-center justify-center text-emerald-500 shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">Waktu Pendaftaran</h3>
+                                <p class="text-gray-400">
+                                    {{ $ppdbActive->tanggal_mulai->format('d M Y') }} s/d {{ $ppdbActive->tanggal_akhir->format('d M Y') }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="w-12 h-12 rounded-lg bg-gray-800 flex items-center justify-center text-emerald-500 shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">Biaya Pendaftaran</h3>
+                                <p class="text-emerald-400 font-mono text-lg">Rp {{ number_format($ppdbActive->biaya_pendaftaran, 0, ',', '.') }}</p>
+                                <p class="text-xs text-gray-500">Pembayaran via Transfer Otomatis (Virtual Account)</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 p-4 bg-gray-800/50 rounded-xl border border-gray-700 text-sm text-gray-300">
+                        <p class="font-semibold text-white mb-2">Deskripsi Gelombang:</p>
+                        {{ $ppdbActive->deskripsi ?? 'Segera daftarkan putra-putri Anda sebelum kuota terpenuhi.' }}
+                    </div>
                 </div>
 
-                {{-- Feature Showcase Cards (Small and Compact) --}}
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-20 w-full max-w-4xl">
-                    @php
-                        $mini_benefits = [
-                            ['icon' => 'clock', 'text' => 'Absensi Cepat'],
-                            ['icon' => 'user-check', 'text' => 'Izin Terpantau'],
-                            ['icon' => 'credit-card', 'text' => 'Uang Jajan Digital'],
-                            ['icon' => 'report', 'text' => 'Laporan Wali'],
-                        ];
-                    @endphp
-                    @foreach ($mini_benefits as $b)
-                        <div class="p-3 bg-gray-900 rounded-lg border border-gray-700/50 flex items-center justify-center lg:justify-start gap-2 shadow-xl">
-                            <div class="text-emerald-500 shrink-0">
-                                @if($b['icon'] == 'clock')
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                @elseif($b['icon'] == 'user-check')
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.275a1.879 1.879 0 011.666 0C21.75 6.136 21.75 7.962 21.75 12c0 4.038 0 5.864-.466 7.275a1.879 1.879 0 01-1.666 0C19.75 18.064 19.75 16.238 19.75 12s0-5.864.466-7.275z"></path></svg>
-                                @elseif($b['icon'] == 'credit-card')
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                                @elseif($b['icon'] == 'report')
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                                @endif
-                            </div>
-                            <span class="text-xs text-gray-300 font-medium">{{ $b['text'] }}</span>
-                        </div>
-                    @endforeach
+                {{-- Card Statistik / Brosur --}}
+                <div class="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 border border-gray-700 shadow-2xl">
+                    <h3 class="text-xl font-bold text-white mb-4 text-center">Alur Pendaftaran</h3>
+                    <ol class="relative border-l border-gray-700 ml-3 space-y-6">                  
+                        <li class="mb-2 ml-6">
+                            <span class="absolute flex items-center justify-center w-8 h-8 bg-emerald-900 rounded-full -left-4 ring-4 ring-gray-900">
+                                <span class="text-emerald-400 font-bold text-sm">1</span>
+                            </span>
+                            <h3 class="font-medium leading-tight text-white">Buat Akun</h3>
+                            <p class="text-sm text-gray-400">Isi Nama, Email & Password.</p>
+                        </li>
+                        <li class="mb-2 ml-6">
+                            <span class="absolute flex items-center justify-center w-8 h-8 bg-gray-800 rounded-full -left-4 ring-4 ring-gray-900 border border-gray-700">
+                                <span class="text-gray-400 font-bold text-sm">2</span>
+                            </span>
+                            <h3 class="font-medium leading-tight text-white">Bayar Pendaftaran</h3>
+                            <p class="text-sm text-gray-400">Melalui Virtual Account / QRIS.</p>
+                        </li>
+                        <li class="mb-2 ml-6">
+                            <span class="absolute flex items-center justify-center w-8 h-8 bg-gray-800 rounded-full -left-4 ring-4 ring-gray-900 border border-gray-700">
+                                <span class="text-gray-400 font-bold text-sm">3</span>
+                            </span>
+                            <h3 class="font-medium leading-tight text-white">Lengkapi Biodata</h3>
+                            <p class="text-sm text-gray-400">Isi data santri & upload berkas.</p>
+                        </li>
+                    </ol>
+                    <div class="mt-8">
+                        <a href="{{ route('ppdb.register') }}" class="block w-full py-3 text-center bg-emerald-600 hover:bg-emerald-500 rounded-lg font-bold text-white transition">
+                            Mulai Daftar
+                        </a>
+                    </div>
                 </div>
             </div>
-        </main>
+        </div>
+    </section>
+    @endif
 
-        {{-- 3. FOOTER --}}
-        <footer class="text-center py-4 text-xs text-gray-600 absolute bottom-0 w-full z-10">
-            &copy; {{ date('Y') }} {{ config('app.name', 'Pondok Digital') }}. Dibuat dengan kecintaan pada pendidikan Islami.
-        </footer>
-    </body>
+    {{-- FOOTER --}}
+    <footer class="bg-black py-10 border-t border-gray-800 text-center">
+        <p class="text-gray-500 text-sm">
+            &copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.
+        </p>
+    </footer>
+
+</body>
 </html>

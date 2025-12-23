@@ -47,6 +47,32 @@ class MidtransWebhookController extends Controller
     $statusCode = $notif->status_code;
     $orderId = $notif->order_id;
 
+    // CEK APAKAH INI TRANSAKSI PPDB?
+        if (str_starts_with($orderId, 'PPDB-')) {
+            
+            $transaksi = \App\Models\PpdbTransaction::where('order_id', $orderId)->first();
+            if (!$transaksi) return response()->json(['message' => 'Order not found'], 404);
+
+            if ($status == 'capture' || $status == 'settlement') {
+                // 1. Update status transaksi jadi success
+                $transaksi->update(['status' => 'success']);
+
+                // 2. Tambahkan nominal ke 'total_sudah_bayar' di tabel calon_santris
+                $calonSantri = $transaksi->calonSantri;
+                $calonSantri->total_sudah_bayar += $transaksi->gross_amount;
+                
+                // 3. Cek Lunas?
+                if ($calonSantri->sisa_tagihan <= 0) {
+                    $calonSantri->status_pembayaran = 'lunas';
+                }
+                
+                $calonSantri->save();
+            } 
+            elseif ($status == 'expire' || $status == 'cancel' || $status == 'deny') {
+                $transaksi->update(['status' => 'failed']);
+            }
+        }
+
     $inputSignature = $notif->signature_key;
     $mySignature = hash("sha512", $orderId . $statusCode . $grossAmount . $serverKey);
 

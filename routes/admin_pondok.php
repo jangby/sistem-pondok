@@ -24,6 +24,8 @@ use App\Http\Controllers\AdminPondok\AdminUangJajanController;
 use App\Http\Controllers\AdminPondok\PengurusPondokController;
 use App\Http\Controllers\AdminPondok\ManajemenSekolahController;
 use App\Http\Controllers\AdminPondok\TagihanController;
+use App\Http\Controllers\AdminPondok\PpdbSettingController;
+use App\Http\Controllers\AdminPondok\PpdbPendaftarController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +49,28 @@ Route::middleware(['auth', 'role:admin-pondok', 'cek.langganan'])
      ->group(function () {
 
     Route::get('/dashboard', [AdminPondokDashboard::class, 'index'])->name('dashboard');
+
+    Route::prefix('ppdb')->name('ppdb.')->group(function () {
+    // Menu Pengaturan Gelombang
+    Route::get('/setting', [PpdbSettingController::class, 'index'])->name('setting.index');
+    Route::get('/setting/create', [PpdbSettingController::class, 'create'])->name('setting.create');
+    Route::post('/setting', [PpdbSettingController::class, 'store'])->name('setting.store');
+    Route::patch('/setting/{id}/toggle', [PpdbSettingController::class, 'toggleStatus'])->name('setting.toggle');
+    Route::delete('/setting/{id}', [PpdbSettingController::class, 'destroy'])->name('setting.destroy');
+
+    // Di dalam group 'ppdb'
+    Route::get('/setting/{id}/biaya', [PpdbSettingController::class, 'manageBiaya'])->name('setting.biaya');
+    Route::post('/setting/{id}/biaya', [PpdbSettingController::class, 'storeBiaya'])->name('setting.biaya.store');
+    Route::delete('/biaya/{id}', [PpdbSettingController::class, 'destroyBiaya'])->name('biaya.destroy');
+
+    // Manajemen Pendaftar
+    Route::get('/pendaftar', [PpdbPendaftarController::class, 'index'])->name('pendaftar.index');
+    Route::get('/pendaftar/{id}', [PpdbPendaftarController::class, 'show'])->name('pendaftar.show');
+    Route::post('/pendaftar/{id}/approve', [PpdbPendaftarController::class, 'approve'])->name('pendaftar.approve');
+    Route::post('/pendaftar/{id}/reject', [PpdbPendaftarController::class, 'reject'])->name('pendaftar.reject');
+    Route::post('/pendaftar/{id}/payment-confirm', [PpdbPendaftarController::class, 'confirmPayment'])->name('pendaftar.payment.confirm');
+    Route::delete('/pendaftar/{id}', [PpdbPendaftarController::class, 'destroy'])->name('pendaftar.destroy');
+});
 
     Route::resource('santris', SantriController::class);
     Route::resource('orang-tuas', OrangTuaController::class);

@@ -102,4 +102,10 @@ public function guru(): HasOne
 {
     return $this->hasOne(Ustadz::class);
 }
+
+// Relasi ke data calon santri
+    public function calonSantri()
+    {
+        return $this->hasOne(CalonSantri::class);
+    }
 }

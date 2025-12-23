@@ -4,16 +4,19 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MidtransWebhookController;
+use App\Http\Controllers\Landing\PpdbController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [PpdbController::class, 'index'])->name('welcome');
+
+Route::get('/ppdb/daftar', [PpdbController::class, 'register'])->name('ppdb.register');
+Route::post('/ppdb/daftar', [PpdbController::class, 'store'])->name('ppdb.store');
 
 // === RUTE DASHBOARD (REDIRECTOR) ===
 Route::get('/dashboard', function () {
     $user = Auth::user();
 
     if ($user->hasRole('super-admin')) return redirect()->route('superadmin.dashboard');
+    if ($user->hasRole('calon_santri')) return redirect()->route('ppdb.dashboard');
     if ($user->hasRole('admin-pondok')) return redirect()->route('adminpondok.dashboard');
     if ($user->hasRole('super-admin-sekolah')) return redirect()->route('sekolah.superadmin.dashboard');
     if ($user->hasRole('admin-sekolah')) return redirect()->route('sekolah.admin.dashboard');
@@ -37,6 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+
 // === WEBHOOK HANDLER ===
 Route::post('/midtrans/webhook', [MidtransWebhookController::class, 'handle'])->name('midtrans.webhook');
 
@@ -51,3 +55,33 @@ require __DIR__.'/auth.php';
 Route::post('/gerbang/api/scan', [App\Http\Controllers\Pengurus\Absensi\GateController::class, 'apiScan'])
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]) 
     ->name('gerbang.api.scan');
+
+// ====================================================
+// RUTE KHUSUS CALON SANTRI (PPDB)
+// ====================================================
+Route::middleware(['auth', 'role:calon_santri'])
+    ->prefix('ppdb')
+    ->name('ppdb.') // <--- INI PENTING: Memberi awalan 'ppdb.' ke semua rute di dalam grup
+    ->group(function () {
+    
+    // Dashboard (Nama menjadi: ppdb.dashboard)
+    Route::get('/dashboard', [PpdbController::class, 'dashboard'])->name('dashboard');
+    
+    // Biodata (Nama menjadi: ppdb.biodata)
+    Route::get('/biodata', [PpdbController::class, 'biodata'])->name('biodata');
+    
+    // Update Biodata (Nama menjadi: ppdb.biodata.update)
+    Route::put('/biodata', [PpdbController::class, 'updateBiodata'])->name('biodata.update');
+
+    // Di dalam group prefix 'ppdb'
+    
+    // Halaman Form Bayar (GET)
+    Route::get('/bayar', [PpdbController::class, 'payment'])->name('payment');
+    
+    // Proses Bayar (POST)
+    Route::post('/bayar', [PpdbController::class, 'processPayment'])->name('payment.process');
+    
+    // Redirect Finish dari Midtrans (GET)
+    Route::get('/bayar/finish', [PpdbController::class, 'paymentSuccess'])->name('payment.finish');
+
+});
