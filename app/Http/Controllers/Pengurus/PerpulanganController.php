@@ -224,28 +224,45 @@ class PerpulanganController extends Controller
         ]);
     }
 
-    // 9. Halaman Detail & Monitoring Event
-    public function show($id)
+    // 9. Halaman Detail & Monitoring Event (DENGAN FILTER)
+    public function show(Request $request, $id)
     {
         $event = PerpulanganEvent::findOrFail($id);
 
-        // Ambil semua record yang terdaftar di event ini
-        $records = PerpulanganRecord::with(['santri.mustawa', 'santri.asrama'])
-            ->where('perpulangan_event_id', $id)
-            ->get();
+        // 1. Ambil Data Kelas yang ada di event ini (Untuk Dropdown Filter)
+        // Kita hanya ambil kelas yang santrinya sudah didaftarkan/dicetak kartunya
+        $mustawaIds = PerpulanganRecord::where('perpulangan_event_id', $id)
+            ->join('santris', 'perpulangan_records.santri_id', '=', 'santris.id')
+            ->select('santris.mustawa_id')
+            ->distinct()
+            ->pluck('santris.mustawa_id');
+            
+        $mustawas = Mustawa::whereIn('id', $mustawaIds)->orderBy('nama')->get();
 
-        // Pisahkan data untuk Tabs
+        // 2. Query Utama Record
+        $query = PerpulanganRecord::with(['santri.mustawa', 'santri.asrama'])
+            ->where('perpulangan_event_id', $id);
+
+        // 3. Logika Filter
+        if ($request->has('mustawa_id') && $request->mustawa_id != '') {
+            $query->whereHas('santri', function($q) use ($request) {
+                $q->where('mustawa_id', $request->mustawa_id);
+            });
+        }
+
+        $records = $query->get();
+
+        // 4. Grouping Data (Tabulasi)
         $belum_pulang = $records->where('status', 0);
         $sedang_pulang = $records->where('status', 1);
         $sudah_kembali = $records->where('status', 2);
         
-        // Data Terlambat (Yang is_late=true ATAU yang masih diluar tapi sudah lewat tanggal wajib kembali)
         $terlambat = $records->filter(function ($record) use ($event) {
             return $record->is_late || ($record->status == 1 && now()->greaterThan($event->tanggal_akhir));
         });
 
         return view('pengurus.perpulangan.show', compact(
-            'event', 'records', 'belum_pulang', 'sedang_pulang', 'sudah_kembali', 'terlambat'
+            'event', 'records', 'belum_pulang', 'sedang_pulang', 'sudah_kembali', 'terlambat', 'mustawas'
         ));
     }
 }
