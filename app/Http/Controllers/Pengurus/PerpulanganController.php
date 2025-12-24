@@ -265,4 +265,22 @@ class PerpulanganController extends Controller
             'event', 'records', 'belum_pulang', 'sedang_pulang', 'sudah_kembali', 'terlambat', 'mustawas'
         ));
     }
+
+    // 10. Toggle Status Event (On/Off)
+    public function toggleStatus($id)
+    {
+        $event = PerpulanganEvent::findOrFail($id);
+        
+        // Cek status sekarang
+        $newStatus = !$event->is_active;
+
+        // Jika mau diaktifkan, matikan dulu event yang lain
+        if ($newStatus) {
+            PerpulanganEvent::where('id', '!=', $id)->update(['is_active' => false]);
+        }
+
+        $event->update(['is_active' => $newStatus]);
+
+        return redirect()->back()->with('success', 'Status jadwal berhasil diperbarui.');
+    }
 }

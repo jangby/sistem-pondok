@@ -152,22 +152,37 @@ Route::middleware(['auth', 'role:pengurus_pondok'])->prefix('pengurus')->name('p
     });
 
     Route::prefix('perpulangan')->name('perpulangan.')->group(function () {
-    // Menu Utama & CRUD Event
+    // 1. ROUTE STATIC (Route dengan nama tetap harus paling atas)
     Route::get('/', [PerpulanganController::class, 'index'])->name('index');
     Route::get('/create', [PerpulanganController::class, 'create'])->name('create');
     Route::post('/store', [PerpulanganController::class, 'store'])->name('store');
-    Route::get('/{id}/edit', [PerpulanganController::class, 'edit'])->name('edit');
-    Route::put('/{id}', [PerpulanganController::class, 'update'])->name('update');
-    Route::delete('/{id}', [PerpulanganController::class, 'destroy'])->name('destroy');
+    
+    // Halaman Scan (Static)
+    Route::get('/scan', [PerpulanganController::class, 'scanIndex'])->name('scan');
+    Route::post('/scan/process', [PerpulanganController::class, 'scanProcess'])->name('scan.process');
 
-    // Menu Cetak Kartu (Tahap berikutnya)
+    // === PINDAHKAN ROUTE PETUGAS KE SINI (Sebelum Wildcard {id}) ===
+    Route::get('/petugas', [App\Http\Controllers\Pengurus\PetugasPerpulanganController::class, 'index'])->name('petugas.index');
+    Route::get('/petugas/create', [App\Http\Controllers\Pengurus\PetugasPerpulanganController::class, 'create'])->name('petugas.create');
+    Route::post('/petugas', [App\Http\Controllers\Pengurus\PetugasPerpulanganController::class, 'store'])->name('petugas.store');
+    Route::get('/petugas/{id}/edit', [App\Http\Controllers\Pengurus\PetugasPerpulanganController::class, 'edit'])->name('petugas.edit');
+    Route::put('/petugas/{id}', [App\Http\Controllers\Pengurus\PetugasPerpulanganController::class, 'update'])->name('petugas.update');
+    Route::delete('/petugas/{id}', [App\Http\Controllers\Pengurus\PetugasPerpulanganController::class, 'destroy'])->name('petugas.destroy');
+    // ================================================================
+
+    // 2. ROUTE DYNAMIC (Route dengan {id} harus di bawah route static)
+    
+    // Menu Cetak Kartu
     Route::get('/{id}/pilih-santri', [PerpulanganController::class, 'pilihSantri'])->name('pilih-santri');
     Route::post('/{id}/cetak', [PerpulanganController::class, 'cetakKartu'])->name('cetak');
 
-    // Halaman Scan
-    Route::get('/scan', [PerpulanganController::class, 'scanIndex'])->name('scan');
-    // Proses Ajax
-    Route::post('/scan/process', [PerpulanganController::class, 'scanProcess'])->name('scan.process');
+    Route::get('/{id}/edit', [PerpulanganController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [PerpulanganController::class, 'update'])->name('update');
+    Route::delete('/{id}', [PerpulanganController::class, 'destroy'])->name('destroy');
+    
+    // Route Show (Paling rawan konflik, taruh paling bawah dalam grup {id})
     Route::get('/{id}', [PerpulanganController::class, 'show'])->name('show');
+
+    Route::patch('/{id}/toggle-status', [PerpulanganController::class, 'toggleStatus'])->name('toggle-status');
 });
 });
