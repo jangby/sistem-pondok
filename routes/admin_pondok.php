@@ -50,27 +50,42 @@ Route::middleware(['auth', 'role:admin-pondok', 'cek.langganan'])
 
     Route::get('/dashboard', [AdminPondokDashboard::class, 'index'])->name('dashboard');
 
+    // GRUP ROUTE PPDB
     Route::prefix('ppdb')->name('ppdb.')->group(function () {
-    // Menu Pengaturan Gelombang
-    Route::get('/setting', [PpdbSettingController::class, 'index'])->name('setting.index');
-    Route::get('/setting/create', [PpdbSettingController::class, 'create'])->name('setting.create');
-    Route::post('/setting', [PpdbSettingController::class, 'store'])->name('setting.store');
-    Route::patch('/setting/{id}/toggle', [PpdbSettingController::class, 'toggleStatus'])->name('setting.toggle');
-    Route::delete('/setting/{id}', [PpdbSettingController::class, 'destroy'])->name('setting.destroy');
+        
+        // 1. Menu Pengaturan Gelombang
+        Route::get('/setting', [PpdbSettingController::class, 'index'])->name('setting.index');
+        Route::get('/setting/create', [PpdbSettingController::class, 'create'])->name('setting.create');
+        Route::post('/setting', [PpdbSettingController::class, 'store'])->name('setting.store');
+        Route::patch('/setting/{id}/toggle', [PpdbSettingController::class, 'toggleStatus'])->name('setting.toggle');
+        Route::delete('/setting/{id}', [PpdbSettingController::class, 'destroy'])->name('setting.destroy');
 
-    // Di dalam group 'ppdb'
-    Route::get('/setting/{id}/biaya', [PpdbSettingController::class, 'manageBiaya'])->name('setting.biaya');
-    Route::post('/setting/{id}/biaya', [PpdbSettingController::class, 'storeBiaya'])->name('setting.biaya.store');
-    Route::delete('/biaya/{id}', [PpdbSettingController::class, 'destroyBiaya'])->name('biaya.destroy');
+        // 2. Pengaturan Biaya
+        Route::get('/setting/{id}/biaya', [PpdbSettingController::class, 'manageBiaya'])->name('setting.biaya');
+        Route::post('/setting/{id}/biaya', [PpdbSettingController::class, 'storeBiaya'])->name('setting.biaya.store');
+        Route::delete('/biaya/{id}', [PpdbSettingController::class, 'destroyBiaya'])->name('biaya.destroy');
 
-    // Manajemen Pendaftar
-    Route::get('/pendaftar', [PpdbPendaftarController::class, 'index'])->name('pendaftar.index');
-    Route::get('/pendaftar/{id}', [PpdbPendaftarController::class, 'show'])->name('pendaftar.show');
-    Route::post('/pendaftar/{id}/approve', [PpdbPendaftarController::class, 'approve'])->name('pendaftar.approve');
-    Route::post('/pendaftar/{id}/reject', [PpdbPendaftarController::class, 'reject'])->name('pendaftar.reject');
-    Route::post('/pendaftar/{id}/payment-confirm', [PpdbPendaftarController::class, 'confirmPayment'])->name('pendaftar.payment.confirm');
-    Route::delete('/pendaftar/{id}', [PpdbPendaftarController::class, 'destroy'])->name('pendaftar.destroy');
-});
+        // 3. Manajemen Pendaftar (Verifikasi & Aksi)
+        Route::get('/pendaftar', [PpdbPendaftarController::class, 'index'])->name('pendaftar.index');
+        Route::get('/pendaftar/{id}', [PpdbPendaftarController::class, 'show'])->name('pendaftar.show');
+        Route::post('/pendaftar/{id}/approve', [PpdbPendaftarController::class, 'approve'])->name('pendaftar.approve');
+        Route::post('/pendaftar/{id}/reject', [PpdbPendaftarController::class, 'reject'])->name('pendaftar.reject');
+        
+        // (Opsional) Konfirmasi lunas manual lama, bisa dihapus jika sudah pakai sistem baru
+        Route::post('/pendaftar/{id}/payment-confirm', [PpdbPendaftarController::class, 'confirmPayment'])->name('pendaftar.payment.confirm');
+        
+        Route::delete('/pendaftar/{id}', [PpdbPendaftarController::class, 'destroy'])->name('pendaftar.destroy');
+
+        // 4. PEMBAYARAN ADMIN / KASIR (BAGIAN YANG DIPERBAIKI)
+        // URL saya tambahkan '/pendaftar' agar rapi dan unik
+        // Name saya tambahkan 'pendaftar.' agar menjadi 'adminpondok.ppdb.pendaftar.payment'
+        Route::get('/pendaftar/{id}/payment', [PpdbPendaftarController::class, 'payment'])->name('pendaftar.payment');
+        Route::post('/pendaftar/{id}/payment', [PpdbPendaftarController::class, 'storePayment'])->name('pendaftar.payment.store');
+        Route::get('/pendaftar/payment/{transactionId}/print', [PpdbPendaftarController::class, 'printReceipt'])->name('pendaftar.payment.print');
+
+        Route::resource('petugas', \App\Http\Controllers\AdminPondok\ManajemenPetugasController::class)
+        ->except(['show', 'edit', 'update']);
+    });
 
     Route::resource('santris', SantriController::class);
     Route::resource('orang-tuas', OrangTuaController::class);

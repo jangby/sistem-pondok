@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout hide-nav>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Dashboard Calon Santri') }}
@@ -55,35 +55,55 @@
             @endif
 
             {{-- 1. HEADER CARD --}}
-            <div class="bg-gradient-to-r from-emerald-700 to-teal-600 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden">
-                <div class="absolute right-0 top-0 w-40 h-40 bg-white opacity-10 rounded-full -mr-10 -mt-10 blur-3xl"></div>
-                <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <h3 class="text-emerald-100 font-medium text-sm uppercase tracking-wider">Ahlan Wa Sahlan,</h3>
-                        <h1 class="text-3xl font-bold mt-1">{{ $calonSantri->nama_lengkap }}</h1>
-                        <div class="mt-3 flex items-center gap-3">
-                            <span class="bg-white/20 px-3 py-1 rounded-full text-xs font-mono backdrop-blur-sm border border-white/10">
-                                {{ $calonSantri->no_pendaftaran }}
-                            </span>
-                            <span class="text-sm text-emerald-100">
-                                Gelombang: {{ $calonSantri->ppdbSetting->nama_gelombang ?? '-' }}
-                            </span>
-                        </div>
-                    </div>
-                    
-                    {{-- Status Global --}}
-                    <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 min-w-[140px] text-center">
-                        <p class="text-xs text-emerald-200">Status Pendaftaran</p>
-                        @if($calonSantri->status_pendaftaran == 'diterima')
-                            <p class="text-lg font-bold text-white">DITERIMA 🎉</p>
-                        @elseif($calonSantri->status_pendaftaran == 'menunggu_verifikasi')
-                            <p class="text-lg font-bold text-yellow-300">VERIFIKASI</p>
-                        @else
-                            <p class="text-lg font-bold text-gray-200">DRAFT</p>
-                        @endif
-                    </div>
-                </div>
+<div class="bg-gradient-to-r from-emerald-700 to-teal-600 rounded-2xl shadow-xl p-6 text-white relative overflow-hidden">
+    {{-- Background Decoration --}}
+    <div class="absolute right-0 top-0 w-40 h-40 bg-white opacity-10 rounded-full -mr-10 -mt-10 blur-3xl"></div>
+    
+    <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        {{-- KIRI: Data Santri --}}
+        <div>
+            <h3 class="text-emerald-100 font-medium text-sm uppercase tracking-wider">Ahlan Wa Sahlan,</h3>
+            <h1 class="text-3xl font-bold mt-1">{{ $calonSantri->nama_lengkap }}</h1>
+            <div class="mt-3 flex items-center gap-3">
+                <span class="bg-white/20 px-3 py-1 rounded-full text-xs font-mono backdrop-blur-sm border border-white/10">
+                    {{ $calonSantri->no_pendaftaran }}
+                </span>
+                <span class="text-sm text-emerald-100">
+                    Gelombang: {{ $calonSantri->ppdbSetting->nama_gelombang ?? '-' }}
+                </span>
             </div>
+        </div>
+        
+        {{-- KANAN: Status & Logout (Dikelompokkan) --}}
+        <div class="flex items-stretch gap-3">
+            
+            {{-- Status Box --}}
+            <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10 min-w-[140px] text-center flex flex-col justify-center">
+                <p class="text-xs text-emerald-200 mb-1">Status Pendaftaran</p>
+                @if($calonSantri->status_pendaftaran == 'diterima')
+                    <p class="text-lg font-bold text-white">DITERIMA 🎉</p>
+                @elseif($calonSantri->status_pendaftaran == 'menunggu_verifikasi')
+                    <p class="text-lg font-bold text-yellow-300">VERIFIKASI</p>
+                @else
+                    <p class="text-lg font-bold text-gray-200">DRAFT</p>
+                @endif
+            </div>
+
+            {{-- Tombol Logout --}}
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="group h-full flex flex-col items-center justify-center bg-white/10 hover:bg-red-500/20 backdrop-blur-md rounded-xl p-3 border border-white/10 hover:border-red-400/30 min-w-[80px] transition-all duration-300 cursor-pointer">
+                    {{-- Icon Logout --}}
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-100 group-hover:text-red-100 mb-1 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span class="text-xs font-medium text-emerald-200 group-hover:text-white transition-colors">Keluar</span>
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
 
             {{-- 2. PROGRESS KELENGKAPAN (Opsional / Visual) --}}
             {{-- Logic sederhana: Jika status draft = progress awal, jika menunggu = progress tengah --}}

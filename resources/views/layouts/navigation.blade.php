@@ -202,33 +202,41 @@
                         @endphp
                         
                         <div class="relative">
-                            <x-dropdown align="left" width="48">
-                                {{-- Tombol Pemicu (Trigger) --}}
-                                <x-slot name="trigger">
-                                    <button class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium leading-5 transition duration-150 ease-in-out {{ $ppdbClasses }}">
-                                        <div>PPDB Online</div>
-                                        <div class="ms-1">
-                                            {{-- Icon Panah Bawah --}}
-                                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                            </svg>
-                                        </div>
-                                    </button>
-                                </x-slot>
+    <x-dropdown align="left" width="48">
+        {{-- Tombol Pemicu (Trigger) --}}
+        <x-slot name="trigger">
+            {{-- Pastikan variabel $ppdbClasses sudah didefinisikan di view/controller, 
+                 atau ganti dengan class string biasa jika error --}}
+            <button class="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium leading-5 transition duration-150 ease-in-out {{ $ppdbClasses ?? 'text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300' }}">
+                <div>PPDB Online</div>
+                <div class="ms-1">
+                    {{-- Icon Panah Bawah --}}
+                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </button>
+        </x-slot>
 
-                                {{-- Isi Menu Dropdown --}}
-                                <x-slot name="content">
-                                    {{-- Link ke Pengaturan Gelombang --}}
-                                    <x-dropdown-link :href="route('adminpondok.ppdb.setting.index')">
-                                        {{ __('Pengaturan Gelombang') }}
-                                    </x-dropdown-link>
+        {{-- Isi Menu Dropdown --}}
+        <x-slot name="content">
+            {{-- 1. Pengaturan Gelombang --}}
+            <x-dropdown-link :href="route('adminpondok.ppdb.setting.index')">
+                {{ __('Pengaturan Gelombang') }}
+            </x-dropdown-link>
 
-                                    <x-dropdown-link :href="route('adminpondok.ppdb.pendaftar.index')">
-        {{ __('Data Pendaftar & Verifikasi') }}
-    </x-dropdown-link>
-                                </x-slot>
-                            </x-dropdown>
-                        </div>
+            {{-- 2. Data Pendaftar --}}
+            <x-dropdown-link :href="route('adminpondok.ppdb.pendaftar.index')">
+                {{ __('Data Pendaftar & Verifikasi') }}
+            </x-dropdown-link>
+
+            {{-- 3. Manajemen Petugas (BARU) --}}
+            <x-dropdown-link :href="route('adminpondok.ppdb.petugas.index')">
+                {{ __('Manajemen Petugas (Offline)') }}
+            </x-dropdown-link>
+        </x-slot>
+    </x-dropdown>
+</div>
 
                         {{-- Menu Fitur Premium --}}
                         @if($isPremium)

@@ -30,6 +30,7 @@ Route::get('/dashboard', function () {
     if ($user->hasRole('ustadz')) return redirect()->route('ustadz.dashboard');
     if ($user->hasRole('petugas_perpus')) return redirect()->route('sekolah.petugas.dashboard');
     if ($user->hasRole('petugas_lab')) return redirect()->route('petugas-lab.dashboard');
+    if ($user->hasRole('petugas_ppdb')) return redirect()->route('petugas.dashboard');
 
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -60,28 +61,55 @@ Route::post('/gerbang/api/scan', [App\Http\Controllers\Pengurus\Absensi\GateCont
 // RUTE KHUSUS CALON SANTRI (PPDB)
 // ====================================================
 Route::middleware(['auth', 'role:calon_santri'])
-    ->prefix('ppdb')
-    ->name('ppdb.') // <--- INI PENTING: Memberi awalan 'ppdb.' ke semua rute di dalam grup
+    ->prefix('ppdb')        // URL otomatis diawali /ppdb/
+    ->name('ppdb.')         // Nama route otomatis diawali ppdb.
     ->group(function () {
     
-    // Dashboard (Nama menjadi: ppdb.dashboard)
+    // Dashboard -> ppdb.dashboard
     Route::get('/dashboard', [PpdbController::class, 'dashboard'])->name('dashboard');
     
-    // Biodata (Nama menjadi: ppdb.biodata)
+    // Biodata -> ppdb.biodata
     Route::get('/biodata', [PpdbController::class, 'biodata'])->name('biodata');
-    
-    // Update Biodata (Nama menjadi: ppdb.biodata.update)
     Route::put('/biodata', [PpdbController::class, 'updateBiodata'])->name('biodata.update');
 
-    // Di dalam group prefix 'ppdb'
+    // --- PEMBAYARAN ---
     
-    // Halaman Form Bayar (GET)
-    Route::get('/bayar', [PpdbController::class, 'payment'])->name('payment');
+    // Hapus duplikasi route sebelumnya, kita pakai yang standar ini:
     
-    // Proses Bayar (POST)
-    Route::post('/bayar', [PpdbController::class, 'processPayment'])->name('payment.process');
+    // 1. Form Bayar -> ppdb.payment
+    // URL jadi: /ppdb/payment
+    Route::get('/payment', [PpdbController::class, 'payment'])->name('payment');
     
-    // Redirect Finish dari Midtrans (GET)
-    Route::get('/bayar/finish', [PpdbController::class, 'paymentSuccess'])->name('payment.finish');
+    // 2. Proses Bayar -> ppdb.payment.process
+    // URL jadi: /ppdb/payment
+    Route::post('/payment', [PpdbController::class, 'processPayment'])->name('payment.process');
+    
+    // 3. Instruksi Bayar (YANG ERROR TADI) -> ppdb.payment.instruksi
+    // URL jadi: /ppdb/payment/{id}/instruksi
+    // Cukup tulis 'payment.instruksi' karena prefix 'ppdb.' diambil dari grup
+    Route::get('/payment/{id}/instruksi', [PpdbController::class, 'instruksi'])->name('payment.instruksi');
 
+    // 4. Redirect Finish (Opsional jika masih dipakai)
+    Route::get('/payment/finish', [PpdbController::class, 'paymentSuccess'])->name('payment.finish');
+});
+
+// === AREA PETUGAS PPDB (OFFLINE) ===
+Route::middleware(['auth', 'role:petugas_ppdb'])
+    ->prefix('petugas-ppdb')
+    ->name('petugas.')
+    ->group(function () {
+        
+        // Dashboard Petugas
+        Route::get('/dashboard', [\App\Http\Controllers\Petugas\PetugasPpdbController::class, 'dashboard'])->name('dashboard');
+        
+        // Pendaftaran Offline
+        Route::get('/register', [\App\Http\Controllers\Petugas\PetugasPpdbController::class, 'create'])->name('pendaftaran.create');
+        Route::post('/register', [\App\Http\Controllers\Petugas\PetugasPpdbController::class, 'store'])->name('pendaftaran.store');
+        
+        // Halaman Sukses (Cetak Akun)
+        Route::get('/register/{id}/success', [\App\Http\Controllers\Petugas\PetugasPpdbController::class, 'success'])->name('pendaftaran.success');
+
+        // Edit & Update (BARU)
+        Route::get('/register/{id}/edit', [\App\Http\Controllers\Petugas\PetugasPpdbController::class, 'edit'])->name('pendaftaran.edit');
+        Route::put('/register/{id}', [\App\Http\Controllers\Petugas\PetugasPpdbController::class, 'update'])->name('pendaftaran.update');
 });

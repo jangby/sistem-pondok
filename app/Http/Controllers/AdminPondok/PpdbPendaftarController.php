@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str; // Opsional
+use App\Models\PpdbTransaction; // Pastikan di import
 
 class PpdbPendaftarController extends Controller
 {
@@ -31,8 +32,11 @@ class PpdbPendaftarController extends Controller
     // 2. DETAIL PENDAFTAR (VERIFIKASI)
     public function show($id)
     {
-        $calon = CalonSantri::with(['ppdbSetting', 'ppdbSetting.biayas'])->findOrFail($id);
-        return view('adminpondok.ppdb.pendaftar.show', compact('calon'));
+        // Ubah nama variabel dari $calon menjadi $calonSantri
+        $calonSantri = CalonSantri::with(['ppdbSetting', 'ppdbSetting.biayas'])->findOrFail($id);
+        
+        // Kirim ke view dengan nama 'calonSantri'
+        return view('adminpondok.ppdb.pendaftar.show', compact('calonSantri'));
     }
 
     // 3. KONFIRMASI PEMBAYARAN MANUAL (Opsional)
@@ -212,4 +216,76 @@ class PpdbPendaftarController extends Controller
         
         return back()->with('success', 'Data pendaftar dihapus permanen.');
     }
+
+    public function payment($id)
+{
+    $calonSantri = CalonSantri::with(['ppdbSetting', 'ppdbSetting.biayas'])->findOrFail($id);
+    
+    // Ambil semua riwayat transaksi (Online & Cash) urutkan dari yang terbaru
+    $riwayat = PpdbTransaction::where('calon_santri_id', $id)
+        ->whereIn('status', ['paid', 'success', 'settlement']) // Hanya yang sukses
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    return view('adminpondok.ppdb.pendaftar.payment', compact('calonSantri', 'riwayat'));
+}
+
+public function storePayment(Request $request, $id)
+{
+    $request->validate([
+        'nominal' => 'required|numeric|min:1000',
+        'keterangan' => 'nullable|string'
+    ]);
+
+    $calonSantri = CalonSantri::findOrFail($id);
+
+    if ($request->nominal > $calonSantri->sisa_tagihan) {
+        return back()->with('error', 'Nominal pembayaran melebihi sisa tagihan!');
+    }
+
+    DB::beginTransaction();
+    try {
+        // 1. Buat Transaksi (Tipe: Manual/Cash)
+        $transaksi = PpdbTransaction::create([
+            'calon_santri_id' => $calonSantri->id,
+            'order_id' => 'MANUAL-' . time() . '-' . auth()->id(), // Kode unik manual
+            'gross_amount' => $request->nominal,
+            'biaya_admin' => 0, // Cash biasanya tanpa admin fee
+            'payment_type' => 'cash',
+            'payment_code' => '-', // Tidak ada VA
+            'status' => 'paid', // Langsung lunas karena cash
+            // Simpan ID admin yang input (Opsional jika tabel support)
+            // 'user_id' => auth()->id() 
+        ]);
+
+        // 2. Update Data Santri
+        $calonSantri->total_sudah_bayar += $request->nominal;
+        
+        // Cek Lunas
+        if ($calonSantri->sisa_tagihan <= 0) {
+            $calonSantri->status_pembayaran = 'lunas';
+        } else {
+            $calonSantri->status_pembayaran = 'sebagian';
+        }
+        
+        $calonSantri->save();
+
+        DB::commit();
+
+        // Redirect ke cetak struk atau kembali dengan pesan sukses
+        return redirect()->route('adminpondok.ppdb.pendaftar.payment', $id)
+            ->with('success', 'Pembayaran tunai berhasil dicatat.')
+            ->with('print_url', route('adminpondok.ppdb.pendaftar.payment.print', $transaksi->id));
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+    }
+}
+
+public function printReceipt($transactionId)
+{
+    $transaksi = PpdbTransaction::with('calonSantri')->findOrFail($transactionId);
+    return view('adminpondok.ppdb.pendaftar.struk', compact('transaksi'));
+}
 }

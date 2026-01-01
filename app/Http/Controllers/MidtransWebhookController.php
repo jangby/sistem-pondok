@@ -4,129 +4,178 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\PembayaranTransaksi;
+use App\Models\PpdbTransaction; // <-- Model PPDB Transaksi
+use App\Models\CalonSantri;     // <-- Model Calon Santri
 use App\Services\PaymentService;
-use App\Services\DompetService; // <-- Import DompetService
+use App\Services\DompetService;
 use Midtrans\Config;
 use Midtrans\Notification;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB; // <-- Import DB (Perbaikan error 500)
-use App\Notifications\PembayaranLunasNotification; // <-- Import Notif Tagihan
-use App\Notifications\TopupLunasNotification;      // <-- Import Notif Top-up
+use Illuminate\Support\Facades\DB;
+use App\Notifications\TopupLunasNotification;
 
 class MidtransWebhookController extends Controller
 {
     protected $paymentService;
-    protected $dompetService; // <-- Deklarasikan property
+    protected $dompetService;
 
-    /**
-     * Inject kedua service saat controller dibuat.
-     */
     public function __construct(
         PaymentService $paymentService, 
-        DompetService $dompetService // <-- Inject dependency
+        DompetService $dompetService
     ) {
         $this->paymentService = $paymentService;
-        $this->dompetService = $dompetService; // <-- Assign ke property
+        $this->dompetService = $dompetService;
 
         // Set konfigurasi Midtrans
         Config::$serverKey = config('midtrans.server_key');
         Config::$isProduction = config('midtrans.is_production');
     }
 
-    /**
-     * Tangani notifikasi webhook dari Midtrans.
-     */
     public function handle(Request $request)
     {
         try {
-            // 1. Buat objek Notifikasi dari library Midtrans
+            // 1. Ambil Notifikasi dari Midtrans
             $notif = new Notification();
 
+            $transaction = $notif->transaction_status;
+            $type = $notif->payment_type;
+            $orderId = $notif->order_id;
+            $fraud = $notif->fraud_status;
+            $grossAmount = $notif->gross_amount;
+            $statusCode = $notif->status_code;
+
+            // 2. Validasi Keamanan (Signature Key)
+            // Hash: order_id + status_code + gross_amount + server_key
             $serverKey = config('midtrans.server_key');
-    $grossAmount = $notif->gross_amount; // Pastikan ambil string amount (misal: 10000.00)
-    $statusCode = $notif->status_code;
-    $orderId = $notif->order_id;
+            $inputSignature = $notif->signature_key;
+            $mySignature = hash("sha512", $orderId . $statusCode . $grossAmount . $serverKey);
 
-    // CEK APAKAH INI TRANSAKSI PPDB?
-        if (str_starts_with($orderId, 'PPDB-')) {
-            
-            $transaksi = \App\Models\PpdbTransaction::where('order_id', $orderId)->first();
-            if (!$transaksi) return response()->json(['message' => 'Order not found'], 404);
+            if ($inputSignature !== $mySignature) {
+                Log::warning("Security Alert: Invalid Signature Key pada Order ID {$orderId}");
+                return response()->json(['message' => 'Invalid Signature'], 403);
+            }
 
-            if ($status == 'capture' || $status == 'settlement') {
-                // 1. Update status transaksi jadi success
-                $transaksi->update(['status' => 'success']);
+            // 3. Logika Percabangan (PPDB vs Sistem Lama)
+            if (str_starts_with($orderId, 'PPDB-')) {
+                // === HANDLE PEMBAYARAN PPDB ===
+                return $this->handlePpdbPayment($notif, $transaction, $fraud);
+            } else {
+                // === HANDLE PEMBAYARAN SPP / DOMPET (Sistem Lama) ===
+                return $this->handleExistingSystemPayment($notif, $transaction);
+            }
 
-                // 2. Tambahkan nominal ke 'total_sudah_bayar' di tabel calon_santris
-                $calonSantri = $transaksi->calonSantri;
-                $calonSantri->total_sudah_bayar += $transaksi->gross_amount;
-                
-                // 3. Cek Lunas?
-                if ($calonSantri->sisa_tagihan <= 0) {
-                    $calonSantri->status_pembayaran = 'lunas';
+        } catch (\Exception $e) {
+            Log::error('Webhook Midtrans Error: ' . $e->getMessage());
+            return response()->json(['message' => 'Internal Server Error'], 500);
+        }
+    }
+
+    /**
+     * Logika Khusus Pembayaran PPDB
+     */
+    private function handlePpdbPayment($notif, $status, $fraud)
+    {
+        $orderId = $notif->order_id;
+        
+        // Cari Transaksi PPDB
+        $transaksi = PpdbTransaction::where('order_id', $orderId)->first();
+        if (!$transaksi) {
+            return response()->json(['message' => 'PPDB Order not found'], 404);
+        }
+
+        // Cek Idempotency (Jika sudah sukses, jangan diproses lagi)
+        if ($transaksi->status == 'success' || $transaksi->status == 'paid') {
+            return response()->json(['message' => 'Already processed'], 200);
+        }
+
+        DB::beginTransaction();
+        try {
+            if ($status == 'capture') {
+                if ($fraud == 'challenge') {
+                    $transaksi->update(['status' => 'pending']);
+                } else {
+                    $transaksi->update(['status' => 'success']); // atau 'paid'
+                    $this->updateSaldoPpdb($transaksi);
                 }
-                
-                $calonSantri->save();
-            } 
-            elseif ($status == 'expire' || $status == 'cancel' || $status == 'deny') {
+            } elseif ($status == 'settlement') {
+                $transaksi->update(['status' => 'success']); // atau 'paid'
+                $this->updateSaldoPpdb($transaksi);
+            } elseif ($status == 'pending') {
+                $transaksi->update(['status' => 'pending']);
+            } elseif ($status == 'deny' || $status == 'expire' || $status == 'cancel') {
                 $transaksi->update(['status' => 'failed']);
             }
-        }
 
-    $inputSignature = $notif->signature_key;
-    $mySignature = hash("sha512", $orderId . $statusCode . $grossAmount . $serverKey);
+            DB::commit();
+            return response()->json(['message' => 'PPDB Payment Processed'], 200);
 
-    if ($inputSignature !== $mySignature) {
-        Log::warning("Security Alert: Invalid Signature Key pada Order ID {$orderId}");
-        return response()->json(['message' => 'Invalid Signature'], 403);
-    }
         } catch (\Exception $e) {
-            Log::error('Webhook Midtrans Gagal: Gagal membuat objek Notifikasi. ' . $e->getMessage());
-            return response()->json(['message' => 'Invalid payload'], 400);
+            DB::rollBack();
+            Log::error('PPDB Payment DB Error: ' . $e->getMessage());
+            throw $e;
         }
+    }
 
-        // 2. Ambil data payload
-        $status = $notif->transaction_status;
-        $orderId = $notif->order_id; // Ini adalah midtrans_order_id kita
-        $paymentType = $notif->payment_type;
+    /**
+     * Helper Update Saldo & Status Calon Santri
+     */
+    private function updateSaldoPpdb($transaksi)
+    {
+        $calonSantri = $transaksi->calonSantri;
+        if ($calonSantri) {
+            // Tambah total bayar
+            // (Pastikan gross_amount angka murni, hilangkan .00 jika string)
+            $amount = (float) $transaksi->gross_amount; 
+
+            // Hindari double count logic (opsional, tergantung app Anda)
+            // Di sini kita update sisa tagihan/total bayar
+            $calonSantri->total_sudah_bayar += $amount;
+
+            // Update status lunas
+            if ($calonSantri->sisa_tagihan <= 0) {
+                $calonSantri->status_pembayaran = 'lunas';
+            } else {
+                $calonSantri->status_pembayaran = 'sebagian';
+            }
+
+            $calonSantri->save();
+        }
+    }
+
+    /**
+     * Logika Pembayaran Lama (SPP, Tagihan, Dompet)
+     */
+    private function handleExistingSystemPayment($notif, $status)
+    {
+        $orderId = $notif->order_id;
         $settlementTime = $notif->settlement_time ?? now();
 
-        // 3. Cari Transaksi di database kita
+        // Cari Transaksi Lama
         $transaksi = PembayaranTransaksi::where('midtrans_order_id', $orderId)->first();
 
         if (!$transaksi) {
-            Log::warning("Webhook Midtrans: Transaksi tidak ditemukan untuk Order ID {$orderId}");
+            Log::warning("Transaction not found for Order ID {$orderId}");
             return response()->json(['message' => 'Transaction not found'], 404);
         }
 
-        // 4. Cek Idempotency (Apakah sudah diproses?)
         if ($transaksi->status_verifikasi == 'verified') {
-            Log::info("Webhook Midtrans: Transaksi {$orderId} sudah diverifikasi sebelumnya.");
-            return response()->json(['message' => 'OK, already processed'], 200);
+            return response()->json(['message' => 'Already verified'], 200);
         }
 
-        // 5. Mulai DB Transaction
         DB::beginTransaction();
         try {
             if ($status == 'settlement' || $status == 'capture') {
-                // --- PEMBAYARAN SUKSES ---
-                
-                // Update transaksi kita (Termasuk perbaikan 'catatan_verifikasi')
+                // --- SUKSES ---
                 $transaksi->status_verifikasi = 'verified';
                 $transaksi->tanggal_bayar = $settlementTime;
                 $transaksi->catatan_verifikasi = 'Pembayaran Midtrans Berhasil (' . $notif->payment_type . ')';
                 $transaksi->save();
 
-                // ===========================================
-                // LOGIKA PEMISAH (Top-up vs Bayar Tagihan)
-                // ===========================================
                 if ($transaksi->tagihan_id) {
-                    // Ini Bayar Tagihan, panggil PaymentService
-                    // (PaymentService sudah otomatis kirim notif tagihan lunas)
+                    // Bayar Tagihan
                     $this->paymentService->processPaymentAllocation($transaksi);
-                    
                 } elseif ($transaksi->dompet_id) {
-                    // Ini Top-up Dompet, panggil DompetService
+                    // Topup Dompet
                     $nominalTopup = $transaksi->total_bayar - $transaksi->biaya_admin;
                     
                     $this->dompetService->createTransaksi(
@@ -137,31 +186,28 @@ class MidtransWebhookController extends Controller
                         $transaksi->orangTua->user
                     );
                     
-                    // Kirim Notifikasi Top-up Berhasil
+                    // Notif WA
                     try {
-                        // Kita 'fresh()' dompetnya agar dapat saldo TERBARU
                         $transaksi->orangTua->notify(new TopupLunasNotification($transaksi, $transaksi->dompet->fresh()));
                     } catch (\Exception $e) {
-                        Log::error('Gagal kirim Notifikasi Top-up WA: ' . $e->getMessage());
+                        Log::error('WA Notification Error: ' . $e->getMessage());
                     }
                 }
-                
+
             } else if ($status == 'cancel' || $status == 'expire' || $status == 'deny') {
-                // --- PEMBAYARAN GAGAL ---
+                // --- GAGAL ---
                 $transaksi->status_verifikasi = 'rejected';
-                $transaksi->catatan_verifikasi = "Pembayaran Midtrans gagal/dibatalkan (Status: {$status})";
+                $transaksi->catatan_verifikasi = "Pembayaran Midtrans gagal (Status: {$status})";
                 $transaksi->save();
             }
-            
+
             DB::commit();
-            
+            return response()->json(['message' => 'Payment Processed'], 200);
+
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Webhook Midtrans: Gagal memproses Order ID {$orderId}. Error: " . $e->getMessage());
-            return response()->json(['message' => 'Internal Server Error'], 500);
+            Log::error("Existing Payment DB Error: " . $e->getMessage());
+            throw $e;
         }
-
-        // 7. Kirim respon OK ke Midtrans
-        return response()->json(['message' => 'OK'], 200);
     }
 }

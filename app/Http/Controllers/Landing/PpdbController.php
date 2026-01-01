@@ -14,6 +14,8 @@ use Illuminate\Validation\Rules;
 use App\Models\PpdbTransaction;
 use Midtrans\Config;
 use Midtrans\Snap;
+use App\Services\MidtransService; 
+use Illuminate\Support\Facades\Log;
 
 class PpdbController extends Controller
 {
@@ -228,55 +230,57 @@ class PpdbController extends Controller
 
     // --- FITUR PEMBAYARAN MIDTRANS ---
 
-    // 1. Tampilkan Halaman/Form Bayar
+    // 1. Tampilkan Halaman/Form Bayar (Updated)
     public function payment()
     {
         $user = Auth::user();
         $calonSantri = $user->calonSantri;
         
-        // Load rincian biaya
+        // Cek jika belum ada data santri
+        if(!$calonSantri) {
+             return redirect()->route('dashboard');
+        }
+
         $calonSantri->load('ppdbSetting', 'ppdbSetting.biayas');
 
-        // Jika sudah lunas, lempar balik ke dashboard
         if ($calonSantri->sisa_tagihan <= 0) {
             return redirect()->route('dashboard')->with('success', 'Pembayaran Anda sudah LUNAS.');
         }
 
+        // Kita kirim sisa tagihan ke view untuk perhitungan JS
         return view('ppdb.payment', compact('calonSantri'));
     }
 
-    // 2. Proses Buat Token (Saat tombol 'Bayar Sekarang' diklik)
-    public function processPayment(Request $request)
+    // 2. Proses Pembayaran dengan Core API (PENGGANTI SNAP)
+    public function processPayment(Request $request, MidtransService $midtransService)
     {
         $user = Auth::user();
         $calonSantri = $user->calonSantri;
 
-        // Validasi Nominal
+        // Validasi Nominal & Metode Bayar
         $request->validate([
             'nominal_bayar' => 'required|numeric|min:10000',
+            // Validasi metode pembayaran yang diizinkan
+            'payment_method' => 'required|in:bca_va,bni_va,mandiri_bill,qris,gopay', 
         ]);
 
         $nominal = $request->nominal_bayar;
+        $biayaAdmin = 5000; // Biaya admin (sesuaikan dengan kebijakan pondok)
+        $totalBayar = $nominal + $biayaAdmin;
 
         if ($nominal > $calonSantri->sisa_tagihan) {
             return back()->with('error', 'Nominal melebihi sisa tagihan.');
         }
 
-        // Konfigurasi Midtrans
-        Config::$serverKey = config('midtrans.server_key');
-        Config::$isProduction = config('midtrans.is_production');
-        Config::$isSanitized = true;
-        Config::$is3ds = true;
-        
-        // Tambahkan konfigurasi ini agar jadi Redirect (Bukan Popup)
-        Config::$overrideNotifUrl = route('midtrans.webhook'); 
-
+        // Generate Order ID Unik
         $orderId = 'PPDB-' . $calonSantri->id . '-' . time();
+        $paymentMethod = $request->payment_method;
 
+        // Siapkan Parameter Midtrans (Sama seperti Controller OrangTua)
         $params = [
             'transaction_details' => [
                 'order_id' => $orderId,
-                'gross_amount' => $nominal,
+                'gross_amount' => $totalBayar,
             ],
             'customer_details' => [
                 'first_name' => $calonSantri->full_name,
@@ -285,41 +289,106 @@ class PpdbController extends Controller
             ],
             'item_details' => [
                 [
-                    'id' => 'PEMBAYARAN-PPDB',
+                    'id' => 'TAGIHAN-PPDB',
                     'price' => $nominal,
                     'quantity' => 1,
-                    'name' => 'Cicilan PPDB: ' . $calonSantri->no_pendaftaran,
+                    'name' => 'Pembayaran PPDB',
+                ],
+                [
+                    'id' => 'ADMIN-FEE',
+                    'price' => $biayaAdmin,
+                    'quantity' => 1,
+                    'name' => 'Biaya Admin',
                 ]
-            ],
-            // PENTING: Callback agar setelah bayar balik ke website kita
-            'callbacks' => [
-                'finish' => route('ppdb.payment.finish'),
-            ],
+            ]
         ];
 
+        // Switch Case Metode Pembayaran
+        $paymentTypeDb = $paymentMethod; // Default simpan slug metode
+        switch ($paymentMethod) {
+            case 'bca_va':
+                $params['payment_type'] = 'bank_transfer';
+                $params['bank_transfer'] = ['bank' => 'bca'];
+                break;
+            case 'bni_va':
+                $params['payment_type'] = 'bank_transfer';
+                $params['bank_transfer'] = ['bank' => 'bni'];
+                break;
+            case 'mandiri_bill':
+                $params['payment_type'] = 'echannel';
+                $params['echannel'] = [
+                    'bill_info1' => 'PEMBAYARAN PPDB',
+                    'bill_info2' => 'SANTRI: ' . $calonSantri->full_name,
+                ];
+                break;
+            case 'qris':
+                $params['payment_type'] = 'qris';
+                break;
+            case 'gopay':
+                $params['payment_type'] = 'gopay';
+                break;
+        }
+
         try {
-            // PERUBAHAN DISINI: Pakai createTransaction
-            $payment = Snap::createTransaction($params);
-            
-            $snapToken = $payment->token;
-            $paymentUrl = $payment->redirect_url; // Ini URL halaman bayarnya
+            // Panggil Service (Core API)
+            $response = $midtransService->createTransaction($params);
+
+            if (!$response) {
+                return back()->with('error', 'Gagal menghubungi gateway pembayaran.');
+            }
+
+            // Ambil Data VA / QR / URL dari respon Midtrans
+            $paymentCode = null;
+            $paymentUrl = null;
+
+            if (isset($response->va_numbers)) { // BCA / BNI
+                $paymentCode = $response->va_numbers[0]->va_number;
+            } elseif (isset($response->bill_key)) { // Mandiri
+                $paymentCode = $response->biller_code . '|' . $response->bill_key;
+            } elseif (isset($response->actions)) {
+                // Untuk QRIS / Gopay biasanya ada di actions
+                foreach ($response->actions as $action) {
+                    if ($action->name === 'generate-qr-code') {
+                        $paymentUrl = $action->url; // URL Gambar QR
+                    }
+                     if ($action->name === 'deeplink-redirect') {
+                        $paymentUrl = $action->url; // Link aplikasi Gojek
+                    }
+                }
+            }
 
             // Simpan Transaksi
-            PpdbTransaction::create([
+            $transaksi = PpdbTransaction::create([
                 'calon_santri_id' => $calonSantri->id,
                 'order_id' => $orderId,
-                'gross_amount' => $nominal,
+                'gross_amount' => $nominal, // Nominal murni tagihan
+                'biaya_admin' => $biayaAdmin,
+                'payment_type' => $paymentMethod,
+                'payment_code' => $paymentCode, // Simpan No VA disini
+                'payment_url' => $paymentUrl,   // Simpan URL QRIS disini
                 'status' => 'pending',
-                'snap_token' => $snapToken,
-                'payment_url' => $paymentUrl, // Simpan URL
             ]);
 
-            // LANGSUNG REDIRECT KE HALAMAN MIDTRANS
-            return redirect($paymentUrl);
+            // Redirect ke Halaman Instruksi
+            return redirect()->route('ppdb.payment.instruksi', $transaksi->id);
 
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal memproses pembayaran: ' . $e->getMessage());
+            Log::error('PPDB Payment Error: ' . $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
         }
+    }
+
+    // 3. Halaman Instruksi Pembayaran (Menampilkan VA/QR)
+    public function instruksi($id)
+    {
+        $transaksi = PpdbTransaction::with('calonSantri')->findOrFail($id);
+        
+        // Cek Hak Akses (Milik user yang login)
+        if($transaksi->calonSantri->user_id != Auth::id()){
+            abort(403);
+        }
+
+        return view('ppdb.instruksi', compact('transaksi'));
     }
 
     // 3. Callback Setelah Bayar (Finish Redirect)
