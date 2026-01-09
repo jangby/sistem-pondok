@@ -234,6 +234,11 @@
             <x-dropdown-link :href="route('adminpondok.ppdb.petugas.index')">
                 {{ __('Manajemen Petugas (Offline)') }}
             </x-dropdown-link>
+
+            {{-- 4. Distribusi Keuangan (BARU) --}}
+            <x-dropdown-link :href="route('adminpondok.ppdb.distribusi.index')">
+                {{ __('Distribusi Keuangan') }}
+            </x-dropdown-link>
         </x-slot>
     </x-dropdown>
 </div>

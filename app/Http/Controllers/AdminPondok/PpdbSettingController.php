@@ -91,6 +91,8 @@ class PpdbSettingController extends Controller
             'jenjang' => 'required|string',
             'nama_biaya' => 'required|string',
             'nominal' => 'required|numeric|min:0',
+            // VALIDASI BARU: Memastikan kategori dipilih dan valid
+            'kategori' => 'required|in:yayasan,pondok,usaha,panitia', 
         ]);
 
         PpdbBiaya::create([
@@ -98,6 +100,8 @@ class PpdbSettingController extends Controller
             'jenjang' => $request->jenjang,
             'nama_biaya' => $request->nama_biaya,
             'nominal' => $request->nominal,
+            // DATA BARU: Simpan kategori ke database
+            'kategori' => $request->kategori, 
         ]);
 
         return back()->with('success', 'Item biaya berhasil ditambahkan.');

@@ -11,6 +11,10 @@
         .bg-deep-navy { background-color: #0c0f1d; }
         .glow-text { text-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
     </style>
+
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1423313253267364"
+     crossorigin="anonymous"></script>
+     
 </head>
 <body class="bg-deep-navy antialiased min-h-screen text-gray-100 font-sans selection:bg-emerald-500 selection:text-white">
 

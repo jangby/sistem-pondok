@@ -83,6 +83,13 @@ Route::middleware(['auth', 'role:admin-pondok', 'cek.langganan'])
         Route::post('/pendaftar/{id}/payment', [PpdbPendaftarController::class, 'storePayment'])->name('pendaftar.payment.store');
         Route::get('/pendaftar/payment/{transactionId}/print', [PpdbPendaftarController::class, 'printReceipt'])->name('pendaftar.payment.print');
 
+        // 5. MANAJEMEN DISTRIBUSI KEUANGAN (BARU)
+        Route::get('/distribusi', [App\Http\Controllers\AdminPondok\PpdbDistribusiController::class, 'index'])->name('distribusi.index');
+        Route::get('/distribusi/{kategori}', [App\Http\Controllers\AdminPondok\PpdbDistribusiController::class, 'show'])->name('distribusi.show');
+        Route::get('/distribusi/{kategori}/detail-item', [App\Http\Controllers\AdminPondok\PpdbDistribusiController::class, 'detailItem'])->name('distribusi.detail_item');
+        Route::post('/distribusi', [App\Http\Controllers\AdminPondok\PpdbDistribusiController::class, 'store'])->name('distribusi.store');
+        Route::get('/distribusi/bukti/{id}', [App\Http\Controllers\AdminPondok\PpdbDistribusiController::class, 'printBukti'])->name('distribusi.print');
+
         Route::resource('petugas', \App\Http\Controllers\AdminPondok\ManajemenPetugasController::class)
         ->except(['show', 'edit', 'update']);
     });

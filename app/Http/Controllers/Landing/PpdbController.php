@@ -106,25 +106,32 @@ class PpdbController extends Controller
 
     private function getCalonSantriOrRedirect($user)
     {
+        // Cek apakah data santri sudah ada
         $calonSantri = $user->calonSantri;
 
+        // Jika BELUM ADA, kita buatkan sekarang
         if (!$calonSantri) {
             $ppdbActive = PpdbSetting::active()->first();
             
+            // Hanya buat jika ada gelombang aktif
             if ($ppdbActive) {
-                $noPendaftaran = preg_replace('/[^0-9]/', '', $ppdbActive->tahun_ajaran) . sprintf('%04d', $user->id);
+                // Generate No Pendaftaran
+                $tahun = preg_replace('/[^0-9]/', '', $ppdbActive->tahun_ajaran);
+                $noPendaftaran = $tahun . sprintf('%04d', $user->id);
                 
                 $calonSantri = CalonSantri::create([
                     'user_id' => $user->id,
                     'ppdb_setting_id' => $ppdbActive->id,
                     'no_pendaftaran' => $noPendaftaran,
                     
-                    // PERBAIKAN DISINI JUGA
-                    'full_name' => $user->name, 
+                    // -- DATA WAJIB --
+                    'full_name' => $user->name, // Ambil nama dari akun User
+                    'jenjang'   => 'SMP',       // DEFAULT value (nanti bisa diedit user)
                     
                     'status_pendaftaran' => 'draft',
                     'status_pembayaran' => 'belum_bayar',
-                    // Default values
+                    
+                    // -- DATA DEFAULT (Agar tidak error MySQL Strict Mode) --
                     'tempat_lahir' => '-',
                     'tanggal_lahir' => now(),
                     'jenis_kelamin' => 'L',
@@ -140,6 +147,7 @@ class PpdbController extends Controller
                     'kode_pos' => '00000',
                 ]);
             } else {
+                // Jika PPDB tutup, return null
                 return null;
             }
         }
@@ -152,10 +160,20 @@ class PpdbController extends Controller
     {
         $user = Auth::user();
         
-        // Ambil data calon santri & setting ppdb terkait
-        // Pastikan model User sudah ada relasi 'calonSantri'
-        $calonSantri = $user->calonSantri()->with('ppdbSetting')->first();
+        // 1. Panggil Helper: Cek data, jika kosong buatkan otomatis
+        $calonSantri = $this->getCalonSantriOrRedirect($user);
+
+        // 2. Jika masih null (artinya PPDB tutup & user baru daftar), lempar ke home
+        if (!$calonSantri) {
+            return redirect()->route('welcome')->with('error', 'Sesi pendaftaran PPDB sedang ditutup.');
+        }
+
+        // 3. Pastikan relasi setting ter-load (penting untuk view)
+        if(!$calonSantri->relationLoaded('ppdbSetting')) {
+            $calonSantri->load('ppdbSetting');
+        }
         
+        // 4. Kirim ke view
         return view('ppdb.dashboard', compact('calonSantri'));
     }
 

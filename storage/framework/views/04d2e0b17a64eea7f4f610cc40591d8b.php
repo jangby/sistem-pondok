@@ -73,7 +73,7 @@
         
         <div>
             <h3 class="text-emerald-100 font-medium text-sm uppercase tracking-wider">Ahlan Wa Sahlan,</h3>
-            <h1 class="text-3xl font-bold mt-1"><?php echo e($calonSantri->nama_lengkap); ?></h1>
+            <h1 class="text-3xl font-bold mt-1"><?php echo e($calonSantri->full_name); ?></h1>
             <div class="mt-3 flex items-center gap-3">
                 <span class="bg-white/20 px-3 py-1 rounded-full text-xs font-mono backdrop-blur-sm border border-white/10">
                     <?php echo e($calonSantri->no_pendaftaran); ?>

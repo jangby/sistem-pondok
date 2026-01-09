@@ -11,8 +11,9 @@
             {{-- Form Tambah Biaya --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
                 <h3 class="text-lg font-bold mb-4">Tambah Komponen Biaya</h3>
-                <form action="{{ route('adminpondok.ppdb.setting.biaya.store', $setting->id) }}" method="POST" class="flex gap-4 items-end">
+                <form action="{{ route('adminpondok.ppdb.setting.biaya.store', $setting->id) }}" method="POST" class="flex flex-wrap gap-4 items-end">
                     @csrf
+                    
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Jenjang</label>
                         <select name="jenjang" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -21,15 +22,28 @@
                             <option value="TAKHOSUS">TAKHOSUS</option>
                         </select>
                     </div>
-                    <div class="flex-1">
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Pos Anggaran</label>
+                        <select name="kategori" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="yayasan">Yayasan (Pendaftaran, Gedung)</option>
+                            <option value="pondok">Pondok (Makan, Operasional)</option>
+                            <option value="usaha">Usaha (Kitab, Laundry)</option>
+                            <option value="panitia">Panitia (Seragam, Atribut)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex-1 min-w-[200px]">
                         <label class="block text-sm font-medium text-gray-700">Nama Biaya</label>
                         <input type="text" name="nama_biaya" placeholder="Contoh: Seragam, Gedung" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                     </div>
-                    <div>
+
+                    <div class="w-40">
                         <label class="block text-sm font-medium text-gray-700">Nominal (Rp)</label>
                         <input type="number" name="nominal" placeholder="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                     </div>
-                    <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-500 font-bold">
+
+                    <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-500 font-bold mb-[2px]">
                         + Tambah
                     </button>
                 </form>
