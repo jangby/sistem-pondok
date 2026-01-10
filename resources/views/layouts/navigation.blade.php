@@ -283,6 +283,10 @@
                                             {{ __('Manajemen Sekolah') }}
                                         </x-dropdown-link>
 
+                                        <x-dropdown-link :href="route('adminpondok.penulis.index')">
+                                            {{ __('Manajemen Buku') }}
+                                        </x-dropdown-link>
+
                                         <div class="border-t border-gray-100 my-1"></div>
 
                                         {{-- Sub-Header: Keuangan Digital --}}

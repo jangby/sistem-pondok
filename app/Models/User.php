@@ -108,4 +108,9 @@ public function guru(): HasOne
     {
         return $this->hasOne(CalonSantri::class);
     }
+
+    public function penulis()
+{
+    return $this->hasOne(Penulis::class, 'user_id');
+}
 }

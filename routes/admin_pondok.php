@@ -26,6 +26,7 @@ use App\Http\Controllers\AdminPondok\ManajemenSekolahController;
 use App\Http\Controllers\AdminPondok\TagihanController;
 use App\Http\Controllers\AdminPondok\PpdbSettingController;
 use App\Http\Controllers\AdminPondok\PpdbPendaftarController;
+use App\Http\Controllers\AdminPondok\PenulisAccountController;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,6 +50,8 @@ Route::middleware(['auth', 'role:admin-pondok', 'cek.langganan'])
      ->group(function () {
 
     Route::get('/dashboard', [AdminPondokDashboard::class, 'index'])->name('dashboard');
+    
+
 
     // GRUP ROUTE PPDB
     Route::prefix('ppdb')->name('ppdb.')->group(function () {
@@ -161,6 +164,11 @@ Route::middleware(['auth', 'role:admin-pondok', 'cek.langganan'])
         Route::resource('manajemen-sekolah', ManajemenSekolahController::class)->parameters([
                 'manajemen-sekolah' => 'user' 
             ]);
+
+        Route::get('/penulis', [PenulisAccountController::class, 'index'])->name('penulis.index');
+        Route::get('/penulis/create', [PenulisAccountController::class, 'create'])->name('penulis.create');
+        Route::post('/penulis', [PenulisAccountController::class, 'store'])->name('penulis.store');
+        Route::delete('/penulis/{id}', [PenulisAccountController::class, 'destroy'])->name('penulis.destroy');
     });
 
 });

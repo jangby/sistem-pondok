@@ -5,6 +5,9 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\MidtransWebhookController;
 use App\Http\Controllers\Landing\PpdbController;
+use App\Http\Controllers\Penulis\BookController;
+use App\Http\Controllers\Penulis\BookChapterController;
+use App\Http\Controllers\Penulis\BookItemController;
 
 Route::get('/', [PpdbController::class, 'index'])->name('welcome');
 
@@ -31,6 +34,7 @@ Route::get('/dashboard', function () {
     if ($user->hasRole('petugas_perpus')) return redirect()->route('sekolah.petugas.dashboard');
     if ($user->hasRole('petugas_lab')) return redirect()->route('petugas-lab.dashboard');
     if ($user->hasRole('petugas_ppdb')) return redirect()->route('petugas.dashboard');
+    if ($user->hasRole('penulis')) return redirect()->route('penulis.dashboard');
 
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -112,4 +116,27 @@ Route::middleware(['auth', 'role:petugas_ppdb'])
         // Edit & Update (BARU)
         Route::get('/register/{id}/edit', [\App\Http\Controllers\Petugas\PetugasPpdbController::class, 'edit'])->name('pendaftaran.edit');
         Route::put('/register/{id}', [\App\Http\Controllers\Petugas\PetugasPpdbController::class, 'update'])->name('pendaftaran.update');
+});
+
+// ROUTE KHUSUS PENULIS (KARYA TULIS)
+Route::middleware(['auth', 'role:penulis'])->prefix('penulis')->name('penulis.')->group(function () {
+    
+    // Dashboard Penulis (Bisa diarahkan ke list buku)
+    Route::get('/dashboard', [App\Http\Controllers\Penulis\DashboardController::class, 'index'])->name('dashboard');
+
+    // CRUD Buku
+    Route::resource('books', BookController::class);
+
+    // CRUD Bab (Chapter) - Nested Resource tidak perlu full, cukup create/store/edit/update/delete
+    // Kita buat route custom agar lebih mudah dipanggil dari halaman Buku
+    Route::post('books/{book}/chapters', [BookChapterController::class, 'store'])->name('chapters.store');
+    Route::put('chapters/{chapter}', [BookChapterController::class, 'update'])->name('chapters.update');
+    Route::delete('chapters/{chapter}', [BookChapterController::class, 'destroy'])->name('chapters.destroy');
+
+    // CRUD Item Doa
+    Route::get('chapters/{chapter}/items/create', [BookItemController::class, 'create'])->name('items.create');
+    Route::post('chapters/{chapter}/items', [BookItemController::class, 'store'])->name('items.store');
+    Route::get('items/{item}/edit', [BookItemController::class, 'edit'])->name('items.edit');
+    Route::put('items/{item}', [BookItemController::class, 'update'])->name('items.update');
+    Route::delete('items/{item}', [BookItemController::class, 'destroy'])->name('items.destroy');
 });
