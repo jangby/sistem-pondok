@@ -124,17 +124,39 @@ class SantriImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmpt
         }
 
         // 3. Cari Kelas & Asrama
+        // 3. LOGIKA PENCARIAN KELAS (DIPERBAIKI)
         $kelasId = null;
-        if (!empty($row['nama_kelas'])) {
+        // Ambil input dari kolom 'nama_kelas' ATAU 'kelas'
+        $inputKelas = $row['nama_kelas'] ?? $row['kelas'] ?? null;
+
+        if (!empty($inputKelas)) {
+            // Bersihkan input (hapus spasi depan/belakang)
+            $namaKelasCari = trim($inputKelas);
+
+            // Cari di database dengan pencarian yang fleksibel (LIKE)
+            // Agar "kelas 1a" tetap ketemu dengan "Kelas 1A"
             $kelas = Kelas::where('pondok_id', $this->pondokId)
-                ->where('nama_kelas', $row['nama_kelas'])->first();
+                ->where(function($q) use ($namaKelasCari) {
+                    $q->where('nama_kelas', $namaKelasCari)
+                      ->orWhere('nama_kelas', 'LIKE', $namaKelasCari); 
+                })->first();
+
             $kelasId = $kelas ? $kelas->id : null;
         }
 
+        // 4. LOGIKA PENCARIAN ASRAMA (DIPERBAIKI JUGA)
         $asramaId = null;
-        if (!empty($row['nama_asrama'])) {
+        $inputAsrama = $row['nama_asrama'] ?? $row['asrama'] ?? null;
+
+        if (!empty($inputAsrama)) {
+            $namaAsramaCari = trim($inputAsrama);
+            
             $asrama = Asrama::where('pondok_id', $this->pondokId)
-                ->where('nama_asrama', $row['nama_asrama'])->first();
+                ->where(function($q) use ($namaAsramaCari) {
+                    $q->where('nama_asrama', $namaAsramaCari)
+                      ->orWhere('nama_asrama', 'LIKE', $namaAsramaCari);
+                })->first();
+
             $asramaId = $asrama ? $asrama->id : null;
         }
 
