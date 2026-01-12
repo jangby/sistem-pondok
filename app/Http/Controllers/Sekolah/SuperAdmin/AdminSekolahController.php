@@ -34,16 +34,12 @@ class AdminSekolahController extends Controller
     public function index(Request $request)
     {
         $pondokId = $this->getPondokId();
-        
-        // 1. Ambil List Sekolah (Untuk Dropdown di Modal)
         $sekolahs = Sekolah::where('pondok_id', $pondokId)->orderBy('nama_sekolah')->get();
 
-        // 2. Query Users (Admin Sekolah)
         $query = User::role('admin-sekolah') 
             ->whereHas('pondokStaff', fn($q) => $q->where('pondok_id', $pondokId))
             ->with('sekolahs');
 
-        // 3. Fitur Pencarian
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -55,6 +51,18 @@ class AdminSekolahController extends Controller
         $users = $query->latest()->paginate(10)->withQueryString();
             
         return view('sekolah.superadmin.admin-sekolah.index', compact('users', 'sekolahs'));
+    }
+
+    /**
+     * MENAMPILKAN FORM TAMBAH ADMIN (INI YANG HILANG)
+     */
+    public function create()
+    {
+        $pondokId = $this->getPondokId();
+        // Ambil data sekolah untuk dropdown pilihan
+        $sekolahs = Sekolah::where('pondok_id', $pondokId)->orderBy('nama_sekolah')->get();
+        
+        return view('sekolah.superadmin.admin-sekolah.create', compact('sekolahs'));
     }
 
     public function store(Request $request)
@@ -98,15 +106,21 @@ class AdminSekolahController extends Controller
                          ->with('success', 'Akun Admin Sekolah berhasil ditambahkan.');
     }
 
+    /**
+     * MENAMPILKAN FORM EDIT (INI JUGA PERLU DITAMBAHKAN)
+     */
+    public function edit(User $user)
+    {
+        $this->checkOwnership($user);
+        
+        $pondokId = $this->getPondokId();
+        $sekolahs = Sekolah::where('pondok_id', $pondokId)->orderBy('nama_sekolah')->get();
+        
+        return view('sekolah.superadmin.admin-sekolah.edit', compact('user', 'sekolahs'));
+    }
+
     public function update(Request $request, User $user)
     {
-        // Note: Route model binding $user disini akan error jika nama parameternya beda di route resource.
-        // Pastikan route resource menggunakan {admin_sekolah} atau sesuaikan nama variabel.
-        // Asumsi standar resource: update(Request $request, $id) lalu find manual lebih aman jika ragu.
-        // Tapi jika Anda yakin, biarkan User $user. 
-        
-        // KOREKSI KEAMANAN:
-        // Pastikan user yang diupdate adalah admin sekolah milik pondok ini
         $this->checkOwnership($user);
 
         $validated = $request->validate([
@@ -140,7 +154,7 @@ class AdminSekolahController extends Controller
                          ->with('success', 'Data Admin Sekolah berhasil diperbarui.');
     }
 
-    public function destroy(User $user) // Sesuaikan nama parameter dengan route:list jika perlu
+    public function destroy(User $user)
     {
         $this->checkOwnership($user);
 

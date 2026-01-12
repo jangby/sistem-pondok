@@ -38,89 +38,109 @@ class AbsensiMonitoringController extends Controller
     public function rekapGuru(Request $request)
     {
         $sekolah = $this->getSekolah();
-        $pondokId = $this->getPondokId();
-        $today = Carbon::today();
+        $today = \Carbon\Carbon::today();
         
         // 1. Dapatkan Pengaturan Absensi
-        $settings = SekolahAbsensiSetting::where('sekolah_id', $sekolah->id)->first(); //
+        $settings = SekolahAbsensiSetting::where('sekolah_id', $sekolah->id)->first();
+        
         if (!$settings) {
-            // Jika admin belum setting, kirim error
             return view('sekolah.admin.monitoring.rekap-guru')
-                ->with('error', 'Pengaturan absensi (jam kerja, hari kerja) belum diatur. Silakan atur di menu Konfigurasi.');
+                ->with('error', 'Pengaturan absensi belum diatur. Silakan atur di menu Konfigurasi.');
         }
 
         // 2. Cek Hari Kerja & Hari Libur
         $namaHariIni = $today->locale('id_ID')->isoFormat('dddd');
-        $isHariKerja = in_array($namaHariIni, $settings->hari_kerja ?? []); //
-        $isHariLibur = SekolahHariLibur::where('sekolah_id', $sekolah->id)->whereDate('tanggal', $today)->exists(); //
+        $isHariKerja = in_array($namaHariIni, $settings->hari_kerja ?? []);
+        $isHariLibur = SekolahHariLibur::where('sekolah_id', $sekolah->id)
+                        ->whereDate('tanggal', $today)
+                        ->exists();
 
-        // Jika bukan hari kerja atau hari libur, tampilkan halaman libur
-        if (!$isHariKerja || $isHariLibur) {
-            return view('sekolah.admin.monitoring.rekap-guru', [
-                'isHariLibur' => true,
-                'isHariKerja' => $isHariKerja,
-                'namaHariIni' => $namaHariIni,
-            ]);
-        }
-        
-        // 3. Ambil Data Guru
-        // Ambil semua guru yang ditugaskan ke sekolah ini
-        $allGurus = $sekolah->users()
-                           ->whereHas('roles', fn($q) => $q->where('name', 'guru'))
-                           ->orderBy('name')
-                           ->get(); //
-                           
-        // Ambil absensi guru HARI INI
-        $absensiGuruHariIni = AbsensiGuru::where('sekolah_id', $sekolah->id) //
-                                ->whereDate('tanggal', $today)
-                                ->get()
-                                ->keyBy('guru_user_id'); // Jadikan user_id sebagai key
+        // 3. Ambil Data Guru (Profil Guru + User)
+        // Kita ambil dari tabel 'gurus' agar sesuai dengan data kepegawaian
+        $userIdsInSchool = \Illuminate\Support\Facades\DB::table('sekolah_user')
+                            ->where('sekolah_id', $sekolah->id)
+                            ->pluck('user_id');
 
-        // 4. Hitung KPI Guru & Pisahkan Daftar
+        // 2. Ambil Profil Guru berdasarkan ID User tersebut
+        $allGurus = \App\Models\Sekolah\Guru::with('user')
+            ->whereIn('user_id', $userIdsInSchool)
+            ->get();
+                            
+        // 4. Ambil Absensi Guru HARI INI
+        // Kita gunakan keyBy('guru_user_id') agar mudah dicari berdasarkan ID User
+        $absensiGuruHariIni = AbsensiGuru::where('sekolah_id', $sekolah->id)
+            ->whereDate('tanggal', $today)
+            ->get()
+            ->keyBy('guru_user_id'); 
+
+        // 5. Inisialisasi Variabel Hitungan
         $kpi_hadir = 0;
         $kpi_terlambat = 0;
         $kpi_sakit_izin = 0;
         $daftarHadir = [];
         $daftarBelumHadir = [];
 
+        // 6. Loop Utama: Mencocokkan Guru dengan Absensi
         foreach ($allGurus as $guru) {
-            if ($absensi = $absensiGuruHariIni->get($guru->id)) {
-                // Jika ada di log absensi
-                if ($absensi->status == 'hadir') {
-                    if ($absensi->jam_masuk > $settings->batas_telat) {
+            // Cari data absen berdasarkan USER ID si Guru
+            $dataAbsen = $absensiGuruHariIni->get($guru->user_id);
+
+            if ($dataAbsen) {
+                // --- JIKA SUDAH ABSEN ---
+                
+                // Masukkan objek Guru ke dalam data absen agar bisa dipanggil namanya di View ($absen->guru->nama_guru)
+                $dataAbsen->guru = $guru; 
+
+                if ($dataAbsen->status == 'hadir' || $dataAbsen->status == 'terlambat') {
+                    // Cek Keterlambatan
+                    if ($dataAbsen->jam_masuk > $settings->batas_telat) {
                         $kpi_terlambat++;
+                        $dataAbsen->status_label = 'Terlambat'; // Helper label
                     } else {
                         $kpi_hadir++;
+                        $dataAbsen->status_label = 'Tepat Waktu';
                     }
-                    $daftarHadir[] = $absensi;
+                    $daftarHadir[] = $dataAbsen;
                 } else {
-                    // Status 'sakit' atau 'izin'
+                    // Status Izin / Sakit
                     $kpi_sakit_izin++;
-                    $daftarBelumHadir[] = $absensi; // Masukkan ke "Belum Hadir" dengan status Sakit/Izin
+                    $dataAbsen->status_label = ucfirst($dataAbsen->status);
+                    $daftarBelumHadir[] = $dataAbsen; // Masuk list bawah tapi status izin
                 }
             } else {
-                // Jika TIDAK ADA di log absensi
-                $daftarBelumHadir[] = $guru; // Ini adalah guru (objek User)
+                // --- JIKA BELUM ABSEN (ALFA) ---
+                // Kita buat objek dummy agar struktur datanya sama dengan $dataAbsen
+                $dummyAbsen = new \stdClass();
+                $dummyAbsen->guru = $guru; // Simpan data profil guru
+                $dummyAbsen->jam_masuk = '-';
+                $dummyAbsen->jam_pulang = '-';
+                $dummyAbsen->status = 'alfa';
+                $dummyAbsen->status_label = 'Belum Hadir';
+                
+                $daftarBelumHadir[] = $dummyAbsen;
             }
         }
         
+        // Hitung Alfa murni (Total Guru Belum Hadir - Yang Izin/Sakit)
+        // Catatan: $daftarBelumHadir berisi (Alfa + Izin + Sakit)
         $kpi_alpa = count($daftarBelumHadir) - $kpi_sakit_izin;
 
-        // 5. Hitung KPI Jam Pelajaran Kosong
-        $jadwalHariIniCount = JadwalPelajaran::where('sekolah_id', $sekolah->id) //
-                                ->where('hari', $namaHariIni)
-                                ->count();
+        // 7. Hitung KPI Jam Pelajaran Kosong (Biarkan logika lama)
+        $jadwalHariIniCount = JadwalPelajaran::where('sekolah_id', $sekolah->id)
+            ->where('hari', $namaHariIni)
+            ->count();
         
-        $pelajaranTerisiCount = AbsensiPelajaran::whereDate('tanggal', $today) //
-                                ->whereHas('jadwalPelajaran', fn($q) => $q->where('sekolah_id', $sekolah->id))
-                                ->count();
+        $pelajaranTerisiCount = AbsensiPelajaran::whereDate('tanggal', $today)
+            ->whereHas('jadwalPelajaran', fn($q) => $q->where('sekolah_id', $sekolah->id))
+            ->count();
 
         $kpi_jam_kosong = $jadwalHariIniCount - $pelajaranTerisiCount;
+        if ($kpi_jam_kosong < 0) $kpi_jam_kosong = 0;
 
         return view('sekolah.admin.monitoring.rekap-guru', compact(
             'isHariLibur', 'isHariKerja', 'settings',
             'kpi_hadir', 'kpi_terlambat', 'kpi_sakit_izin', 'kpi_alpa', 'kpi_jam_kosong',
-            'daftarHadir', 'daftarBelumHadir'
+            'daftarHadir', 'daftarBelumHadir', 'today'
         ));
     }
     
