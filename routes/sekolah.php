@@ -129,16 +129,26 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-sekolah'])
         Route::post('laporan/cetak', [LaporanController::class, 'cetak'])->name('laporan.cetak');
         
         Route::prefix('konfigurasi')->name('konfigurasi.')->group(function () {
+            // Halaman Utama
             Route::get('/', [KonfigurasiController::class, 'index'])->name('index');
-            Route::post('settings', [KonfigurasiController::class, 'storeSettings'])->name('settings.store');
-            Route::post('hari-libur', [KonfigurasiController::class, 'storeHariLibur'])->name('hari-libur.store');
-            Route::delete('hari-libur/{sekolahHariLibur}', [KonfigurasiController::class, 'destroyHariLibur'])->name('hari-libur.destroy');
-            Route::post('wifi', [KonfigurasiController::class, 'storeWifi'])->name('wifi.store');
-            Route::delete('wifi/{sekolahWifi}', [KonfigurasiController::class, 'destroyWifi'])->name('wifi.destroy');
-            Route::post('geofence', [KonfigurasiController::class, 'storeGeofence'])->name('geofence.store');
-            Route::delete('geofence/{sekolahLokasiGeofence}', [KonfigurasiController::class, 'destroyGeofence'])->name('geofence.destroy');
-            Route::get('kios-kode', [KonfigurasiController::class, 'showKiosKode'])->name('kios.show');
-            Route::get('kios-kode/new', [KonfigurasiController::class, 'getNewKodeAbsen'])->name('kios.new_kode');
+            
+            // Simpan Jam & Hari Kerja (INI YANG PENTING)
+            Route::post('/settings', [KonfigurasiController::class, 'storeSettings'])->name('settings.store');
+
+            // Route Kios Kode
+            Route::get('/kios', [KonfigurasiController::class, 'showKiosKode'])->name('kios.show');
+            Route::get('/kios/new-code', [KonfigurasiController::class, 'getNewKodeAbsen'])->name('kios.get-code'); // API
+
+            // Route Wifi & Geofence (Jika belum ada)
+            Route::post('/wifi', [KonfigurasiController::class, 'storeWifi'])->name('wifi.store');
+            Route::delete('/wifi/{sekolahWifi}', [KonfigurasiController::class, 'destroyWifi'])->name('wifi.destroy');
+            
+            Route::post('/geofence', [KonfigurasiController::class, 'storeGeofence'])->name('geofence.store');
+            Route::delete('/geofence/{sekolahLokasiGeofence}', [KonfigurasiController::class, 'destroyGeofence'])->name('geofence.destroy');
+            
+            // Route Hari Libur (Jika belum ada)
+            Route::post('/hari-libur', [KonfigurasiController::class, 'storeHariLibur'])->name('hari-libur.store');
+            Route::delete('/hari-libur/{sekolahHariLibur}', [KonfigurasiController::class, 'destroyHariLibur'])->name('hari-libur.destroy');
         });
 
         Route::prefix('monitoring-absensi')->name('monitoring.')->group(function () {

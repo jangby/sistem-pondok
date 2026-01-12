@@ -87,23 +87,47 @@ class KonfigurasiController extends Controller
     {
         $sekolah = $this->getSekolah();
 
+        // 1. NORMALISASI FORMAT WAKTU
+        // Kadang browser/database mengirim format H:i:s (07:00:00).
+        // Kita potong jadi 5 karakter (07:00) agar lolos validasi date_format:H:i
+        $timeFields = ['jam_masuk', 'batas_telat', 'jam_pulang_awal', 'jam_pulang_akhir'];
+        foreach ($timeFields as $field) {
+            if ($request->filled($field)) {
+                $request->merge([
+                    $field => substr($request->input($field), 0, 5)
+                ]);
+            }
+        }
+
+        // 2. VALIDASI DATA
+        // Saya tambahkan parameter ke-3 (Custom Messages) agar errornya bahasa manusia, bukan kode
         $validated = $request->validate([
-            'jam_masuk' => 'required|date_format:H:i',
-            'batas_telat' => 'required|date_format:H:i|after:jam_masuk',
-            'jam_pulang_awal' => 'required|date_format:H:i|after:batas_telat',
-            'jam_pulang_akhir' => 'required|date_format:H:i|after:jam_pulang_awal',
-            'hari_kerja' => 'required|array|min:1', // Minimal 1 hari kerja
-            'hari_kerja.*' => 'in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
+            'jam_masuk'        => 'required|date_format:H:i',
+            'batas_telat'      => 'required|date_format:H:i|after:jam_masuk',
+            'jam_pulang_awal'  => 'required|date_format:H:i',
+            'jam_pulang_akhir' => 'required|date_format:H:i',
+            'hari_kerja'       => 'required|array|min:1',
+        ], [
+            'date_format' => 'Format jam tidak valid (harus HH:MM).',
+            'after'       => 'Jam Batas Telat harus lebih akhir dari Jam Masuk.',
+            'required'    => 'Wajib diisi.',
+            'array'       => 'Pilih minimal satu hari kerja.'
         ]);
-        
-        // Gunakan updateOrCreate untuk menyimpan 1 baris pengaturan
+
+        // 3. SIMPAN KE DATABASE
         SekolahAbsensiSetting::updateOrCreate(
-            ['sekolah_id' => $sekolah->id], // Kunci pencarian
-            $validated // Data yang di-update/dibuat
+            ['sekolah_id' => $sekolah->id],
+            [
+                'jam_masuk'        => $validated['jam_masuk'],
+                'batas_telat'      => $validated['batas_telat'],
+                'jam_pulang_awal'  => $validated['jam_pulang_awal'],
+                'jam_pulang_akhir' => $validated['jam_pulang_akhir'],
+                'hari_kerja'       => $validated['hari_kerja'],
+            ]
         );
 
         return redirect()->route('sekolah.admin.konfigurasi.index')
-                         ->with('success', 'Pengaturan Jam & Hari Kerja berhasil disimpan.');
+            ->with('success', 'Pengaturan jam & hari kerja berhasil diperbarui.');
     }
 
     /**

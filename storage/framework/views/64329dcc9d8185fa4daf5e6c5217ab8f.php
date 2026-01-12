@@ -1,6 +1,15 @@
-<x-app-layout>
-    {{-- STYLE KHUSUS (Hanya untuk hover card & transisi) --}}
-    @push('styles')
+<?php if (isset($component)) { $__componentOriginal9ac128a9029c0e4701924bd2d73d7f54 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54 = $attributes; } ?>
+<?php $component = App\View\Components\AppLayout::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('app-layout'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\App\View\Components\AppLayout::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+    
+    <?php $__env->startPush('styles'); ?>
     <style>
         .config-card { transition: transform 0.2s, box-shadow 0.2s; }
         .config-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
@@ -11,9 +20,9 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
     </style>
-    @endpush
+    <?php $__env->stopPush(); ?>
 
-    <x-slot name="header">
+     <?php $__env->slot('header', null, []); ?> 
         <div class="flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
                 <h2 class="font-black text-2xl text-gray-800 tracking-tight flex items-center gap-2">
@@ -22,8 +31,8 @@
                 <p class="text-sm text-gray-500 mt-1">Atur jam kerja, lokasi, jaringan, dan kalender libur sekolah.</p>
             </div>
             
-            {{-- KIOS BANNER MINI --}}
-            <a href="{{ route('sekolah.admin.konfigurasi.kios.show') }}" target="_blank" class="group flex items-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-200 transition-all transform hover:scale-105">
+            
+            <a href="<?php echo e(route('sekolah.admin.konfigurasi.kios.show')); ?>" target="_blank" class="group flex items-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-indigo-200 transition-all transform hover:scale-105">
                 <div class="p-1.5 bg-white/20 rounded-lg group-hover:rotate-12 transition-transform">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                 </div>
@@ -33,39 +42,39 @@
                 </div>
             </a>
         </div>
-    </x-slot>
+     <?php $__env->endSlot(); ?>
 
     <div class="py-8 bg-gray-50/50 min-h-screen">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
 
-            {{-- NOTIFIKASI SUKSES/ERROR --}}
-            @if(session('success'))
+            
+            <?php if(session('success')): ?>
                 <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-sm flex items-center justify-between" role="alert">
                     <div class="flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <span class="font-medium">{{ session('success') }}</span>
+                        <span class="font-medium"><?php echo e(session('success')); ?></span>
                     </div>
                     <button onclick="this.parentElement.remove()" class="text-green-600 hover:text-green-800">&times;</button>
                 </div>
-            @endif
+            <?php endif; ?>
 
-            @if ($errors->any())
+            <?php if($errors->any()): ?>
                 <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow-sm">
                     <p class="font-bold flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                         Terjadi Kesalahan:
                     </p>
                     <ul class="list-disc list-inside text-sm mt-1 ml-2">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
+                        <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <li><?php echo e($error); ?></li>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </ul>
                 </div>
-            @endif
+            <?php endif; ?>
 
-            {{-- 1. PENGATURAN UTAMA (JAM & HARI KERJA) --}}
-            <form method="POST" action="{{ route('sekolah.admin.konfigurasi.settings.store') }}">
-                @csrf
+            
+            <form method="POST" action="<?php echo e(route('sekolah.admin.konfigurasi.settings.store')); ?>">
+                <?php echo csrf_field(); ?>
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                     <div class="p-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
                         <h3 class="font-bold text-gray-800 flex items-center gap-2">
@@ -79,49 +88,49 @@
                     </div>
                     
                     <div class="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-10">
-                        {{-- Jam Kerja --}}
+                        
                         <div class="space-y-6">
                             <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider border-b pb-2">Aturan Jam (Format 24 Jam)</h4>
                             
                             <div class="grid grid-cols-2 gap-6">
-                                {{-- JAM MASUK --}}
+                                
                                 <div>
                                     <label class="block text-sm font-bold text-gray-700 mb-2">Jam Masuk</label>
                                     <div class="relative group">
-                                        <input type="time" name="jam_masuk" value="{{ old('jam_masuk', $absensiSettings->jam_masuk ?? '07:00') }}" 
+                                        <input type="time" name="jam_masuk" value="<?php echo e(old('jam_masuk', $absensiSettings->jam_masuk ?? '07:00')); ?>" 
                                             class="block w-full pl-10 py-2.5 border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 font-mono font-bold text-gray-800 transition-shadow group-hover:shadow-sm">
                                         <svg class="w-5 h-5 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
                                     </div>
                                     <p class="text-xs text-gray-500 mt-1">Waktu mulai check-in.</p>
                                 </div>
 
-                                {{-- BATAS TELAT --}}
+                                
                                 <div>
                                     <label class="block text-sm font-bold text-gray-700 mb-2">Batas Terlambat</label>
                                     <div class="relative group">
-                                        <input type="time" name="batas_telat" value="{{ old('batas_telat', $absensiSettings->batas_telat ?? '07:15') }}" 
+                                        <input type="time" name="batas_telat" value="<?php echo e(old('batas_telat', $absensiSettings->batas_telat ?? '07:15')); ?>" 
                                             class="block w-full pl-10 py-2.5 border-gray-300 rounded-xl focus:ring-amber-500 focus:border-amber-500 font-mono font-bold text-gray-800 transition-shadow group-hover:shadow-sm">
                                         <svg class="w-5 h-5 text-amber-500 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                                     </div>
                                     <p class="text-xs text-gray-500 mt-1">Lewat ini dihitung telat.</p>
                                 </div>
 
-                                {{-- PULANG AWAL --}}
+                                
                                 <div>
                                     <label class="block text-sm font-bold text-gray-700 mb-2">Pulang Awal</label>
                                     <div class="relative group">
-                                        <input type="time" name="jam_pulang_awal" value="{{ old('jam_pulang_awal', $absensiSettings->jam_pulang_awal ?? '14:00') }}" 
+                                        <input type="time" name="jam_pulang_awal" value="<?php echo e(old('jam_pulang_awal', $absensiSettings->jam_pulang_awal ?? '14:00')); ?>" 
                                             class="block w-full pl-10 py-2.5 border-gray-300 rounded-xl focus:ring-emerald-500 focus:border-emerald-500 font-mono font-bold text-gray-800 transition-shadow group-hover:shadow-sm">
                                         <svg class="w-5 h-5 text-emerald-500 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                                     </div>
                                     <p class="text-xs text-gray-500 mt-1">Mulai bisa check-out.</p>
                                 </div>
 
-                                {{-- BATAS AKHIR SCAN --}}
+                                
                                 <div>
                                     <label class="block text-sm font-bold text-gray-700 mb-2">Batas Akhir Scan</label>
                                     <div class="relative group">
-                                        <input type="time" name="jam_pulang_akhir" value="{{ old('jam_pulang_akhir', $absensiSettings->jam_pulang_akhir ?? '17:00') }}" 
+                                        <input type="time" name="jam_pulang_akhir" value="<?php echo e(old('jam_pulang_akhir', $absensiSettings->jam_pulang_akhir ?? '17:00')); ?>" 
                                             class="block w-full pl-10 py-2.5 border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 font-mono font-bold text-gray-800 transition-shadow group-hover:shadow-sm">
                                         <svg class="w-5 h-5 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                                     </div>
@@ -130,11 +139,11 @@
                             </div>
                         </div>
 
-                        {{-- Hari Kerja --}}
+                        
                         <div class="space-y-6">
                             <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider border-b pb-2">Hari Sekolah Aktif</h4>
                             
-                            @php
+                            <?php
                                 // Logic untuk memastikan data hari kerja ter-handle dengan benar
                                 $defaultDays = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
                                 $savedDays = $absensiSettings->hari_kerja ?? $defaultDays;
@@ -145,34 +154,34 @@
                                 }
                                 
                                 $days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-                            @endphp
+                            ?>
                             
                             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                @foreach($days as $hari)
+                                <?php $__currentLoopData = $days; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $hari): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <label class="relative cursor-pointer group select-none">
-                                        {{-- INPUT CHECKBOX (Hidden) --}}
+                                        
                                         <input type="checkbox" 
                                                name="hari_kerja[]" 
-                                               value="{{ $hari }}" 
+                                               value="<?php echo e($hari); ?>" 
                                                class="peer sr-only" 
-                                               @checked(in_array($hari, $savedDays))>
+                                               <?php if(in_array($hari, $savedDays)): echo 'checked'; endif; ?>>
                                         
-                                        {{-- TAMPILAN KARTU (Sibling dari Input) --}}
+                                        
                                         <div class="flex items-center justify-between w-full px-3 py-2.5 rounded-xl border transition-all duration-200 ease-in-out
                                                     bg-gray-50 border-gray-200 text-gray-500 
                                                     group-hover:border-blue-300 group-hover:bg-white group-hover:shadow-sm
                                                     peer-checked:bg-blue-600 peer-checked:border-blue-600 peer-checked:text-white peer-checked:shadow-md">
                                             
-                                            <span class="font-bold text-sm">{{ $hari }}</span>
+                                            <span class="font-bold text-sm"><?php echo e($hari); ?></span>
                                             
-                                            {{-- Lingkaran Status --}}
+                                            
                                             <div class="w-4 h-4 rounded-full border border-gray-300 bg-white/50 flex items-center justify-center
                                                         peer-checked:border-white peer-checked:bg-white/20">
                                                 <svg class="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                                             </div>
                                         </div>
                                     </label>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
 
                             <div class="bg-blue-50 text-blue-700 text-xs p-3 rounded-lg flex gap-2 items-start">
@@ -180,16 +189,35 @@
                                 <p>Hari yang <b>tidak dipilih</b> (abu-abu) akan dianggap libur rutin (Check-in ditolak).</p>
                             </div>
                             
-                            <x-input-error :messages="$errors->get('hari_kerja')" class="mt-2" />
+                            <?php if (isset($component)) { $__componentOriginalf94ed9c5393ef72725d159fe01139746 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalf94ed9c5393ef72725d159fe01139746 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.input-error','data' => ['messages' => $errors->get('hari_kerja'),'class' => 'mt-2']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('input-error'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['messages' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($errors->get('hari_kerja')),'class' => 'mt-2']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $attributes = $__attributesOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__attributesOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $component = $__componentOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__componentOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
                         </div>
                     </div>
                 </div>
             </form>
 
-            {{-- 2. GRID MODUL (3 KOLOM) --}}
+            
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                {{-- MODUL A: HARI LIBUR --}}
+                
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col h-[500px] config-card">
                     <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-red-50/50 rounded-t-2xl">
                         <h3 class="font-bold text-gray-800 flex items-center gap-2">
@@ -202,31 +230,31 @@
                         </button>
                     </div>
                     <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scroll">
-                        @forelse($hariLiburList as $libur)
+                        <?php $__empty_1 = true; $__currentLoopData = $hariLiburList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $libur): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-red-50/30 transition group">
                                 <div>
-                                    <div class="text-xs font-bold text-red-500">{{ \Carbon\Carbon::parse($libur->tanggal)->translatedFormat('d F Y') }}</div>
-                                    <div class="text-sm font-bold text-gray-700">{{ $libur->keterangan }}</div>
+                                    <div class="text-xs font-bold text-red-500"><?php echo e(\Carbon\Carbon::parse($libur->tanggal)->translatedFormat('d F Y')); ?></div>
+                                    <div class="text-sm font-bold text-gray-700"><?php echo e($libur->keterangan); ?></div>
                                 </div>
-                                <form action="{{ route('sekolah.admin.konfigurasi.hari-libur.destroy', $libur->id) }}" method="POST" class="delete-form">
-                                    @csrf @method('DELETE')
+                                <form action="<?php echo e(route('sekolah.admin.konfigurasi.hari-libur.destroy', $libur->id)); ?>" method="POST" class="delete-form">
+                                    <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
                                     <button type="button" class="btn-delete text-gray-300 hover:bg-red-100 group-hover:text-red-500 transition p-2 rounded-lg">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </form>
                             </div>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <div class="text-center py-10">
                                 <div class="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 </div>
                                 <span class="text-gray-400 text-sm">Belum ada hari libur.</span>
                             </div>
-                        @endforelse
+                        <?php endif; ?>
                     </div>
                 </div>
 
-                {{-- MODUL B: WIFI --}}
+                
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col h-[500px] config-card">
                     <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-emerald-50/50 rounded-t-2xl">
                         <h3 class="font-bold text-gray-800 flex items-center gap-2">
@@ -239,31 +267,31 @@
                         </button>
                     </div>
                     <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scroll">
-                        @forelse($wifiList as $wifi)
+                        <?php $__empty_1 = true; $__currentLoopData = $wifiList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $wifi): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-emerald-50/30 transition group">
                                 <div>
-                                    <div class="text-sm font-bold text-gray-800">{{ $wifi->nama_wifi_ssid }}</div>
-                                    <div class="text-xs font-mono text-gray-400 mt-0.5 bg-gray-100 px-2 py-0.5 rounded inline-block">{{ $wifi->bssid ?? 'Any BSSID' }}</div>
+                                    <div class="text-sm font-bold text-gray-800"><?php echo e($wifi->nama_wifi_ssid); ?></div>
+                                    <div class="text-xs font-mono text-gray-400 mt-0.5 bg-gray-100 px-2 py-0.5 rounded inline-block"><?php echo e($wifi->bssid ?? 'Any BSSID'); ?></div>
                                 </div>
-                                <form action="{{ route('sekolah.admin.konfigurasi.wifi.destroy', $wifi->id) }}" method="POST" class="delete-form">
-                                    @csrf @method('DELETE')
+                                <form action="<?php echo e(route('sekolah.admin.konfigurasi.wifi.destroy', $wifi->id)); ?>" method="POST" class="delete-form">
+                                    <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
                                     <button type="button" class="btn-delete text-gray-300 hover:bg-red-100 group-hover:text-red-500 transition p-2 rounded-lg">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </form>
                             </div>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <div class="text-center py-10">
                                 <div class="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
                                 </div>
                                 <span class="text-gray-400 text-sm">Belum ada WiFi terdaftar.</span>
                             </div>
-                        @endforelse
+                        <?php endif; ?>
                     </div>
                 </div>
 
-                {{-- MODUL C: GEOFENCE --}}
+                
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col h-[500px] config-card">
                     <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-purple-50/50 rounded-t-2xl">
                         <h3 class="font-bold text-gray-800 flex items-center gap-2">
@@ -276,31 +304,31 @@
                         </button>
                     </div>
                     <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scroll">
-                        @forelse($geofenceList as $geo)
+                        <?php $__empty_1 = true; $__currentLoopData = $geofenceList; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $geo): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-purple-50/30 transition group">
                                 <div>
-                                    <div class="text-sm font-bold text-gray-800">{{ $geo->nama_lokasi }}</div>
+                                    <div class="text-sm font-bold text-gray-800"><?php echo e($geo->nama_lokasi); ?></div>
                                     <div class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        Radius: {{ $geo->radius }}m
+                                        Radius: <?php echo e($geo->radius); ?>m
                                     </div>
-                                    <div class="text-[10px] font-mono text-gray-400 mt-1">{{ number_format($geo->latitude, 6) }}, {{ number_format($geo->longitude, 6) }}</div>
+                                    <div class="text-[10px] font-mono text-gray-400 mt-1"><?php echo e(number_format($geo->latitude, 6)); ?>, <?php echo e(number_format($geo->longitude, 6)); ?></div>
                                 </div>
-                                <form action="{{ route('sekolah.admin.konfigurasi.geofence.destroy', $geo->id) }}" method="POST" class="delete-form">
-                                    @csrf @method('DELETE')
+                                <form action="<?php echo e(route('sekolah.admin.konfigurasi.geofence.destroy', $geo->id)); ?>" method="POST" class="delete-form">
+                                    <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
                                     <button type="button" class="btn-delete text-gray-300 hover:bg-red-100 group-hover:text-red-500 transition p-2 rounded-lg">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </form>
                             </div>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <div class="text-center py-10">
                                 <div class="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                 </div>
                                 <span class="text-gray-400 text-sm">Belum ada lokasi terdaftar.</span>
                             </div>
-                        @endforelse
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -308,7 +336,7 @@
         </div>
     </div>
 
-    {{-- MODAL UNIFIED (Libur, WiFi, Geofence) --}}
+    
     <div id="configModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity opacity-0" id="modalBackdrop"></div>
         <div class="flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
@@ -322,9 +350,9 @@
                 </div>
 
                 <div class="px-6 py-6">
-                    {{-- Form Libur --}}
-                    <form id="formLibur" action="{{ route('sekolah.admin.konfigurasi.hari-libur.store') }}" method="POST" class="hidden space-y-5 modal-form">
-                        @csrf
+                    
+                    <form id="formLibur" action="<?php echo e(route('sekolah.admin.konfigurasi.hari-libur.store')); ?>" method="POST" class="hidden space-y-5 modal-form">
+                        <?php echo csrf_field(); ?>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tanggal Libur</label>
                             <input type="date" name="tanggal" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:ring-red-500 focus:border-red-500 text-sm py-2.5">
@@ -336,9 +364,9 @@
                         <button type="submit" class="w-full bg-red-600 text-white font-bold py-3 rounded-xl hover:bg-red-700 shadow-md transition transform active:scale-95">Simpan Hari Libur</button>
                     </form>
 
-                    {{-- Form WiFi --}}
-                    <form id="formWifi" action="{{ route('sekolah.admin.konfigurasi.wifi.store') }}" method="POST" class="hidden space-y-5 modal-form">
-                        @csrf
+                    
+                    <form id="formWifi" action="<?php echo e(route('sekolah.admin.konfigurasi.wifi.store')); ?>" method="POST" class="hidden space-y-5 modal-form">
+                        <?php echo csrf_field(); ?>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nama WiFi (SSID)</label>
                             <input type="text" name="nama_wifi_ssid" placeholder="Cth: Sekolah_Official" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:ring-emerald-500 focus:border-emerald-500 text-sm py-2.5">
@@ -351,9 +379,9 @@
                         <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 shadow-md transition transform active:scale-95">Simpan WiFi</button>
                     </form>
 
-                    {{-- Form Geofence --}}
-                    <form id="formGeofence" action="{{ route('sekolah.admin.konfigurasi.geofence.store') }}" method="POST" class="hidden space-y-5 modal-form">
-                        @csrf
+                    
+                    <form id="formGeofence" action="<?php echo e(route('sekolah.admin.konfigurasi.geofence.store')); ?>" method="POST" class="hidden space-y-5 modal-form">
+                        <?php echo csrf_field(); ?>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Lokasi</label>
                             <input type="text" name="nama_lokasi" placeholder="Cth: Gerbang Utama" required class="block w-full rounded-xl border-gray-300 shadow-sm focus:ring-purple-500 focus:border-purple-500 text-sm py-2.5">
@@ -380,7 +408,7 @@
         </div>
     </div>
 
-    @push('scripts')
+    <?php $__env->startPush('scripts'); ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         const modal = document.getElementById('configModal');
@@ -442,13 +470,22 @@
         });
 
         // Auto Open Modal on Error
-        @if($errors->has('tanggal') || $errors->has('keterangan'))
+        <?php if($errors->has('tanggal') || $errors->has('keterangan')): ?>
             openModal('libur');
-        @elseif($errors->has('nama_wifi_ssid') || $errors->has('bssid'))
+        <?php elseif($errors->has('nama_wifi_ssid') || $errors->has('bssid')): ?>
             openModal('wifi');
-        @elseif($errors->has('nama_lokasi') || $errors->has('latitude'))
+        <?php elseif($errors->has('nama_lokasi') || $errors->has('latitude')): ?>
             openModal('geofence');
-        @endif
+        <?php endif; ?>
     </script>
-    @endpush
-</x-app-layout>
+    <?php $__env->stopPush(); ?>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54)): ?>
+<?php $attributes = $__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54; ?>
+<?php unset($__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9ac128a9029c0e4701924bd2d73d7f54)): ?>
+<?php $component = $__componentOriginal9ac128a9029c0e4701924bd2d73d7f54; ?>
+<?php unset($__componentOriginal9ac128a9029c0e4701924bd2d73d7f54); ?>
+<?php endif; ?><?php /**PATH C:\laragon\www\keuangan-pesantren\resources\views/sekolah/admin/konfigurasi/index.blade.php ENDPATH**/ ?>
