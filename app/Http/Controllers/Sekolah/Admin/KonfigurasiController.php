@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Cache;
+use App\Models\Sekolah\Sekolah;
 
 class KonfigurasiController extends Controller
 {
@@ -85,85 +86,102 @@ class KonfigurasiController extends Controller
      */
     public function storeSettings(Request $request)
     {
-        $sekolah = $this->getSekolah();
-
-        // 1. NORMALISASI FORMAT WAKTU
-        // Kadang browser/database mengirim format H:i:s (07:00:00).
-        // Kita potong jadi 5 karakter (07:00) agar lolos validasi date_format:H:i
+        // 1. Validasi Input
         $timeFields = ['jam_masuk', 'batas_telat', 'jam_pulang_awal', 'jam_pulang_akhir'];
         foreach ($timeFields as $field) {
             if ($request->filled($field)) {
-                $request->merge([
-                    $field => substr($request->input($field), 0, 5)
-                ]);
+                $request->merge([$field => substr($request->input($field), 0, 5)]);
             }
         }
 
-        // 2. VALIDASI DATA
-        // Saya tambahkan parameter ke-3 (Custom Messages) agar errornya bahasa manusia, bukan kode
         $validated = $request->validate([
             'jam_masuk'        => 'required|date_format:H:i',
             'batas_telat'      => 'required|date_format:H:i|after:jam_masuk',
             'jam_pulang_awal'  => 'required|date_format:H:i',
             'jam_pulang_akhir' => 'required|date_format:H:i',
             'hari_kerja'       => 'required|array|min:1',
-        ], [
-            'date_format' => 'Format jam tidak valid (harus HH:MM).',
-            'after'       => 'Jam Batas Telat harus lebih akhir dari Jam Masuk.',
-            'required'    => 'Wajib diisi.',
-            'array'       => 'Pilih minimal satu hari kerja.'
         ]);
 
-        // 3. SIMPAN KE DATABASE
-        SekolahAbsensiSetting::updateOrCreate(
-            ['sekolah_id' => $sekolah->id],
-            [
-                'jam_masuk'        => $validated['jam_masuk'],
-                'batas_telat'      => $validated['batas_telat'],
-                'jam_pulang_awal'  => $validated['jam_pulang_awal'],
-                'jam_pulang_akhir' => $validated['jam_pulang_akhir'],
-                'hari_kerja'       => $validated['hari_kerja'],
-            ]
-        );
+        // 2. Ambil ID Pondok
+        $pondokId = $this->getPondokId();
+
+        // 3. Ambil SEMUA Sekolah di Pondok ini
+        $allSekolah = Sekolah::where('pondok_id', $pondokId)->get();
+
+        // 4. Loop & Simpan ke Semua Sekolah
+        foreach ($allSekolah as $unitSekolah) {
+            SekolahAbsensiSetting::updateOrCreate(
+                ['sekolah_id' => $unitSekolah->id], // Cari berdasarkan ID Sekolah masing-masing
+                $validated // Data jam & hari kerja yang sama
+            );
+        }
 
         return redirect()->route('sekolah.admin.konfigurasi.index')
-            ->with('success', 'Pengaturan jam & hari kerja berhasil diperbarui.');
+            ->with('success', 'Pengaturan Absensi berhasil disimpan untuk SEMUA Unit Sekolah.');
     }
 
     /**
-     * Simpan data Hari Libur baru
+     * SIMPAN HARI LIBUR (BERLAKU UNTUK SEMUA UNIT)
      */
     public function storeHariLibur(Request $request)
     {
-        $sekolah = $this->getSekolah();
+        $currentSekolah = $this->getSekolah();
 
         $validated = $request->validate([
             'tanggal' => [
                 'required', 'date',
-                Rule::unique('sekolah_hari_libur')->where(fn ($q) => $q->where('sekolah_id', $sekolah->id))
+                // Validasi unique hanya dicek di sekolah yang sedang aktif agar tidak error form
+                Rule::unique('sekolah_hari_libur')->where(fn ($q) => $q->where('sekolah_id', $currentSekolah->id))
             ],
             'keterangan' => 'required|string|max:255',
         ], [
-            'tanggal.unique' => 'Tanggal libur ini sudah pernah ditambahkan.'
+            'tanggal.unique' => 'Tanggal libur ini sudah ada.'
         ]);
-        
-        $validated['sekolah_id'] = $sekolah->id;
 
-        SekolahHariLibur::create($validated);
+        // 1. Ambil ID Pondok
+        $pondokId = $this->getPondokId();
+
+        // 2. Ambil SEMUA Sekolah
+        $allSekolah = Sekolah::where('pondok_id', $pondokId)->get();
+
+        // 3. Loop & Create Hari Libur untuk Semua Sekolah
+        foreach ($allSekolah as $unitSekolah) {
+            // Cek dulu biar tidak duplikat (firstOrCreate)
+            SekolahHariLibur::firstOrCreate(
+                [
+                    'sekolah_id' => $unitSekolah->id,
+                    'tanggal'    => $validated['tanggal']
+                ],
+                [
+                    'keterangan' => $validated['keterangan']
+                ]
+            );
+        }
 
         return redirect()->route('sekolah.admin.konfigurasi.index')
-                         ->with('success', 'Hari Libur berhasil ditambahkan.');
+            ->with('success', 'Hari Libur berhasil ditambahkan ke SEMUA Unit Sekolah.');
     }
 
     /**
-     * Hapus data Hari Libur
+     * HAPUS HARI LIBUR (HAPUS DI SEMUA UNIT JUGA)
      */
     public function destroyHariLibur(SekolahHariLibur $sekolahHariLibur)
     {
-        $this->checkOwnershipHariLibur($sekolahHariLibur); // Keamanan
-        $sekolahHariLibur->delete();
+        $this->checkOwnershipHariLibur($sekolahHariLibur);
+        
+        $tanggal = $sekolahHariLibur->tanggal;
+        $pondokId = $this->getPondokId();
+
+        // Cari semua sekolah di pondok
+        $sekolahIds = Sekolah::where('pondok_id', $pondokId)->pluck('id');
+
+        // Hapus hari libur dengan tanggal yang sama di semua sekolah milik pondok ini
+        SekolahHariLibur::whereIn('sekolah_id', $sekolahIds)
+            ->where('tanggal', $tanggal)
+            ->delete();
+
         return redirect()->route('sekolah.admin.konfigurasi.index')
-                         ->with('success', 'Hari Libur berhasil dihapus.');
+            ->with('success', 'Hari Libur berhasil dihapus dari semua unit.');
     }
 
 
