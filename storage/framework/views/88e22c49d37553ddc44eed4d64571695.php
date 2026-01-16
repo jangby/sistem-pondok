@@ -15,16 +15,16 @@
 <body>
     <div class="header">
         <h2 style="margin:0;">Data Perpulangan Santri</h2>
-        <h3 style="margin:5px 0;">{{ $event->judul }}</h3>
-        <p>Kategori: {{ $status == 'all' ? 'Semua Data' : ucwords(str_replace('_', ' ', $status)) }}</p>
+        <h3 style="margin:5px 0;"><?php echo e($event->judul); ?></h3>
+        <p>Kategori: <?php echo e($status == 'all' ? 'Semua Data' : ucwords(str_replace('_', ' ', $status))); ?></p>
     </div>
 
-    @foreach(['Putra' => $recordsPutra, 'Putri' => $recordsPutri] as $label => $data)
-        <div class="section-title">Santri {{ $label }}</div>
+    <?php $__currentLoopData = ['Putra' => $recordsPutra, 'Putri' => $recordsPutri]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $label => $data): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <div class="section-title">Santri <?php echo e($label); ?></div>
         
-        @if($data->isEmpty())
+        <?php if($data->isEmpty()): ?>
             <p><i>Tidak ada data.</i></p>
-        @else
+        <?php else: ?>
             <table>
                 <thead>
                     <tr>
@@ -35,26 +35,26 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($data as $index => $rec)
-                    @php
+                    <?php $__currentLoopData = $data; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $rec): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php
                         $alamat = $rec->santri->alamat ?? '';
                         $alamat .= $rec->santri->desa ? ", Ds. {$rec->santri->desa}" : '';
                         $alamat .= $rec->santri->kecamatan ? ", Kec. {$rec->santri->kecamatan}" : '';
-                    @endphp
+                    ?>
                     <tr>
-                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td class="text-center"><?php echo e($index + 1); ?></td>
                         <td>
-                            {{ $rec->santri->full_name }}<br>
-                            <small style="color: #666;">{{ $rec->santri->nis }}</small>
+                            <?php echo e($rec->santri->full_name); ?><br>
+                            <small style="color: #666;"><?php echo e($rec->santri->nis); ?></small>
                         </td>
-                        <td>{{ $rec->santri->kelas->nama_kelas ?? '-' }}</td>
-                        <td>{{ $alamat }}</td>
+                        <td><?php echo e($rec->santri->kelas->nama_kelas ?? '-'); ?></td>
+                        <td><?php echo e($alamat); ?></td>
                     </tr>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </tbody>
             </table>
-        @endif
-    @endforeach
+        <?php endif; ?>
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
 </body>
-</html>
+</html><?php /**PATH C:\laragon\www\keuangan-pesantren\resources\views/pengurus/perpulangan/pdf_export.blade.php ENDPATH**/ ?>

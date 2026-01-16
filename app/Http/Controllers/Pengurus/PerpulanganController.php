@@ -228,12 +228,12 @@ class PerpulanganController extends Controller
     }
 
     // 9. Halaman Detail & Monitoring Event (DENGAN FILTER)
+    // 9. Halaman Detail & Monitoring Event
     public function show(Request $request, $id)
     {
         $event = PerpulanganEvent::findOrFail($id);
 
-        // 1. Ambil Data Kelas yang ada di event ini (Untuk Dropdown Filter)
-        // Kita hanya ambil kelas yang santrinya sudah didaftarkan/dicetak kartunya
+        // 1. Ambil Data Kelas untuk Filter Dropdown
         $mustawaIds = PerpulanganRecord::where('perpulangan_event_id', $id)
             ->join('santris', 'perpulangan_records.santri_id', '=', 'santris.id')
             ->select('santris.mustawa_id')
@@ -242,31 +242,46 @@ class PerpulanganController extends Controller
             
         $mustawas = Mustawa::whereIn('id', $mustawaIds)->orderBy('nama')->get();
 
-        // 2. Query Utama Record
-        $query = PerpulanganRecord::with(['santri.mustawa', 'santri.asrama'])
+        // 2. Query Utama
+        $query = PerpulanganRecord::with(['santri.mustawa', 'santri.asrama']) // Eager load relasi
             ->where('perpulangan_event_id', $id);
 
-        // 3. Logika Filter
+        // --- LOGIKA FILTER ---
+        
+        // Filter Kelas (Mustawa)
         if ($request->has('mustawa_id') && $request->mustawa_id != '') {
             $query->whereHas('santri', function($q) use ($request) {
                 $q->where('mustawa_id', $request->mustawa_id);
             });
         }
 
-        $records = $query->get();
+        // Filter Pencarian (Nama/NISM)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('santri', function($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                  ->orWhere('nis', 'like', "%{$search}%");
+            });
+        }
 
-        // 4. Grouping Data (Tabulasi)
-        $belum_pulang = $records->where('status', 0);
-        $sedang_pulang = $records->where('status', 1);
-        $sudah_kembali = $records->where('status', 2);
-        
-        $terlambat = $records->filter(function ($record) use ($event) {
-            return $record->is_late || ($record->status == 1 && now()->greaterThan($event->tanggal_akhir));
-        });
+        // Filter Status
+        if ($request->filled('status_filter')) {
+            if ($request->status_filter == 'sedang_pulang') {
+                $query->where('status', 1);
+            } elseif ($request->status_filter == 'sudah_kembali') {
+                $query->where('status', 2);
+            }
+        }
 
-        return view('pengurus.perpulangan.show', compact(
-            'event', 'records', 'belum_pulang', 'sedang_pulang', 'sudah_kembali', 'terlambat', 'mustawas'
-        ));
+        // 3. Ambil Data dengan Pagination (SOLUSI ERROR ANDA)
+        // Gunakan paginate() bukan get() agar method links() dan firstItem() di view berfungsi
+        $records = $query->paginate(20)->withQueryString();
+
+        // Catatan: Variabel statistik ($belum_pulang, $terlambat, dll) dihapus dari controller
+        // karena sekarang perhitungan statistik sudah ditangani langsung di View (show.blade.php)
+        // menggunakan $event->records agar angkanya tetap akurat meski di halaman 2, 3, dst.
+
+        return view('pengurus.perpulangan.show', compact('event', 'records', 'mustawas'));
     }
 
     // 10. Toggle Status Event (On/Off)
@@ -294,26 +309,24 @@ class PerpulanganController extends Controller
         $format = $request->format ?? 'excel';
 
         if ($format == 'excel') {
-            // Excel akan otomatis membuat 2 sheet (Putra & Putri) dari Class Export baru
             return Excel::download(new PerpulanganExport($id, $status), 'perpulangan-' . $status . '.xlsx');
         } elseif ($format == 'pdf') {
-            // Helper query function
+            // Query Dasar
             $queryBase = PerpulanganRecord::with(['santri.kelas', 'event'])
                 ->where('perpulangan_event_id', $id);
 
             // Filter Status
             if ($status && $status !== 'all') {
                 $statusMap = ['belum_jalan' => 0, 'sedang_pulang' => 1, 'sudah_kembali' => 2];
-                if (isset($statusMap[$status])) {
+                
+                if (array_key_exists($status, $statusMap)) {
                     $queryBase->where('status', $statusMap[$status]);
                 } elseif ($status == 'terlambat') {
                     // Logic terlambat query manual
                     $queryBase->where(function($q) use ($event) {
-                        // Kasus 1: Sudah kembali tapi telat
                         $q->whereNotNull('waktu_kembali')
                           ->where('waktu_kembali', '>', $event->tanggal_akhir . ' 23:59:59');
                     })->orWhere(function($q) use ($event) {
-                        // Kasus 2: Belum kembali dan hari ini sudah lewat batas
                         $q->whereNull('waktu_kembali')
                           ->where('status', '!=', 2)
                           ->whereRaw('NOW() > ?', [$event->tanggal_akhir . ' 23:59:59']);
@@ -321,15 +334,13 @@ class PerpulanganController extends Controller
                 }
             }
 
-            // Ambil Data Putra (L)
-            // Clone query agar tidak merusak query dasar
+            // PERBAIKAN DI SINI: Gunakan 'Laki-laki' dan 'Perempuan'
             $recordsPutra = (clone $queryBase)->whereHas('santri', function($q) {
-                $q->where('jenis_kelamin', 'L'); // Sesuaikan 'L' dengan data di DB Anda (L/P atau Laki-laki)
+                $q->where('jenis_kelamin', 'Laki-laki'); 
             })->get();
 
-            // Ambil Data Putri (P)
             $recordsPutri = (clone $queryBase)->whereHas('santri', function($q) {
-                $q->where('jenis_kelamin', 'P');
+                $q->where('jenis_kelamin', 'Perempuan');
             })->get();
 
             $pdf = Pdf::loadView('pengurus.perpulangan.pdf_export', compact('recordsPutra', 'recordsPutri', 'event', 'status'));

@@ -17,9 +17,10 @@ class PerpulanganExport implements WithMultipleSheets
 
     public function sheets(): array
     {
+        // PERBAIKAN: Gunakan 'Laki-laki' dan 'Perempuan' sesuai database
         return [
-            new PerpulanganSheet($this->eventId, $this->status, 'L', 'Santri Putra'),
-            new PerpulanganSheet($this->eventId, $this->status, 'P', 'Santri Putri'),
+            new PerpulanganSheet($this->eventId, $this->status, 'Laki-laki', 'Santri Putra'),
+            new PerpulanganSheet($this->eventId, $this->status, 'Perempuan', 'Santri Putri'),
         ];
     }
 }
