@@ -294,23 +294,45 @@ class PerpulanganController extends Controller
         $format = $request->format ?? 'excel';
 
         if ($format == 'excel') {
+            // Excel akan otomatis membuat 2 sheet (Putra & Putri) dari Class Export baru
             return Excel::download(new PerpulanganExport($id, $status), 'perpulangan-' . $status . '.xlsx');
         } elseif ($format == 'pdf') {
-            // Logic query manual untuk PDF (mirip dengan logic di Export Class)
-            $query = PerpulanganRecord::with(['santri', 'event'])
+            // Helper query function
+            $queryBase = PerpulanganRecord::with(['santri.kelas', 'event'])
                 ->where('perpulangan_event_id', $id);
 
+            // Filter Status
             if ($status && $status !== 'all') {
-                if ($status == 'terlambat') {
-                     $query->where('is_late', true)->orWhere('status', 'terlambat');
-                } else {
-                     $query->where('status', $status);
+                $statusMap = ['belum_jalan' => 0, 'sedang_pulang' => 1, 'sudah_kembali' => 2];
+                if (isset($statusMap[$status])) {
+                    $queryBase->where('status', $statusMap[$status]);
+                } elseif ($status == 'terlambat') {
+                    // Logic terlambat query manual
+                    $queryBase->where(function($q) use ($event) {
+                        // Kasus 1: Sudah kembali tapi telat
+                        $q->whereNotNull('waktu_kembali')
+                          ->where('waktu_kembali', '>', $event->tanggal_akhir . ' 23:59:59');
+                    })->orWhere(function($q) use ($event) {
+                        // Kasus 2: Belum kembali dan hari ini sudah lewat batas
+                        $q->whereNull('waktu_kembali')
+                          ->where('status', '!=', 2)
+                          ->whereRaw('NOW() > ?', [$event->tanggal_akhir . ' 23:59:59']);
+                    });
                 }
             }
-            
-            $records = $query->get();
 
-            $pdf = Pdf::loadView('pengurus.perpulangan.pdf_export', compact('records', 'event', 'status'));
+            // Ambil Data Putra (L)
+            // Clone query agar tidak merusak query dasar
+            $recordsPutra = (clone $queryBase)->whereHas('santri', function($q) {
+                $q->where('jenis_kelamin', 'L'); // Sesuaikan 'L' dengan data di DB Anda (L/P atau Laki-laki)
+            })->get();
+
+            // Ambil Data Putri (P)
+            $recordsPutri = (clone $queryBase)->whereHas('santri', function($q) {
+                $q->where('jenis_kelamin', 'P');
+            })->get();
+
+            $pdf = Pdf::loadView('pengurus.perpulangan.pdf_export', compact('recordsPutra', 'recordsPutri', 'event', 'status'));
             return $pdf->download('perpulangan-' . $status . '.pdf');
         }
 
