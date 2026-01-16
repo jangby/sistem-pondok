@@ -7,15 +7,24 @@ use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToPondok;
 use App\Models\User;
 use App\Models\Pondok;
-use Illuminate\Notifications\Notifiable; // <-- 1. TAMBAHKAN IMPORT INI
+use Illuminate\Notifications\Notifiable; 
 
 class Guru extends Model
 {
-    //
-    use HasFactory, BelongsToPondok, Notifiable; // <-- 2. TAMBAHKAN 'Notifiable'
+    use HasFactory, BelongsToPondok, Notifiable;
 
+    /**
+     * The attributes that are mass assignable.
+     * Pastikan 'rfid_uid' ada di sini agar bisa disimpan.
+     */
     protected $fillable = [
-        'user_id', 'pondok_id', 'nip', 'telepon', 'alamat', 'tipe_jam_kerja',
+        'user_id', 
+        'pondok_id', 
+        'nip', 
+        'telepon', 
+        'alamat', 
+        'tipe_jam_kerja',
+        'rfid_uid', // <--- PENTING: Tambahkan ini
     ];
 
     /**
@@ -23,35 +32,36 @@ class Guru extends Model
      */
     public function user()
     {
-        return $this->belongsTo(User::class); //
+        return $this->belongsTo(User::class);
     }
 
     public function pondok()
     {
-        return $this->belongsTo(Pondok::class); //
+        return $this->belongsTo(Pondok::class);
     }
-    
-    /*
-    |--------------------------------------------------------------------------
-    | 3. TAMBAHKAN FUNGSI BARU DI BAWAH INI
-    |--------------------------------------------------------------------------
-    | (Meniru pola dari app/Models/OrangTua.php)
-    */
     
     /**
      * Format nomor HP untuk WAHA (cth: 62812345678@c.us).
+     * Digunakan jika Anda melakukan $guru->notify(...)
      */
     public function routeNotificationForWaha($notification)
     {
-        if (!$this->telepon) {
+        // Ambil telepon dari tabel gurus (atau fallback ke user jika perlu)
+        $telepon = $this->telepon; 
+
+        if (!$telepon) {
             return null;
         }
-        // Hapus spasi, +, -, ganti 08 di depan jadi 62
-        $phone = preg_replace('/[+\-\s]/', '', $this->telepon);
+
+        // Hapus spasi, +, -
+        $phone = preg_replace('/[+\-\s]/', '', $telepon);
+
+        // Ubah 08 di depan jadi 62
         if (substr($phone, 0, 1) == '0') {
             $phone = '62' . substr($phone, 1);
         }
 
+        // Pastikan format akhiran @c.us (untuk personal chat)
         return $phone . '@c.us';
     }
 }

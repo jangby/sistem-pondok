@@ -45,7 +45,7 @@
 
                 
                 <button onclick="openModal('create')" 
-                   class="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-xl shadow-lg hover:shadow-amber-200 transition-all duration-200 transform hover:-translate-y-0.5">
+                    class="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-xl shadow-lg hover:shadow-amber-200 transition-all duration-200 transform hover:-translate-y-0.5">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
                     Tambah Guru Baru
                 </button>
@@ -121,10 +121,11 @@
                                         
                                         <td class="px-6 py-4 whitespace-nowrap text-right">
                                             <div class="flex items-center justify-end gap-2">
-                                                
                                                 <?php
                                                     $userJson = $user->toArray();
                                                     $userJson['guru'] = $user->guru;
+                                                    // Pastikan rfid_uid terkirim
+                                                    $userJson['guru']['rfid_uid'] = $user->guru->rfid_uid ?? ''; 
                                                     $userJson['sekolah_ids'] = $user->sekolahs->pluck('id')->toArray();
                                                 ?>
                                                 
@@ -234,6 +235,25 @@
                                                class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 text-sm py-2.5">
                                     </div>
                                 </div>
+
+                                
+                                <div>
+                                    <label for="rfid_uid" class="block text-xs font-bold text-gray-500 uppercase mb-1">UID Kartu RFID (Absensi)</label>
+                                    <div class="relative rounded-xl shadow-sm">
+                                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
+                                            </svg>
+                                        </div>
+                                        <input type="text" name="rfid_uid" id="rfid_uid" placeholder="Klik disini & tempelkan kartu..." 
+                                               class="block w-full rounded-xl border-gray-300 pl-10 focus:border-amber-500 focus:ring-amber-500 text-sm py-2.5 font-mono text-gray-600">
+                                    </div>
+                                    <p class="text-[10px] text-gray-400 mt-1 italic">
+                                        *Pastikan kursor aktif di kolom ini, lalu tap kartu di alat reader.
+                                    </p>
+                                </div>
+
                                 <div>
                                     <label for="alamat" class="block text-xs font-bold text-gray-500 uppercase mb-1">Alamat</label>
                                     <textarea name="alamat" id="alamat" rows="2" placeholder="Alamat lengkap..."
@@ -317,6 +337,9 @@
                 document.getElementById('telepon').value = data.guru?.telepon || data.telepon || '';
                 document.getElementById('alamat').value = data.guru?.alamat || '';
                 document.getElementById('tipe_jam_kerja').value = data.guru?.tipe_jam_kerja || 'full_time';
+                
+                // ISI DATA RFID
+                document.getElementById('rfid_uid').value = data.guru?.rfid_uid || '';
 
                 // Populate Checkboxes (Sekolah IDs)
                 if (data.sekolah_ids) {
@@ -376,6 +399,7 @@
                 document.getElementById('nip').value = "<?php echo e(old('nip')); ?>";
                 document.getElementById('telepon').value = "<?php echo e(old('telepon')); ?>";
                 document.getElementById('alamat').value = "<?php echo e(old('alamat')); ?>";
+                document.getElementById('rfid_uid').value = "<?php echo e(old('rfid_uid')); ?>";
                 // Repopulate Checkboxes
                 const oldSekolahIds = <?php echo json_encode(old('sekolah_ids', []), 512) ?>;
                 oldSekolahIds.forEach(id => {

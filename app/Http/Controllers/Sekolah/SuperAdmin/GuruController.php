@@ -84,6 +84,9 @@ class GuruController extends Controller
             'telepon' => 'required|numeric|min:10', 
             'alamat' => 'nullable|string',
             'tipe_jam_kerja' => 'required|in:full_time,flexi',
+            
+            // PERBAIKAN: Validasi RFID (Unique Global)
+            'rfid_uid' => 'nullable|string|unique:gurus,rfid_uid',
 
             // Validasi Penugasan (Multi-Select)
             'sekolah_ids' => 'required|array|min:1',
@@ -97,7 +100,7 @@ class GuruController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
-                'telepon' => $request->telepon, // Simpan telepon juga di tabel users jika ada kolomnya
+                'telepon' => $request->telepon, // Simpan telepon juga di tabel users
             ]);
 
             // 2. Beri role 'guru'
@@ -117,6 +120,7 @@ class GuruController extends Controller
                 'telepon' => $request->telepon,
                 'alamat' => $request->alamat,
                 'tipe_jam_kerja' => $request->tipe_jam_kerja,
+                'rfid_uid' => $request->rfid_uid, // <--- PERBAIKAN: Simpan RFID
             ]);
 
             // 5. Tautkan ke unit sekolah (pivot 'sekolah_user')
@@ -140,6 +144,10 @@ class GuruController extends Controller
     {
         $this->checkOwnership($user); // Keamanan
         $pondokId = $this->getPondokId();
+        
+        // PERBAIKAN: Ambil profil guru terkait user ini (bisa null jika data lama rusak)
+        $guruProfile = $user->guru; 
+        $guruId = $guruProfile ? $guruProfile->id : null;
 
         $validated = $request->validate([
             // Validasi User
@@ -148,10 +156,13 @@ class GuruController extends Controller
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             
             // Validasi Profil Guru
-            'nip' => ['nullable', 'string', 'max:255', Rule::unique('gurus')->where(fn ($q) => $q->where('pondok_id', $pondokId))->ignore($user->guru->id ?? null)],
+            'nip' => ['nullable', 'string', 'max:255', Rule::unique('gurus')->where(fn ($q) => $q->where('pondok_id', $pondokId))->ignore($guruId)],
             'telepon' => 'required|numeric|min:10',
             'alamat' => 'nullable|string',
             'tipe_jam_kerja' => 'required|in:full_time,flexi',
+            
+            // PERBAIKAN: Validasi RFID (Ignore diri sendiri)
+            'rfid_uid' => ['nullable', 'string', Rule::unique('gurus', 'rfid_uid')->ignore($guruId)],
 
             // Validasi Penugasan (Multi-Select)
             'sekolah_ids' => 'required|array|min:1',
@@ -166,7 +177,7 @@ class GuruController extends Controller
             if ($request->filled('password')) {
                 $user->password = Hash::make($validated['password']);
             }
-            $user->telepon = $request->telepon; // Update telepon di user juga
+            $user->telepon = $request->telepon; 
             $user->save();
 
             // 2. Update atau Buat Profil Guru
@@ -178,6 +189,7 @@ class GuruController extends Controller
                     'telepon' => $request->telepon,
                     'alamat' => $request->alamat,
                     'tipe_jam_kerja' => $request->tipe_jam_kerja,
+                    'rfid_uid' => $request->rfid_uid, // <--- PERBAIKAN: Update RFID
                 ]
             );
 

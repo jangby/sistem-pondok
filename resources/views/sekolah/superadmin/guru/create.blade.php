@@ -48,6 +48,13 @@
                             <x-input-error :messages="$errors->get('nip')" class="mt-2" />
                         </div>
 
+                        <div class="mb-4">
+    <x-input-label for="rfid_uid" :value="__('UID Kartu RFID')" />
+    <x-text-input id="rfid_uid" class="block mt-1 w-full" type="text" name="rfid_uid" :value="old('rfid_uid', $guru->rfid_uid ?? '')" placeholder="Tempelkan kartu ke reader (Cth: A1 B2 C3 D4)" />
+    <x-input-error :messages="$errors->get('rfid_uid')" class="mt-2" />
+    <p class="text-xs text-gray-500 mt-1">*Klik kolom ini lalu tempelkan kartu pada alat reader USB untuk mengisi otomatis.</p>
+</div>
+
                         <div class="mt-4">
                             <x-input-label for="telepon" :value="__('Nomor Telepon / WA (Wajib untuk Notifikasi)')" />
                             <x-text-input id="telepon" class="block mt-1 w-full" type="number" name="telepon" :value="old('telepon')" required placeholder="Cth: 628123456789" />

@@ -67,7 +67,7 @@ class IzinController extends Controller
                 $superAdmin->notify((new GuruIzinRequestNotification($izin))->delay(now()->addSeconds(5)));
             }
         } catch (\Exception $e) {
-            Log::error('Gagal kirim WA Notif Izin ke Super Admin: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Gagal Kirim WA Izin: ' . $e->getMessage());
         }
 
         return redirect()->route('sekolah.guru.izin.index')

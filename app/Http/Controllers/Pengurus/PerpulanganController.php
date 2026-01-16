@@ -10,6 +10,9 @@ use App\Models\PerpulanganRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use App\Exports\Pengurus\PerpulanganExport;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PerpulanganController extends Controller
 {
@@ -282,5 +285,35 @@ class PerpulanganController extends Controller
         $event->update(['is_active' => $newStatus]);
 
         return redirect()->back()->with('success', 'Status jadwal berhasil diperbarui.');
+    }
+
+    public function download(Request $request, $id)
+    {
+        $event = PerpulanganEvent::findOrFail($id);
+        $status = $request->status ?? 'all';
+        $format = $request->format ?? 'excel';
+
+        if ($format == 'excel') {
+            return Excel::download(new PerpulanganExport($id, $status), 'perpulangan-' . $status . '.xlsx');
+        } elseif ($format == 'pdf') {
+            // Logic query manual untuk PDF (mirip dengan logic di Export Class)
+            $query = PerpulanganRecord::with(['santri', 'event'])
+                ->where('perpulangan_event_id', $id);
+
+            if ($status && $status !== 'all') {
+                if ($status == 'terlambat') {
+                     $query->where('is_late', true)->orWhere('status', 'terlambat');
+                } else {
+                     $query->where('status', $status);
+                }
+            }
+            
+            $records = $query->get();
+
+            $pdf = Pdf::loadView('pengurus.perpulangan.pdf_export', compact('records', 'event', 'status'));
+            return $pdf->download('perpulangan-' . $status . '.pdf');
+        }
+
+        return redirect()->back()->with('error', 'Format tidak dikenali');
     }
 }

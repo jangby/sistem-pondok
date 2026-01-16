@@ -89,7 +89,7 @@ Carbon::setLocale('id');
                     </a>
 
                     
-                    <a href="#" class="flex flex-col items-center gap-2 group">
+                    <a href="<?php echo e(route('sekolah.guru.izin.index')); ?>" class="flex flex-col items-center gap-2 group">
                         <div class="w-14 h-14 bg-orange-50 rounded-2xl border border-orange-100 flex items-center justify-center text-orange-600 group-active:scale-95 transition-all duration-200 shadow-sm group-hover:bg-orange-100">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </div>

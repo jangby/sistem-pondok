@@ -161,6 +161,8 @@ Route::middleware(['auth', 'role:pengurus_pondok'])->prefix('pengurus')->name('p
     Route::get('/scan', [PerpulanganController::class, 'scanIndex'])->name('scan');
     Route::post('/scan/process', [PerpulanganController::class, 'scanProcess'])->name('scan.process');
 
+    Route::get('/{id}/download', [PerpulanganController::class, 'download'])->name('download');
+
     // === PINDAHKAN ROUTE PETUGAS KE SINI (Sebelum Wildcard {id}) ===
     Route::get('/petugas', [App\Http\Controllers\Pengurus\PetugasPerpulanganController::class, 'index'])->name('petugas.index');
     Route::get('/petugas/create', [App\Http\Controllers\Pengurus\PetugasPerpulanganController::class, 'create'])->name('petugas.create');

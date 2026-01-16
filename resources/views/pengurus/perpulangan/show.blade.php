@@ -1,178 +1,233 @@
-<x-app-layout hide-nav>
-    <x-slot name="header"></x-slot>
-
-    <script>
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(el => {
-                el.classList.remove('text-emerald-600', 'border-emerald-600', 'bg-emerald-50');
-                el.classList.add('text-gray-500', 'border-transparent');
-            });
-            document.getElementById('tab-' + tabName).classList.remove('hidden');
-            const btn = document.getElementById('btn-' + tabName);
-            btn.classList.remove('text-gray-500', 'border-transparent');
-            btn.classList.add('text-emerald-600', 'border-emerald-600', 'bg-emerald-50');
-        }
-    </script>
-
-    <div class="min-h-screen bg-gray-50 pb-10 font-sans">
+<x-app-layout>
+    <div class="py-12">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
         
-        <div class="bg-white shadow-sm sticky top-0 z-30">
-            <div class="flex items-center gap-3 p-4 bg-emerald-600 text-white">
-                <a href="{{ route('pengurus.perpulangan.index') }}" class="p-2 bg-white/20 rounded-full hover:bg-white/30 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                </a>
-                <div class="flex-1 min-w-0">
-                    <h1 class="font-bold text-lg truncate">{{ $event->judul }}</h1>
-                    <p class="text-[10px] text-emerald-100 flex items-center gap-1">
-                        Batas Kembali: {{ $event->tanggal_akhir->format('d M Y') }}
-                    </p>
-                </div>
-            </div>
-
-            <div class="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
-                <form action="{{ route('pengurus.perpulangan.show', $event->id) }}" method="GET" class="flex gap-2">
-                    <div class="relative flex-1">
-                        <select name="mustawa_id" onchange="this.form.submit()" class="w-full text-xs rounded-lg border-emerald-200 focus:border-emerald-500 focus:ring-emerald-200 py-2 pl-2 pr-8 bg-white">
-                            <option value="">-- Tampilkan Semua Kelas --</option>
-                            @foreach($mustawas as $m)
-                                <option value="{{ $m->id }}" {{ request('mustawa_id') == $m->id ? 'selected' : '' }}>
-                                    Kelas {{ $m->nama }}
-                                </option>
-                            @endforeach
-                        </select>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="md:col-span-4 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 border-emerald-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">{{ $event->judul }}</h2>
+                        <p class="text-gray-600 mt-1">
+                            <span class="font-semibold">Waktu Mulai:</span> {{ \Carbon\Carbon::parse($event->tanggal_mulai)->format('d M Y H:i') }} <br>
+                            <span class="font-semibold">Batas Kembali:</span> {{ \Carbon\Carbon::parse($event->tanggal_akhir)->format('d M Y H:i') }}
+                        </p>
+                        <div class="mt-3">
+                            <span class="px-3 py-1 text-xs font-bold rounded-full {{ $event->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800' }}">
+                                {{ $event->is_active ? 'Aktif' : 'Selesai' }}
+                            </span>
+                        </div>
                     </div>
-                    @if(request('mustawa_id'))
-                        <a href="{{ route('pengurus.perpulangan.show', $event->id) }}" class="bg-gray-200 text-gray-600 px-3 py-2 rounded-lg text-xs font-bold flex items-center">
-                            Reset
+                    <div class="flex flex-col gap-2">
+                         <a href="{{ route('pengurus.perpulangan.index') }}" class="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 text-center">
+                            &laquo; Kembali
                         </a>
-                    @endif
-                </form>
-            </div>
-
-            <div class="grid grid-cols-4 gap-2 p-4 border-b border-gray-100 bg-white">
-                <div class="text-center">
-                    <span class="block text-lg font-black text-gray-800">{{ $records->count() }}</span>
-                    <span class="text-[8px] text-gray-500 uppercase font-bold">Total Data</span>
-                </div>
-                <div class="text-center">
-                    <span class="block text-lg font-black text-amber-500">{{ $sedang_pulang->count() }}</span>
-                    <span class="text-[8px] text-gray-500 uppercase font-bold">Diluar</span>
-                </div>
-                <div class="text-center">
-                    <span class="block text-lg font-black text-emerald-600">{{ $sudah_kembali->count() }}</span>
-                    <span class="text-[8px] text-gray-500 uppercase font-bold">Kembali</span>
-                </div>
-                <div class="text-center relative">
-                    <span class="block text-lg font-black text-rose-500">{{ $terlambat->count() }}</span>
-                    <span class="text-[8px] text-gray-500 uppercase font-bold text-rose-500">Telat</span>
+                        <a href="{{ route('pengurus.perpulangan.scan') }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 flex items-center gap-2 justify-center">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                            Scan QR
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            <div class="flex overflow-x-auto px-4 pb-0 gap-2 no-scrollbar border-b border-gray-200 bg-white">
-                <button onclick="switchTab('belum')" id="btn-belum" class="tab-btn whitespace-nowrap pb-3 pt-2 px-3 border-b-2 border-emerald-600 text-emerald-600 bg-emerald-50 text-xs font-bold transition">
-                    Belum Jalan
-                </button>
-                <button onclick="switchTab('sedang')" id="btn-sedang" class="tab-btn whitespace-nowrap pb-3 pt-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 text-xs font-bold transition">
-                    Sedang Pulang
-                </button>
-                <button onclick="switchTab('kembali')" id="btn-kembali" class="tab-btn whitespace-nowrap pb-3 pt-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 text-xs font-bold transition">
-                    Sudah Kembali
-                </button>
-                <button onclick="switchTab('terlambat')" id="btn-terlambat" class="tab-btn whitespace-nowrap pb-3 pt-2 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 text-xs font-bold transition">
-                    Terlambat
-                </button>
+            <div class="bg-white p-4 rounded-lg shadow-sm border-t-4 border-gray-400">
+                <div class="text-gray-500 text-xs font-bold uppercase">Total Santri</div>
+                <div class="text-3xl font-bold text-gray-800 mt-1">{{ $records->count() }}</div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border-t-4 border-blue-400">
+                <div class="text-blue-500 text-xs font-bold uppercase">Sedang Pulang</div>
+                <div class="text-3xl font-bold text-blue-800 mt-1">
+                    {{ $records->whereIn('status', ['sedang_pulang', 'izin', 'sakit'])->count() }}
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border-t-4 border-emerald-400">
+                <div class="text-emerald-500 text-xs font-bold uppercase">Sudah Kembali</div>
+                <div class="text-3xl font-bold text-emerald-800 mt-1">
+                    {{ $records->where('status', 'sudah_kembali')->count() }}
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border-t-4 border-red-400">
+                <div class="text-red-500 text-xs font-bold uppercase">Terlambat</div>
+                <div class="text-3xl font-bold text-red-800 mt-1">
+                    {{ $records->filter(function($r) use ($event) {
+                        return $r->status == 'sedang_pulang' && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($event->tanggal_akhir));
+                    })->count() }}
+                </div>
             </div>
         </div>
 
-        <div class="p-4 min-h-[50vh]">
-            
-            <div id="tab-belum" class="tab-content space-y-3">
-                @forelse($belum_pulang as $rec)
-                    <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex items-center gap-3">
-                        <div class="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 text-xs font-bold flex-shrink-0">
-                            {{ substr($rec->santri->full_name, 0, 1) }}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="font-bold text-gray-800 text-sm truncate">{{ $rec->santri->full_name }}</h4>
-                            <p class="text-[10px] text-gray-500 truncate">{{ $rec->santri->mustawa->nama ?? '-' }} • {{ $rec->santri->asrama->nama_asrama ?? '-' }}</p>
-                        </div>
-                        <span class="text-[9px] font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">Di Pondok</span>
-                    </div>
-                @empty
-                    <div class="flex flex-col items-center justify-center py-10 text-gray-400">
-                        <svg class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <p class="text-xs">Tidak ada data (sesuai filter).</p>
-                    </div>
-                @endforelse
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="p-4 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50">
+                <form action="" method="GET" class="flex items-center gap-2 w-full md:w-auto">
+                    <input type="text" name="search" placeholder="Cari Nama/NISM..." value="{{ request('search') }}" class="rounded-lg border-gray-300 text-sm focus:ring-emerald-500 focus:border-emerald-500 w-full md:w-64">
+                    <select name="status_filter" class="rounded-lg border-gray-300 text-sm focus:ring-emerald-500 focus:border-emerald-500">
+                        <option value="">Semua Status</option>
+                        <option value="sedang_pulang" {{ request('status_filter') == 'sedang_pulang' ? 'selected' : '' }}>Sedang Pulang</option>
+                        <option value="sudah_kembali" {{ request('status_filter') == 'sudah_kembali' ? 'selected' : '' }}>Sudah Kembali</option>
+                    </select>
+                    <button type="submit" class="bg-gray-800 text-white px-3 py-2 rounded-lg hover:bg-gray-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </button>
+                </form>
+
+                <button onclick="document.getElementById('downloadModal').classList.remove('hidden')" 
+                        class="w-full md:w-auto bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-emerald-700 transition shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Unduh Data
+                </button>
             </div>
 
-            <div id="tab-sedang" class="tab-content space-y-3 hidden">
-                @forelse($sedang_pulang as $rec)
-                    <div class="bg-white p-3 rounded-xl border-l-4 border-amber-400 shadow-sm flex items-center gap-3 relative">
-                        @if(now()->greaterThan($event->tanggal_akhir))
-                            <span class="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full"></span>
-                        @endif
-
-                        <div class="w-9 h-9 bg-amber-50 rounded-full flex items-center justify-center text-amber-600 text-xs font-bold flex-shrink-0">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="font-bold text-gray-800 text-sm truncate">{{ $rec->santri->full_name }}</h4>
-                            <div class="flex items-center gap-2 text-[10px] text-gray-500">
-                                <span>{{ $rec->santri->mustawa->nama ?? '' }} • Keluar: {{ $rec->waktu_keluar ? $rec->waktu_keluar->format('d/m H:i') : '-' }}</span>
-                            </div>
-                        </div>
-                         <a href="https://wa.me/{{ $rec->santri->no_hp_ortu ?? '' }}?text=Assalamualaikum, mohon info apakah ananda {{ $rec->santri->full_name }} sudah sampai rumah?" target="_blank" class="w-8 h-8 flex items-center justify-center bg-green-50 text-green-600 rounded-lg active:scale-95 transition">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.694c.93.513 1.698.809 2.795.81h.002c3.178 0 5.765-2.587 5.765-5.766.001-3.176-2.587-5.765-5.756-5.795zm6.873 9.132c-.143-.238-.853-1.636-1.196-1.815-.343-.179-.699-.267-1.055.268-.357.534-1.393 1.745-1.713 2.102-.32.357-.642.392-1.212.107-.571-.285-2.408-.887-4.588-2.829-1.699-1.513-2.846-3.383-3.167-3.953-.32-.571-.034-.879.251-1.163.26-.258.571-.678.855-1.018.286-.339.393-.57.571-.928.179-.357.089-.678-.053-.928-.143-.25-1.069-2.586-1.463-3.543-.386-.94-.78-.813-1.068-.828l-.91-.01c-.321 0-.855.125-1.319.624-.464.5-1.783 1.748-1.783 4.28 0 2.532 1.855 4.978 2.122 5.334.267.356 3.651 5.567 8.847 7.808 3.125 1.348 3.754 1.08 4.431.99.981-.13 3.016-1.231 3.444-2.421.428-1.189.428-2.212.285-2.451z"/></svg>
-                        </a>
-                    </div>
-                @empty
-                    <div class="text-center py-10 text-gray-400 text-xs">Tidak ada data.</div>
-                @endforelse
-            </div>
-
-            <div id="tab-kembali" class="tab-content space-y-3 hidden">
-                @forelse($sudah_kembali as $rec)
-                    <div class="bg-white p-3 rounded-xl border-l-4 {{ $rec->is_late ? 'border-orange-400' : 'border-emerald-500' }} shadow-sm flex items-center gap-3">
-                        <div class="w-9 h-9 {{ $rec->is_late ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600' }} rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="font-bold text-gray-800 text-sm truncate">{{ $rec->santri->full_name }}</h4>
-                            <div class="flex flex-col text-[10px] text-gray-500">
-                                <span>{{ $rec->santri->mustawa->nama ?? '' }} • Kembali: {{ $rec->waktu_kembali ? $rec->waktu_kembali->format('d/m H:i') : '-' }}</span>
-                                @if($rec->is_late)
-                                    <span class="text-orange-500 font-bold mt-0.5">Terlambat</span>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b">
+                        <tr>
+                            <th class="px-6 py-3">No</th>
+                            <th class="px-6 py-3">Santri</th>
+                            <th class="px-6 py-3">Kelas</th>
+                            <th class="px-6 py-3">Status</th>
+                            <th class="px-6 py-3">Waktu Kembali</th>
+                            <th class="px-6 py-3">Keterlambatan</th>
+                            <th class="px-6 py-3 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($records as $index => $record)
+                        <tr class="bg-white border-b hover:bg-gray-50">
+                            <td class="px-6 py-4">{{ $index + 1 }}</td>
+                            <td class="px-6 py-4">
+                                <div class="font-medium text-gray-900">{{ $record->santri->full_name }}</div>
+                                <div class="text-xs">{{ $record->santri->nis }}</div>
+                            </td>
+                            <td class="px-6 py-4">{{ $record->santri->kelas->nama_kelas ?? '-' }}</td>
+                            <td class="px-6 py-4">
+                                @if($record->status == 'sudah_kembali')
+                                    <span class="px-2 py-1 text-xs rounded bg-emerald-100 text-emerald-800">Sudah Kembali</span>
+                                @elseif($record->status == 'sedang_pulang')
+                                    <span class="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">Sedang Pulang</span>
+                                @else
+                                    <span class="px-2 py-1 text-xs rounded bg-gray-100 text-gray-800">{{ ucfirst(str_replace('_', ' ', $record->status)) }}</span>
                                 @endif
-                            </div>
-                        </div>
-                    </div>
-                @empty
-                    <div class="text-center py-10 text-gray-400 text-xs">Tidak ada data.</div>
-                @endforelse
-            </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                {{ $record->waktu_kembali ? \Carbon\Carbon::parse($record->waktu_kembali)->format('d M H:i') : '-' }}
+                            </td>
+                            <td class="px-6 py-4">
+                                @php
+                                    $isLate = false;
+                                    $diff = 0;
+                                    if ($record->waktu_kembali) {
+                                        $kembali = \Carbon\Carbon::parse($record->waktu_kembali);
+                                        $batas = \Carbon\Carbon::parse($event->tanggal_akhir);
+                                        if ($kembali->gt($batas)) {
+                                            $isLate = true;
+                                            $diff = $batas->diffInDays($kembali);
+                                        }
+                                    } elseif ($record->status == 'sedang_pulang' && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($event->tanggal_akhir))) {
+                                        $isLate = true;
+                                        $diff = \Carbon\Carbon::parse($event->tanggal_akhir)->diffInDays(\Carbon\Carbon::now());
+                                    }
+                                @endphp
 
-            <div id="tab-terlambat" class="tab-content space-y-3 hidden">
-                 @forelse($terlambat as $rec)
-                    <div class="bg-white p-3 rounded-xl border border-rose-100 shadow-sm flex items-center gap-3">
-                        <div class="w-9 h-9 bg-rose-50 rounded-full flex items-center justify-center text-rose-500 font-bold text-sm flex-shrink-0">!</div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="font-bold text-gray-800 text-sm truncate">{{ $rec->santri->full_name }}</h4>
-                            <p class="text-[10px] text-rose-500 font-medium truncate">
-                                {{ $rec->santri->mustawa->nama ?? '' }} • 
-                                @if($rec->status == 1) Belum Kembali @else Telat @endif
-                            </p>
-                        </div>
-                        <a href="https://wa.me/{{ $rec->santri->no_hp_ortu ?? '' }}?text=Assalamualaikum, kami menginformasikan bahwa ananda {{ $rec->santri->full_name }} terlambat kembali ke pondok." target="_blank" class="w-8 h-8 flex items-center justify-center bg-rose-50 text-rose-600 rounded-lg active:scale-95 transition">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.694c.93.513 1.698.809 2.795.81h.002c3.178 0 5.765-2.587 5.765-5.766.001-3.176-2.587-5.765-5.756-5.795zm6.873 9.132c-.143-.238-.853-1.636-1.196-1.815-.343-.179-.699-.267-1.055.268-.357.534-1.393 1.745-1.713 2.102-.32.357-.642.392-1.212.107-.571-.285-2.408-.887-4.588-2.829-1.699-1.513-2.846-3.383-3.167-3.953-.32-.571-.034-.879.251-1.163.26-.258.571-.678.855-1.018.286-.339.393-.57.571-.928.179-.357.089-.678-.053-.928-.143-.25-1.069-2.586-1.463-3.543-.386-.94-.78-.813-1.068-.828l-.91-.01c-.321 0-.855.125-1.319.624-.464.5-1.783 1.748-1.783 4.28 0 2.532 1.855 4.978 2.122 5.334.267.356 3.651 5.567 8.847 7.808 3.125 1.348 3.754 1.08 4.431.99.981-.13 3.016-1.231 3.444-2.421.428-1.189.428-2.212.285-2.451z"/></svg>
-                        </a>
-                    </div>
-                @empty
-                    <div class="text-center py-10 text-gray-400 text-xs">Tidak ada santri terlambat.</div>
-                @endforelse
+                                @if($isLate)
+                                    <span class="text-red-600 font-bold text-xs">+{{ $diff }} Hari</span>
+                                @else
+                                    <span class="text-emerald-600 text-xs">Tepat Waktu</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <a href="{{ route('pengurus.perpulangan.edit', $record->id) }}" class="text-blue-600 hover:text-blue-900 text-xs font-bold">Detail</a>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="7" class="px-6 py-8 text-center text-gray-400">
+                                Tidak ada data santri untuk event ini.
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-            
+            @if($records instanceof \Illuminate\Pagination\LengthAwarePaginator)
+            <div class="p-4">
+                {{ $records->withQueryString()->links() }}
+            </div>
+            @endif
         </div>
     </div>
+</div>
+
+<div id="downloadModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden backdrop-blur-sm">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden transform transition-all animate-fade-in-down">
+        <div class="bg-emerald-600 p-4 flex justify-between items-center">
+            <h3 class="text-white font-bold text-lg">Unduh Data Perpulangan</h3>
+            <button onclick="document.getElementById('downloadModal').classList.add('hidden')" class="text-emerald-100 hover:text-white transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <form action="{{ route('pengurus.perpulangan.download', $event->id) }}" method="GET" class="p-6">
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Kategori Data</label>
+                    <div class="relative">
+                        <select name="status" class="block w-full rounded-lg border-gray-300 bg-gray-50 focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-2.5">
+                            <option value="all">📥 Semua Data (Lengkap)</option>
+                            <option value="belum_jalan">🏠 Belum Jalan</option>
+                            <option value="sedang_pulang">🚚 Sedang Pulang / Di Rumah</option>
+                            <option value="sudah_kembali">✅ Sudah Kembali</option>
+                            <option value="terlambat">⚠️ Terlambat (Melebihi Batas)</option>
+                        </select>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Pilih jenis data santri yang ingin Anda laporan.</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Format File</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="border rounded-lg p-3 flex items-center gap-3 cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 transition group">
+                            <div class="bg-green-100 p-2 rounded-full group-hover:bg-green-200">
+                                <svg class="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            </div>
+                            <div>
+                                <input type="radio" name="format" value="excel" checked class="text-emerald-600 focus:ring-emerald-500">
+                                <span class="text-sm font-bold text-gray-700 ml-1">Excel</span>
+                            </div>
+                        </label>
+                        
+                        <label class="border rounded-lg p-3 flex items-center gap-3 cursor-pointer hover:bg-red-50 hover:border-red-200 transition group">
+                            <div class="bg-red-100 p-2 rounded-full group-hover:bg-red-200">
+                                <svg class="w-5 h-5 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                            </div>
+                            <div>
+                                <input type="radio" name="format" value="pdf" class="text-emerald-600 focus:ring-emerald-500">
+                                <span class="text-sm font-bold text-gray-700 ml-1">PDF</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <button type="button" onclick="document.getElementById('downloadModal').classList.add('hidden')" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-bold hover:bg-gray-200 transition">
+                    Batal
+                </button>
+                <button type="submit" onclick="document.getElementById('downloadModal').classList.add('hidden')" class="px-5 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 transition shadow-lg flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Unduh File
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    @keyframes fade-in-down {
+        0% { opacity: 0; transform: translateY(-10px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in-down {
+        animation: fade-in-down 0.3s ease-out;
+    }
+</style>
+</div>
 </x-app-layout>

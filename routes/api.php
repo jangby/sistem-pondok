@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Sekolah\SekolahApiController;
 use App\Http\Controllers\Api\ComputerLogController;
 use App\Http\Controllers\SuperAdmin\ComputerManagerController;
+use App\Http\Controllers\Api\RfidAbsensiController;
 
 
 Route::post('/update-pc-password', [ComputerLogController::class, 'store']);
@@ -14,3 +15,4 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::post('/sekolah/scan', [SekolahApiController::class, 'scanAbsensi']);
+Route::post('/rfid/tap', [RfidAbsensiController::class, 'tap']);

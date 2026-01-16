@@ -11,7 +11,11 @@ class GuruIzinResultNotification extends Notification implements ShouldQueue
     use Queueable;
     protected $izin;
     public function __construct(SekolahIzinGuru $izin) { $this->izin = $izin; }
-    public function via(mixed $notifiable): array { return ['waha']; }
+    public function via($notifiable)
+{
+    // Pastikan return array berisi WahaChannel::class
+    return ['database', WahaChannel::class]; 
+}
     public function toWaha(mixed $notifiable): array
     {
         $status = $this->izin->status == 'approved' ? 'DISETUJUI' : 'DITOLAK';
