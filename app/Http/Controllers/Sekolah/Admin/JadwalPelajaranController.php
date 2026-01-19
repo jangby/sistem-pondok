@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class JadwalPelajaranController extends Controller
 {
@@ -209,6 +210,33 @@ class JadwalPelajaranController extends Controller
                          ->with('success', 'Jadwal Pelajaran berhasil dihapus.');
     }
     
-    // Method create() dan edit() bisa dihapus atau dibiarkan kosong 
-    // karena kita sudah menggunakan Modal di index.
+    /**
+     * Download PDF Jadwal
+     */
+    public function downloadPdf()
+    {
+        $sekolah = $this->getSekolah();
+        $tahunAjaranAktif = $this->getTahunAjaranAktif();
+
+        if (!$tahunAjaranAktif) {
+            return back()->with('error', 'Tidak ada tahun ajaran aktif.');
+        }
+
+        // Ambil semua jadwal tahun aktif
+        $jadwals = JadwalPelajaran::where('sekolah_id', $sekolah->id)
+            ->where('tahun_ajaran_id', $tahunAjaranAktif->id)
+            ->with(['kelas', 'mataPelajaran', 'guru'])
+            ->orderBy('kelas_id')
+            ->orderByRaw("FIELD(hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu')")
+            ->orderBy('jam_mulai')
+            ->get()
+            ->groupBy('kelas.nama_kelas'); // Grouping berdasarkan nama kelas
+
+        $pdf = Pdf::loadView('sekolah.admin.jadwal-pelajaran.pdf', compact('jadwals', 'sekolah', 'tahunAjaranAktif'));
+        
+        // Setup kertas A4 Landscape agar muat banyak kolom
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download('Jadwal_Pelajaran_' . $sekolah->nama_sekolah . '.pdf');
+    }
 }

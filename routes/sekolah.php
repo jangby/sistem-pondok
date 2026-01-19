@@ -101,6 +101,8 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-sekolah'])
         
         Route::get('/dashboard', [AdminSekolahDashboard::class, 'index'])->name('dashboard');
         Route::resource('mata-pelajaran', MataPelajaranController::class);
+        Route::get('jadwal-pelajaran/download-pdf', [JadwalPelajaranController::class, 'downloadPdf'])
+        ->name('jadwal-pelajaran.download-pdf');
         Route::resource('jadwal-pelajaran', JadwalPelajaranController::class);
         Route::resource('kegiatan-akademik', KegiatanAkademikController::class)->except(['show']);
 
