@@ -58,28 +58,28 @@ class MataPelajaranController extends Controller
      * Simpan Mata Pelajaran baru
      */
     public function store(Request $request)
-    {
-        $sekolah = $this->getSekolah();
+{
+    $sekolah = $this->getSekolah();
 
-        $validated = $request->validate([
-            'nama_mapel' => [
-                'required', 'string', 'max:255',
-                // Pastikan nama mapel unik di sekolah ini
-                Rule::unique('mata_pelajarans')->where(fn ($q) => $q->where('sekolah_id', $sekolah->id)),
-            ],
-            'kode_mapel' => [
-                'nullable', 'string', 'max:50',
-                Rule::unique('mata_pelajarans')->where(fn ($q) => $q->where('sekolah_id', $sekolah->id)),
-            ],
-        ]);
+    $validated = $request->validate([
+        'nama_mapel' => [
+            'required', 'string', 'max:255',
+            Rule::unique('mata_pelajarans')->where(fn ($q) => $q->where('sekolah_id', $sekolah->id)),
+        ],
+        'kode_mapel' => [
+            'nullable', 'string', 'max:50',
+            Rule::unique('mata_pelajarans')->where(fn ($q) => $q->where('sekolah_id', $sekolah->id)),
+        ],
+        // Tambahkan validasi KKM
+        'kkm' => ['required', 'integer', 'min:0', 'max:100'],
+    ]);
 
-        // Tambahkan sekolah_id dan simpan
-        $validated['sekolah_id'] = $sekolah->id;
-        MataPelajaran::create($validated); //
+    $validated['sekolah_id'] = $sekolah->id;
+    MataPelajaran::create($validated);
 
-        return redirect()->route('sekolah.admin.mata-pelajaran.index')
-                         ->with('success', 'Mata Pelajaran berhasil ditambahkan.');
-    }
+    return redirect()->route('sekolah.admin.mata-pelajaran.index')
+                     ->with('success', 'Mata Pelajaran berhasil ditambahkan.');
+}
 
     /**
      * Tampilkan form edit
@@ -94,26 +94,28 @@ class MataPelajaranController extends Controller
      * Update data Mata Pelajaran
      */
     public function update(Request $request, MataPelajaran $mataPelajaran)
-    {
-        $this->checkOwnership($mataPelajaran); // Keamanan
-        $sekolah = $this->getSekolah();
+{
+    $this->checkOwnership($mataPelajaran);
+    $sekolah = $this->getSekolah();
 
-        $validated = $request->validate([
-            'nama_mapel' => [
-                'required', 'string', 'max:255',
-                Rule::unique('mata_pelajarans')->where(fn ($q) => $q->where('sekolah_id', $sekolah->id))->ignore($mataPelajaran->id),
-            ],
-            'kode_mapel' => [
-                'nullable', 'string', 'max:50',
-                Rule::unique('mata_pelajarans')->where(fn ($q) => $q->where('sekolah_id', $sekolah->id))->ignore($mataPelajaran->id),
-            ],
-        ]);
+    $validated = $request->validate([
+        'nama_mapel' => [
+            'required', 'string', 'max:255',
+            Rule::unique('mata_pelajarans')->where(fn ($q) => $q->where('sekolah_id', $sekolah->id))->ignore($mataPelajaran->id),
+        ],
+        'kode_mapel' => [
+            'nullable', 'string', 'max:50',
+            Rule::unique('mata_pelajarans')->where(fn ($q) => $q->where('sekolah_id', $sekolah->id))->ignore($mataPelajaran->id),
+        ],
+        // Tambahkan validasi KKM
+        'kkm' => ['required', 'integer', 'min:0', 'max:100'],
+    ]);
 
-        $mataPelajaran->update($validated); //
+    $mataPelajaran->update($validated);
 
-        return redirect()->route('sekolah.admin.mata-pelajaran.index')
-                         ->with('success', 'Mata Pelajaran berhasil diperbarui.');
-    }
+    return redirect()->route('sekolah.admin.mata-pelajaran.index')
+                     ->with('success', 'Mata Pelajaran berhasil diperbarui.');
+}
 
     /**
      * Hapus data Mata Pelajaran

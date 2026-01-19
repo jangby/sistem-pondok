@@ -10,7 +10,7 @@ class MataPelajaran extends Model
     use HasFactory;
 
     protected $fillable = [
-        'sekolah_id', 'nama_mapel', 'kode_mapel',
+        'sekolah_id', 'nama_mapel', 'kode_mapel', 'kkm',
     ];
 
     public function sekolah()
