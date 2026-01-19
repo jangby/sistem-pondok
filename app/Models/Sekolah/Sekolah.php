@@ -13,7 +13,7 @@ class Sekolah extends Model
     use HasFactory, BelongsToPondok; // Otomatis terhubung ke pondok
 
     protected $fillable = [
-        'pondok_id', 'nama_sekolah', 'tingkat', 'kepala_sekolah',
+        'pondok_id', 'nama_sekolah', 'tingkat', 'kepala_sekolah', 'alamat', 'email', 'no_telp',
     ];
 
     public function pondok()
