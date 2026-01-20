@@ -20,14 +20,16 @@
         <div class="px-5 -mt-16 relative z-20">
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                 
-                <form method="POST" action="{{ route('sekolah.guru.izin.store') }}">
+                {{-- FORM START: Pastikan ada enctype untuk upload file --}}
+                <form method="POST" action="{{ route('sekolah.guru.izin.store') }}" enctype="multipart/form-data">
                     @csrf
                     
                     {{-- Tipe Izin --}}
                     <div class="mb-5">
-                        <label for="tipe_izin" class="block text-xs font-bold text-gray-500 uppercase mb-2">Tipe Pengajuan</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Tipe Pengajuan</label>
                         <div class="grid grid-cols-2 gap-3">
                             <label class="cursor-pointer">
+                                {{-- Name: tipe_izin --}}
                                 <input type="radio" name="tipe_izin" value="sakit" class="peer sr-only" required>
                                 <div class="rounded-xl border-2 border-gray-200 p-3 text-center transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-50 hover:bg-gray-50">
                                     <div class="text-2xl mb-1">🤒</div>
@@ -42,6 +44,7 @@
                                 </div>
                             </label>
                         </div>
+                        <x-input-error :messages="$errors->get('tipe_izin')" class="mt-1" />
                     </div>
 
                     {{-- Tanggal --}}
@@ -63,12 +66,35 @@
                     </div>
 
                     {{-- Keterangan --}}
-                    <div class="mb-6">
+                    <div class="mb-5">
                         <label for="keterangan_guru" class="block text-xs font-bold text-gray-500 uppercase mb-2">Alasan / Keterangan</label>
-                        <textarea id="keterangan_guru" name="keterangan_guru" rows="4" 
+                        {{-- Name: keterangan_guru --}}
+                        <textarea id="keterangan_guru" name="keterangan_guru" rows="3" 
                                   class="block w-full border-gray-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-emerald-500 bg-gray-50 py-3 placeholder-gray-400" 
                                   placeholder="Jelaskan alasan pengajuan izin..." required>{{ old('keterangan_guru') }}</textarea>
                         <x-input-error :messages="$errors->get('keterangan_guru')" class="mt-1" />
+                    </div>
+
+                    {{-- Upload Bukti (Baru) --}}
+                    <div class="mb-6">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Bukti Dokumen (Opsional)</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:bg-gray-50 transition relative group">
+                            <div class="space-y-1 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400 group-hover:text-emerald-500 transition" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <div class="flex text-sm text-gray-600 justify-center">
+                                    <label for="bukti" class="relative cursor-pointer bg-transparent rounded-md font-medium text-emerald-600 hover:text-emerald-500 focus-within:outline-none">
+                                        <span>Upload Foto/Surat</span>
+                                        <input id="bukti" name="bukti" type="file" class="sr-only" accept="image/png, image/jpeg, image/jpg" onchange="previewFilename()">
+                                    </label>
+                                </div>
+                                <p class="text-xs text-gray-500">PNG, JPG, JPEG (Max 5MB)</p>
+                                {{-- Area Preview Nama File --}}
+                                <p id="file-name-display" class="text-xs text-emerald-600 font-bold mt-2 hidden"></p>
+                            </div>
+                        </div>
+                        <x-input-error :messages="$errors->get('bukti')" class="mt-1" />
                     </div>
 
                     {{-- Tombol Submit --}}
@@ -85,4 +111,19 @@
             </div>
         </div>
     </div>
+
+    {{-- Script untuk menampilkan nama file yang dipilih --}}
+    <script>
+        function previewFilename() {
+            const input = document.getElementById('bukti');
+            const display = document.getElementById('file-name-display');
+            
+            if (input.files && input.files[0]) {
+                display.textContent = 'File terpilih: ' + input.files[0].name;
+                display.classList.remove('hidden');
+            } else {
+                display.classList.add('hidden');
+            }
+        }
+    </script>
 </x-app-layout>

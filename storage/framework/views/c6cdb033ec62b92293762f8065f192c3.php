@@ -29,14 +29,16 @@
         <div class="px-5 -mt-16 relative z-20">
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                 
-                <form method="POST" action="<?php echo e(route('sekolah.guru.izin.store')); ?>">
+                
+                <form method="POST" action="<?php echo e(route('sekolah.guru.izin.store')); ?>" enctype="multipart/form-data">
                     <?php echo csrf_field(); ?>
                     
                     
                     <div class="mb-5">
-                        <label for="tipe_izin" class="block text-xs font-bold text-gray-500 uppercase mb-2">Tipe Pengajuan</label>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Tipe Pengajuan</label>
                         <div class="grid grid-cols-2 gap-3">
                             <label class="cursor-pointer">
+                                
                                 <input type="radio" name="tipe_izin" value="sakit" class="peer sr-only" required>
                                 <div class="rounded-xl border-2 border-gray-200 p-3 text-center transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-50 hover:bg-gray-50">
                                     <div class="text-2xl mb-1">🤒</div>
@@ -51,6 +53,26 @@
                                 </div>
                             </label>
                         </div>
+                        <?php if (isset($component)) { $__componentOriginalf94ed9c5393ef72725d159fe01139746 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalf94ed9c5393ef72725d159fe01139746 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.input-error','data' => ['messages' => $errors->get('tipe_izin'),'class' => 'mt-1']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('input-error'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['messages' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($errors->get('tipe_izin')),'class' => 'mt-1']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $attributes = $__attributesOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__attributesOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $component = $__componentOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__componentOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
                     </div>
 
                     
@@ -110,9 +132,10 @@
                     </div>
 
                     
-                    <div class="mb-6">
+                    <div class="mb-5">
                         <label for="keterangan_guru" class="block text-xs font-bold text-gray-500 uppercase mb-2">Alasan / Keterangan</label>
-                        <textarea id="keterangan_guru" name="keterangan_guru" rows="4" 
+                        
+                        <textarea id="keterangan_guru" name="keterangan_guru" rows="3" 
                                   class="block w-full border-gray-200 rounded-xl text-sm focus:border-emerald-500 focus:ring-emerald-500 bg-gray-50 py-3 placeholder-gray-400" 
                                   placeholder="Jelaskan alasan pengajuan izin..." required><?php echo e(old('keterangan_guru')); ?></textarea>
                         <?php if (isset($component)) { $__componentOriginalf94ed9c5393ef72725d159fe01139746 = $component; } ?>
@@ -125,6 +148,47 @@
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
 <?php $component->withAttributes(['messages' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($errors->get('keterangan_guru')),'class' => 'mt-1']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $attributes = $__attributesOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__attributesOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalf94ed9c5393ef72725d159fe01139746)): ?>
+<?php $component = $__componentOriginalf94ed9c5393ef72725d159fe01139746; ?>
+<?php unset($__componentOriginalf94ed9c5393ef72725d159fe01139746); ?>
+<?php endif; ?>
+                    </div>
+
+                    
+                    <div class="mb-6">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Bukti Dokumen (Opsional)</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:bg-gray-50 transition relative group">
+                            <div class="space-y-1 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400 group-hover:text-emerald-500 transition" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <div class="flex text-sm text-gray-600 justify-center">
+                                    <label for="bukti" class="relative cursor-pointer bg-transparent rounded-md font-medium text-emerald-600 hover:text-emerald-500 focus-within:outline-none">
+                                        <span>Upload Foto/Surat</span>
+                                        <input id="bukti" name="bukti" type="file" class="sr-only" accept="image/png, image/jpeg, image/jpg" onchange="previewFilename()">
+                                    </label>
+                                </div>
+                                <p class="text-xs text-gray-500">PNG, JPG, JPEG (Max 5MB)</p>
+                                
+                                <p id="file-name-display" class="text-xs text-emerald-600 font-bold mt-2 hidden"></p>
+                            </div>
+                        </div>
+                        <?php if (isset($component)) { $__componentOriginalf94ed9c5393ef72725d159fe01139746 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalf94ed9c5393ef72725d159fe01139746 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.input-error','data' => ['messages' => $errors->get('bukti'),'class' => 'mt-1']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('input-error'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['messages' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($errors->get('bukti')),'class' => 'mt-1']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginalf94ed9c5393ef72725d159fe01139746)): ?>
@@ -151,6 +215,21 @@
             </div>
         </div>
     </div>
+
+    
+    <script>
+        function previewFilename() {
+            const input = document.getElementById('bukti');
+            const display = document.getElementById('file-name-display');
+            
+            if (input.files && input.files[0]) {
+                display.textContent = 'File terpilih: ' + input.files[0].name;
+                display.classList.remove('hidden');
+            } else {
+                display.classList.add('hidden');
+            }
+        }
+    </script>
  <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54)): ?>
