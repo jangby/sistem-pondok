@@ -23,7 +23,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-24 items-center">
                 <a href="{{ route('landing.home') }}" class="flex-shrink-0 flex items-center gap-3 group">
-                    <img src="{{ asset('logo.jpeg') }}" alt="Logo" class="w-12 h-12 rounded-xl object-cover shadow-md group-hover:scale-105 transition-transform" onerror="this.src='https://ui-avatars.com/api/?name=A&background=10b981&color=fff&rounded=true&bold=true'">
+                    <img src="{{ asset('logo-pondok.jpg') }}" alt="Logo" class="w-12 h-12 rounded-xl object-cover shadow-md group-hover:scale-105 transition-transform" onerror="this.src='https://ui-avatars.com/api/?name=A&background=10b981&color=fff&rounded=true&bold=true'">
                     <div class="flex flex-col">
                         <span class="text-xl font-extrabold text-slate-900 tracking-tight leading-none">Assa'adah</span>
                         <span class="text-xs font-semibold text-emerald-600 tracking-widest uppercase mt-1">Smart Digital</span>
