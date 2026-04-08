@@ -20,6 +20,9 @@ use App\Http\Controllers\Pengurus\Inventaris\KerusakanController;
 use App\Http\Controllers\Pengurus\Inventaris\PeminjamanController;
 use App\Http\Controllers\Pengurus\Inventaris\AuditController;
 use App\Http\Controllers\Pengurus\PerpulanganController;
+use App\Http\Controllers\Pengurus\KiosAbsenGerbangController;
+use App\Http\Controllers\Pengurus\JadwalGerbangController;
+use App\Http\Controllers\Pengurus\RekapAbsenGerbangController;
 
 /*
 |--------------------------------------------------------------------------
@@ -187,4 +190,16 @@ Route::middleware(['auth', 'role:pengurus_pondok'])->prefix('pengurus')->name('p
 
     Route::patch('/{id}/toggle-status', [PerpulanganController::class, 'toggleStatus'])->name('toggle-status');
 });
+// Kios & Jadwal Absensi Gerbang
+        Route::get('/kios-absen-gerbang', [KiosAbsenGerbangController::class, 'index'])->name('kios.index');
+        Route::post('/kios-absen-gerbang', [KiosAbsenGerbangController::class, 'store'])->name('kios.store');
+
+        Route::get('/jadwal-gerbang', [JadwalGerbangController::class, 'index'])->name('jadwal.index');
+        Route::post('/jadwal-gerbang', [JadwalGerbangController::class, 'store'])->name('jadwal.store');
+        Route::delete('/jadwal-gerbang/{id}', [JadwalGerbangController::class, 'destroy'])->name('jadwal.destroy');
+        Route::post('/jadwal-gerbang/pin', [JadwalGerbangController::class, 'updatePin'])->name('jadwal.pin');
+        Route::get('/jadwal-gerbang/pdf', [JadwalGerbangController::class, 'exportPdf'])->name('jadwal.pdf');
+        // Rekap Absensi Gerbang
+        Route::get('/rekap-gerbang', [RekapAbsenGerbangController::class, 'index'])->name('rekap-gerbang.index');
+        Route::get('/rekap-gerbang/pdf', [RekapAbsenGerbangController::class, 'exportPdf'])->name('rekap-gerbang.pdf');
 });

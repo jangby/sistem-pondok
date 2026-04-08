@@ -9,7 +9,21 @@ use App\Http\Controllers\Penulis\BookController;
 use App\Http\Controllers\Penulis\BookChapterController;
 use App\Http\Controllers\Penulis\BookItemController;
 
-Route::get('/', [PpdbController::class, 'index'])->name('welcome');
+// Jika Anda perlu me-lempar data $ppdbActive ke Home, gunakan cara ini:
+Route::get('/', function () {
+    // $ppdbActive = \App\Models\PpdbSetting::where('is_active', true)->first(); 
+    return view('landing.home'); // Tambahkan , compact('ppdbActive') jika perlu
+})->name('landing.home');
+
+// Rute Halaman Tambahan (Statis)
+Route::view('/tentang-kami', 'landing.tentang')->name('landing.tentang');
+Route::view('/program-pendidikan', 'landing.program')->name('landing.program');
+Route::view('/kontak', 'landing.kontak')->name('landing.kontak');
+Route::get('/informasi-ppdb', function () {
+    // Mengambil data gelombang PPDB aktif dari database (jika ada)
+    $ppdbActive = \App\Models\PpdbSetting::where('is_active', true)->first(); 
+    return view('landing.ppdb', compact('ppdbActive'));
+})->name('landing.ppdb');
 
 Route::get('/ppdb/daftar', [PpdbController::class, 'register'])->name('ppdb.register');
 Route::post('/ppdb/daftar', [PpdbController::class, 'store'])->name('ppdb.store');

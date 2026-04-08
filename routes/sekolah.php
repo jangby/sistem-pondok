@@ -41,6 +41,7 @@ use App\Http\Controllers\Sekolah\Petugas\KunjunganController as PetugasKunjungan
 use App\Http\Controllers\Sekolah\Petugas\AuditController as PetugasAuditController;
 
 use App\Http\Controllers\Sekolah\Petugas\ComputerLabController;
+use App\Http\Controllers\Sekolah\Admin\CctvController;
 
 /*
 |--------------------------------------------------------------------------
@@ -157,6 +158,8 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-sekolah'])
             Route::get('guru', [AbsensiMonitoringController::class, 'rekapGuru'])->name('guru');
             Route::get('siswa', [AbsensiMonitoringController::class, 'rekapSiswa'])->name('siswa');
         });
+
+        Route::get('cctv', [CctvController::class, 'index'])->name('cctv.index');
     });
 
 // 3. GURU

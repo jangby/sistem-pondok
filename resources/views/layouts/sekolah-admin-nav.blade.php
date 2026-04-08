@@ -79,3 +79,8 @@
 <x-nav-link :href="route('sekolah.admin.laporan.index')" :active="request()->routeIs('sekolah.admin.laporan.*')">
     {{ __('Laporan & Ledger') }}
 </x-nav-link>
+
+{{-- 5. LIVE CCTV (TAMBAHKAN KODE INI) --}}
+<x-nav-link :href="route('sekolah.admin.cctv.index')" :active="request()->routeIs('sekolah.admin.cctv.*')">
+    {{ __('Live CCTV') }}
+</x-nav-link>
