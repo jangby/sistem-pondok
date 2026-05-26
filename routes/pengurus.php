@@ -23,6 +23,7 @@ use App\Http\Controllers\Pengurus\PerpulanganController;
 use App\Http\Controllers\Pengurus\KiosAbsenGerbangController;
 use App\Http\Controllers\Pengurus\JadwalGerbangController;
 use App\Http\Controllers\Pengurus\RekapAbsenGerbangController;
+use App\Http\Controllers\Pengurus\BukuTamuController;
 
 /*
 |--------------------------------------------------------------------------
@@ -199,6 +200,11 @@ Route::middleware(['auth', 'role:pengurus_pondok'])->prefix('pengurus')->name('p
         Route::delete('/jadwal-gerbang/{id}', [JadwalGerbangController::class, 'destroy'])->name('jadwal.destroy');
         Route::post('/jadwal-gerbang/pin', [JadwalGerbangController::class, 'updatePin'])->name('jadwal.pin');
         Route::get('/jadwal-gerbang/pdf', [JadwalGerbangController::class, 'exportPdf'])->name('jadwal.pdf');
+        // Buku Tamu Gerbang
+        Route::get('/buku-tamu', [BukuTamuController::class, 'index'])->name('buku-tamu.index');
+        Route::get('/buku-tamu/pdf', [BukuTamuController::class, 'exportPdf'])->name('buku-tamu.pdf'); // <--- Tambahkan baris ini
+        Route::post('/buku-tamu', [BukuTamuController::class, 'store'])->name('buku-tamu.store');
+        Route::put('/buku-tamu/{id}/keluar', [BukuTamuController::class, 'checkout'])->name('buku-tamu.checkout');
         // Rekap Absensi Gerbang
         Route::get('/rekap-gerbang', [RekapAbsenGerbangController::class, 'index'])->name('rekap-gerbang.index');
         Route::get('/rekap-gerbang/pdf', [RekapAbsenGerbangController::class, 'exportPdf'])->name('rekap-gerbang.pdf');

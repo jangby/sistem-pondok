@@ -51,6 +51,21 @@
                 </div>
             </a>
 
+            {{-- Menu Tambahan Baru: Buku Tamu --}}
+            <a href="{{ route('pengurus.buku-tamu.index') }}" class="block bg-white p-5 rounded-2xl shadow-md border border-gray-100 mb-4 group active:scale-95 transition relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-2 h-full bg-cyan-500"></div>
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 bg-cyan-50 text-cyan-600 rounded-2xl flex items-center justify-center group-hover:bg-cyan-600 group-hover:text-white transition duration-300">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-bold text-gray-800 group-hover:text-cyan-600 transition">Buku Tamu</h3>
+                        <p class="text-xs text-gray-500 mt-1">Catat kunjungan tamu pondok</p>
+                    </div>
+                    <svg class="w-5 h-5 text-gray-300 group-hover:text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </div>
+            </a>
+
             {{-- Menu 2: Asrama --}}
             <a href="{{ route('pengurus.absensi.asrama') }}" class="block bg-white p-5 rounded-2xl shadow-md border border-gray-100 mb-4 group active:scale-95 transition">
                 <div class="flex items-center gap-4">

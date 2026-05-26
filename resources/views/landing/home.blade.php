@@ -53,17 +53,17 @@
     <section class="relative z-20 -mt-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="bg-white rounded-2xl shadow-2xl p-8 md:p-12 border border-slate-100 flex flex-wrap justify-between items-center gap-8 lg:gap-12">
             <div class="flex-1 min-w-[200px]">
-                <h3 class="text-5xl font-extrabold text-slate-900 mb-2">15+</h3>
+                <h3 class="text-5xl font-extrabold text-slate-900 mb-2">50+</h3>
                 <p class="text-slate-500 font-semibold text-sm uppercase tracking-wider">Tahun Pengalaman</p>
             </div>
             <div class="hidden md:block w-px h-16 bg-slate-200"></div>
             <div class="flex-1 min-w-[200px]">
-                <h3 class="text-5xl font-extrabold text-slate-900 mb-2">2.5K</h3>
+                <h3 class="text-5xl font-extrabold text-slate-900 mb-2">500</h3>
                 <p class="text-slate-500 font-semibold text-sm uppercase tracking-wider">Santri Aktif</p>
             </div>
             <div class="hidden md:block w-px h-16 bg-slate-200"></div>
             <div class="flex-1 min-w-[200px]">
-                <h3 class="text-5xl font-extrabold text-slate-900 mb-2">100%</h3>
+                <h3 class="text-5xl font-extrabold text-slate-900 mb-2">70%</h3>
                 <p class="text-slate-500 font-semibold text-sm uppercase tracking-wider">Sistem Digital</p>
             </div>
         </div>

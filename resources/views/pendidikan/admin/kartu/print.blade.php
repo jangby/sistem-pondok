@@ -191,7 +191,7 @@
                     <div class="tgl">Limbangan, {{ date('d M Y') }}</div>
                     <div class="tgl">Ketua Panitia Ujian</div>
                     <img src="https://raw.githubusercontent.com/Dhuyuand/aset-cerdas-cermat/main/TTD.png" class="ttd-img" alt="TTD Panitia">
-                    <div class="panitia">Ihsan</div>
+                    <div class="panitia">Ari Muhammad Fajri</div>
                 </div>
             </div>
 

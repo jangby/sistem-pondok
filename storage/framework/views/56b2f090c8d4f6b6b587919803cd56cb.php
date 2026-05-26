@@ -23,7 +23,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-24 items-center">
                 <a href="<?php echo e(route('landing.home')); ?>" class="flex-shrink-0 flex items-center gap-3 group">
-                    <img src="<?php echo e(asset('logo.jpeg')); ?>" alt="Logo" class="w-12 h-12 rounded-xl object-cover shadow-md group-hover:scale-105 transition-transform" onerror="this.src='https://ui-avatars.com/api/?name=A&background=10b981&color=fff&rounded=true&bold=true'">
+                    <img src="<?php echo e(asset('logo-pondok.jpg')); ?>" alt="Logo" class="w-12 h-12 rounded-xl object-cover shadow-md group-hover:scale-105 transition-transform" onerror="this.src='https://ui-avatars.com/api/?name=A&background=10b981&color=fff&rounded=true&bold=true'">
                     <div class="flex flex-col">
                         <span class="text-xl font-extrabold text-slate-900 tracking-tight leading-none">Assa'adah</span>
                         <span class="text-xs font-semibold text-emerald-600 tracking-widest uppercase mt-1">Smart Digital</span>
@@ -94,7 +94,7 @@
                     <ul class="space-y-4 text-slate-400 font-medium">
                         <li class="flex items-start gap-3">
                             <svg class="w-5 h-5 text-emerald-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-                            Nagreg, Jawa Barat, Indonesia
+                            Garut, Jawa Barat, Indonesia
                         </li>
                         <li class="flex items-center gap-3">
                             <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
