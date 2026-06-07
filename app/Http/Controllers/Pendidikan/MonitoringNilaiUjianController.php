@@ -25,7 +25,18 @@ class MonitoringNilaiUjianController extends Controller
 
     private function getActiveTahunAjaran()
     {
-        return request('tahun_ajaran', date('Y') . '/' . (date('Y') + 1));
+        if (request()->has('tahun_ajaran') && request('tahun_ajaran') != '') {
+            return request('tahun_ajaran');
+        }
+
+        $bulanIni = (int) date('m');
+        $tahunIni = (int) date('Y');
+
+        if ($bulanIni >= 7) {
+            return $tahunIni . '/' . ($tahunIni + 1);
+        } else {
+            return ($tahunIni - 1) . '/' . $tahunIni;
+        }
     }
 
     // === LEVEL 1: DASHBOARD MUSTAWA ===
@@ -34,15 +45,15 @@ class MonitoringNilaiUjianController extends Controller
         $pondokId = $this->getPondokId();
         $semester = $this->getActiveSemester();
         $tahunAjaran = $this->getActiveTahunAjaran();
+        
+        $jenisUjian = $request->input('jenis_ujian');
 
-        // 1. Ambil Semua Mustawa (Kelas) Aktif
         $mustawas = Mustawa::where('pondok_id', $pondokId)
             ->where('is_active', true)
             ->orderBy('tingkat')
             ->get();
 
         foreach ($mustawas as $m) {
-            
             $totalSantri = Santri::where('mustawa_id', $m->id)
                 ->where('status', 'active')
                 ->count();
@@ -52,24 +63,39 @@ class MonitoringNilaiUjianController extends Controller
                 continue;
             }
 
-            // Mapel diambil jika ada di Jadwal Harian, Jadwal Ujian, atau sudah ada nilainya
+            // PERBAIKAN 1: Hanya panggil mapel dari Jadwal UJIAN & Nilai UJIAN saja
             $relevantMapels = MapelDiniyah::where('pondok_id', $pondokId)
-                ->where(function($q) use ($m, $semester, $tahunAjaran) {
-                    // Cek Jadwal Harian
-                    $q->whereHas('jadwals', function($subQ) use ($m) {
-                        $subQ->where('mustawa_id', $m->id);
-                    })
-                    // Cek Jadwal Ujian
-                    ->orWhereIn('id', function($subQ) use ($m, $semester, $tahunAjaran) {
-                        $subQ->select('mapel_diniyah_id')
-                             ->from('jadwal_ujian_diniyahs')
-                             ->where('mustawa_id', $m->id)
-                             ->where('semester', $semester)
-                             ->where('tahun_ajaran', $tahunAjaran);
-                    })
-                    // Cek Nilai Existing
-                    ->orWhereIn('id', NilaiPesantren::where('mustawa_id', $m->id)
-                        ->select('mapel_diniyah_id'));
+                ->where(function($q) use ($m, $semester, $tahunAjaran, $jenisUjian) {
+                    
+                    if (!empty($jenisUjian)) {
+                        // Jika jenis ujian dipilih (UTS/UAS)
+                        $q->whereIn('id', function($subQ) use ($m, $semester, $tahunAjaran, $jenisUjian) {
+                            $subQ->select('mapel_diniyah_id')
+                                 ->from('jadwal_ujian_diniyahs')
+                                 ->where('mustawa_id', $m->id)
+                                 ->where('semester', $semester)
+                                 ->where('tahun_ajaran', $tahunAjaran)
+                                 ->where('jenis_ujian', $jenisUjian);
+                        })
+                        ->orWhereIn('id', NilaiPesantren::where('mustawa_id', $m->id)
+                            ->where('semester', $semester)
+                            ->where('tahun_ajaran', $tahunAjaran)
+                            ->where('jenis_ujian', $jenisUjian)
+                            ->select('mapel_diniyah_id'));
+                    } else {
+                        // Jika jenis ujian 'Semua'
+                        $q->whereIn('id', function($subQ) use ($m, $semester, $tahunAjaran) {
+                            $subQ->select('mapel_diniyah_id')
+                                 ->from('jadwal_ujian_diniyahs')
+                                 ->where('mustawa_id', $m->id)
+                                 ->where('semester', $semester)
+                                 ->where('tahun_ajaran', $tahunAjaran);
+                        })
+                        ->orWhereIn('id', NilaiPesantren::where('mustawa_id', $m->id)
+                            ->where('semester', $semester)
+                            ->where('tahun_ajaran', $tahunAjaran)
+                            ->select('mapel_diniyah_id'));
+                    }
                 })
                 ->get();
 
@@ -78,13 +104,16 @@ class MonitoringNilaiUjianController extends Controller
                 continue;
             }
 
-            // Ambil semua nilai (Optimasi)
-            $allNilai = NilaiPesantren::where('mustawa_id', $m->id)
+            // PERBAIKAN 2: Progress juga difilter berdasarkan Jenis Ujian
+            $queryNilai = NilaiPesantren::where('mustawa_id', $m->id)
                 ->where('semester', $semester)
-                ->where('tahun_ajaran', $tahunAjaran)
-                ->get()
-                ->groupBy('mapel_diniyah_id');
+                ->where('tahun_ajaran', $tahunAjaran);
+            
+            if (!empty($jenisUjian)) {
+                $queryNilai->where('jenis_ujian', $jenisUjian);
+            }
 
+            $allNilai = $queryNilai->get()->groupBy('mapel_diniyah_id');
             $totalProgressSemuaMapel = 0;
 
             foreach ($relevantMapels as $mapel) {
@@ -93,28 +122,24 @@ class MonitoringNilaiUjianController extends Controller
                 $activeComponents = 0;
                 $currentMapelProgress = 0;
                 
-                // Hitung Tulis
                 if ($mapel->uji_tulis) {
                     $activeComponents++;
                     $filled = $nilaiMapelIni ? $nilaiMapelIni->whereNotNull('nilai_tulis')->count() : 0;
                     $currentMapelProgress += ($filled / $totalSantri) * 100;
                 }
                 
-                // Hitung Lisan
                 if ($mapel->uji_lisan) {
                     $activeComponents++;
                     $filled = $nilaiMapelIni ? $nilaiMapelIni->whereNotNull('nilai_lisan')->count() : 0;
                     $currentMapelProgress += ($filled / $totalSantri) * 100;
                 }
                 
-                // Hitung Praktek
                 if ($mapel->uji_praktek) {
                     $activeComponents++;
                     $filled = $nilaiMapelIni ? $nilaiMapelIni->whereNotNull('nilai_praktek')->count() : 0;
                     $currentMapelProgress += ($filled / $totalSantri) * 100;
                 }
 
-                // [PERBAIKAN] Hitung Hafalan
                 if ($mapel->uji_hafalan) {
                     $activeComponents++;
                     $filled = $nilaiMapelIni ? $nilaiMapelIni->whereNotNull('nilai_hafalan')->count() : 0;
@@ -139,21 +164,38 @@ class MonitoringNilaiUjianController extends Controller
         $tahunAjaran = $this->getActiveTahunAjaran();
         
         $mustawa = Mustawa::where('pondok_id', $pondokId)->findOrFail($mustawaId);
-        
+        $jenisUjian = request('jenis_ujian');
+
+        // PERBAIKAN 3: Filter Mapel Level 2
         $mapels = MapelDiniyah::where('pondok_id', $pondokId)
-            ->where(function($q) use ($mustawaId, $semester, $tahunAjaran) {
-                $q->whereHas('jadwals', function($subQ) use ($mustawaId) {
-                    $subQ->where('mustawa_id', $mustawaId);
-                })
-                ->orWhereIn('id', function($subQ) use ($mustawaId, $semester, $tahunAjaran) {
-                    $subQ->select('mapel_diniyah_id')
-                            ->from('jadwal_ujian_diniyahs')
-                            ->where('mustawa_id', $mustawaId)
-                            ->where('semester', $semester)
-                            ->where('tahun_ajaran', $tahunAjaran);
-                })
-                ->orWhereIn('id', NilaiPesantren::where('mustawa_id', $mustawaId)
-                    ->select('mapel_diniyah_id'));
+            ->where(function($q) use ($mustawaId, $semester, $tahunAjaran, $jenisUjian) {
+                if (!empty($jenisUjian)) {
+                    $q->whereIn('id', function($subQ) use ($mustawaId, $semester, $tahunAjaran, $jenisUjian) {
+                        $subQ->select('mapel_diniyah_id')
+                             ->from('jadwal_ujian_diniyahs')
+                             ->where('mustawa_id', $mustawaId)
+                             ->where('semester', $semester)
+                             ->where('tahun_ajaran', $tahunAjaran)
+                             ->where('jenis_ujian', $jenisUjian);
+                    })
+                    ->orWhereIn('id', NilaiPesantren::where('mustawa_id', $mustawaId)
+                        ->where('semester', $semester)
+                        ->where('tahun_ajaran', $tahunAjaran)
+                        ->where('jenis_ujian', $jenisUjian)
+                        ->select('mapel_diniyah_id'));
+                } else {
+                    $q->whereIn('id', function($subQ) use ($mustawaId, $semester, $tahunAjaran) {
+                        $subQ->select('mapel_diniyah_id')
+                             ->from('jadwal_ujian_diniyahs')
+                             ->where('mustawa_id', $mustawaId)
+                             ->where('semester', $semester)
+                             ->where('tahun_ajaran', $tahunAjaran);
+                    })
+                    ->orWhereIn('id', NilaiPesantren::where('mustawa_id', $mustawaId)
+                        ->where('semester', $semester)
+                        ->where('tahun_ajaran', $tahunAjaran)
+                        ->select('mapel_diniyah_id'));
+                }
             })
             ->orderBy('nama_mapel')
             ->get();
@@ -169,10 +211,15 @@ class MonitoringNilaiUjianController extends Controller
             $activeComponents = 0;
             $totalProgress = 0;
 
+            // PERBAIKAN 4: Progress Base Query Level 2
             $baseQuery = NilaiPesantren::where('mustawa_id', $mustawaId)
                 ->where('mapel_diniyah_id', $mapel->id)
                 ->where('semester', $semester)
                 ->where('tahun_ajaran', $tahunAjaran);
+
+            if (!empty($jenisUjian)) {
+                $baseQuery->where('jenis_ujian', $jenisUjian);
+            }
 
             if ($mapel->uji_tulis) {
                 $activeComponents++;
@@ -192,7 +239,6 @@ class MonitoringNilaiUjianController extends Controller
                 $totalProgress += ($filled / $santriCount) * 100;
             }
 
-            // [PERBAIKAN] Hitung Hafalan
             if ($mapel->uji_hafalan) {
                 $activeComponents++;
                 $filled = (clone $baseQuery)->whereNotNull('nilai_hafalan')->count();
@@ -212,12 +258,12 @@ class MonitoringNilaiUjianController extends Controller
         $pondokId = $this->getPondokId();
         $semester = $this->getActiveSemester();
         $tahunAjaran = $this->getActiveTahunAjaran();
+        $jenisUjian = request('jenis_ujian');
 
         $mustawa = Mustawa::where('pondok_id', $pondokId)->findOrFail($mustawaId);
         $mapel = MapelDiniyah::where('pondok_id', $pondokId)->findOrFail($mapelId);
         $santriCount = Santri::where('mustawa_id', $mustawaId)->where('status', 'active')->count();
 
-        // [PERBAIKAN] Inisialisasi key 'hafalan'
         $progress = ['tulis' => 0, 'lisan' => 0, 'praktek' => 0, 'hafalan' => 0];
 
         if ($santriCount > 0) {
@@ -225,6 +271,10 @@ class MonitoringNilaiUjianController extends Controller
                 ->where('mapel_diniyah_id', $mapelId)
                 ->where('semester', $semester)
                 ->where('tahun_ajaran', $tahunAjaran);
+
+            if (!empty($jenisUjian)) {
+                $baseQuery->where('jenis_ujian', $jenisUjian);
+            }
 
             if ($mapel->uji_tulis) {
                 $c = (clone $baseQuery)->whereNotNull('nilai_tulis')->count();
@@ -238,7 +288,6 @@ class MonitoringNilaiUjianController extends Controller
                 $c = (clone $baseQuery)->whereNotNull('nilai_praktek')->count();
                 $progress['praktek'] = min(round(($c / $santriCount) * 100), 100);
             }
-            // [PERBAIKAN] Hitung Hafalan
             if ($mapel->uji_hafalan) {
                 $c = (clone $baseQuery)->whereNotNull('nilai_hafalan')->count();
                 $progress['hafalan'] = min(round(($c / $santriCount) * 100), 100);
@@ -254,6 +303,7 @@ class MonitoringNilaiUjianController extends Controller
         $pondokId = $this->getPondokId();
         $semester = $this->getActiveSemester();
         $tahunAjaran = $this->getActiveTahunAjaran();
+        $jenisUjian = request('jenis_ujian');
 
         $mustawa = Mustawa::where('pondok_id', $pondokId)->findOrFail($mustawaId);
         $mapel = MapelDiniyah::where('pondok_id', $pondokId)->findOrFail($mapelId);
@@ -263,12 +313,16 @@ class MonitoringNilaiUjianController extends Controller
             ->orderBy('full_name')
             ->get();
 
-        $existingNilai = NilaiPesantren::where('mustawa_id', $mustawaId)
+        $queryNilai = NilaiPesantren::where('mustawa_id', $mustawaId)
             ->where('mapel_diniyah_id', $mapelId)
             ->where('semester', $semester)
-            ->where('tahun_ajaran', $tahunAjaran)
-            ->get()
-            ->keyBy('santri_id');
+            ->where('tahun_ajaran', $tahunAjaran);
+            
+        if (!empty($jenisUjian)) {
+            $queryNilai->where('jenis_ujian', $jenisUjian);
+        }
+
+        $existingNilai = $queryNilai->get()->keyBy('santri_id');
 
         return view('pendidikan.admin.monitoring.ujian.input', compact(
             'mustawa', 'mapel', 'jenis', 'santris', 'existingNilai', 'semester', 'tahunAjaran'
@@ -296,11 +350,12 @@ class MonitoringNilaiUjianController extends Controller
                     'mapel_diniyah_id' => $mapelId,
                     'semester' => $semester,
                     'tahun_ajaran' => $tahunAjaran,
+                    'jenis_ujian' => request('jenis_ujian'),
                 ]);
 
                 if (!$record->exists) {
                     $record->mustawa_id = $mustawaId;
-                    $record->jenis_ujian = 'uas';
+                    $record->jenis_ujian = request('jenis_ujian') ?: 'uas';
                 }
 
                 if ($jenis == 'tulis') {
@@ -312,7 +367,7 @@ class MonitoringNilaiUjianController extends Controller
                     $record->nilai_lisan = $val;
                 } elseif ($jenis == 'praktek') {
                     $record->nilai_praktek = $val;
-                } elseif ($jenis == 'hafalan') { // [PERBAIKAN] Tambahkan kondisi Hafalan
+                } elseif ($jenis == 'hafalan') { 
                     $record->nilai_hafalan = $val;
                 }
 
@@ -332,7 +387,6 @@ class MonitoringNilaiUjianController extends Controller
                     $sum += $record->nilai_praktek ?? 0; 
                     $cols++; 
                 }
-                // [PERBAIKAN] Hitung Hafalan
                 if ($mapel->uji_hafalan) { 
                     $sum += $record->nilai_hafalan ?? 0; 
                     $cols++; 
