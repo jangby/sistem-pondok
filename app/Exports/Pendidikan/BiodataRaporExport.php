@@ -18,12 +18,9 @@ class BiodataRaporExport implements WithMultipleSheets
         $mustawas = Mustawa::all();
 
         foreach ($mustawas as $mustawa) {
-            // Buat Sheet untuk Putra (Laki-laki)
-            // Parameter: ID Kelas, Nama Kelas (menggunakan ->nama), Jenis Kelamin DB, Label Sheet
-            $sheets[] = new BiodataRaporSheet($mustawa->id, $mustawa->nama, 'Laki-laki', 'Putra');
-            
-            // Buat Sheet untuk Putri (Perempuan)
-            $sheets[] = new BiodataRaporSheet($mustawa->id, $mustawa->nama, 'Perempuan', 'Putri');
+            // CUKUP SATU SHEET PER KELAS
+            // Hanya mengirim parameter: ID Kelas dan Nama Kelas saja
+            $sheets[] = new BiodataRaporSheet($mustawa->id, $mustawa->nama);
         }
 
         return $sheets;

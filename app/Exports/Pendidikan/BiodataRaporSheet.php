@@ -16,24 +16,19 @@ class BiodataRaporSheet implements FromCollection, WithHeadings, WithMapping, Wi
 {
     protected $mustawa_id;
     protected $nama_mustawa;
-    protected $jenis_kelamin;
-    protected $label_jk;
 
-    // Menerima parameter dari BiodataRaporExport
-    public function __construct($mustawa_id, $nama_mustawa, $jenis_kelamin, $label_jk)
+    // Sekarang hanya menerima 2 parameter utama
+    public function __construct($mustawa_id, $nama_mustawa)
     {
         $this->mustawa_id = $mustawa_id;
         $this->nama_mustawa = $nama_mustawa;
-        $this->jenis_kelamin = $jenis_kelamin;
-        $this->label_jk = $label_jk;
     }
 
-    // Mengambil data Santri dan relasi Kelas (mustawa)
+    // Mengambil data Santri berdasarkan Kelas tanpa memisahkan Putra/Putri lagi
     public function collection()
     {
         return Santri::with(['mustawa'])
             ->where('mustawa_id', $this->mustawa_id)
-            ->where('jenis_kelamin', $this->jenis_kelamin)
             ->get();
     }
 
@@ -72,8 +67,6 @@ class BiodataRaporSheet implements FromCollection, WithHeadings, WithMapping, Wi
             $ttl,
             $santri->jenis_kelamin ?? '-',
             'Islam',
-            
-            // Sekarang datanya diambil langsung dari tabel Santri, bukan relasi
             $santri->alamat ?? '-', 
             $santri->mustawa->nama ?? '-', 
             $santri->tahun_masuk ?? '-',
@@ -84,12 +77,11 @@ class BiodataRaporSheet implements FromCollection, WithHeadings, WithMapping, Wi
         ];
     }
 
-    // Nama Tab/Sheet di bawah Excel
+    // Nama Tab/Sheet di bawah Excel langsung menggunakan Nama Kelas aslinya
     public function title(): string
     {
-        // Max 31 Karakter (Aturan Excel)
-        $title = ($this->nama_mustawa ?? 'Kelas') . ' - ' . $this->label_jk;
-        return substr($title, 0, 31);
+        // Maksimal nama tab excel adalah 31 karakter
+        return substr($this->nama_mustawa ?? 'Kelas', 0, 31);
     }
 
     // Styling Baris pertama (Tebal/Bold)
