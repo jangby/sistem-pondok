@@ -165,4 +165,54 @@ class SantriController extends Controller
                             
         return view('adminpondok.santris.show', compact('santri', 'jenisPembayarans'));
     }
+
+    public function exportPdfPerMustawa(Request $request)
+    {
+        $pondokId = Auth::user()->pondokStaff->pondok_id;
+        
+        // Ambil semua data Mustawa (Kelas Pesantren)
+        $mustawas = \App\Models\Mustawa::orderBy('nama')->get();
+        
+        $dataEkspor = [];
+
+        foreach ($mustawas as $mustawa) {
+            // Ambil Santri Putra
+            $santriPutra = \App\Models\Santri::with('orangTua')
+                ->where('pondok_id', $pondokId)
+                ->where('mustawa_id', $mustawa->id)
+                ->where('jenis_kelamin', 'Laki-laki')
+                ->orderBy('full_name')
+                ->get();
+
+            // Ambil Santri Putri
+            $santriPutri = \App\Models\Santri::with('orangTua')
+                ->where('pondok_id', $pondokId)
+                ->where('mustawa_id', $mustawa->id)
+                ->where('jenis_kelamin', 'Perempuan')
+                ->orderBy('full_name')
+                ->get();
+
+            if ($santriPutra->count() > 0) {
+                $dataEkspor[] = [
+                    'kelas' => $mustawa->nama,
+                    'kategori' => 'PUTRA (LAKI-LAKI)',
+                    'santris' => $santriPutra
+                ];
+            }
+
+            if ($santriPutri->count() > 0) {
+                $dataEkspor[] = [
+                    'kelas' => $mustawa->nama,
+                    'kategori' => 'PUTRI (PEREMPUAN)',
+                    'santris' => $santriPutri
+                ];
+            }
+        }
+
+        // Panggil alias PDF
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('adminpondok.santris.pdf_export_mustawa', compact('dataEkspor'))
+                  ->setPaper('a4', 'landscape');
+
+        return $pdf->download('Data_Santri_Pesantren.pdf');
+    }
 }

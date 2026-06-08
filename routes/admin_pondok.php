@@ -97,6 +97,8 @@ Route::middleware(['auth', 'role:admin-pondok', 'cek.langganan'])
         ->except(['show', 'edit', 'update']);
     });
 
+    Route::get('/santri/export-pdf-mustawa', [App\Http\Controllers\AdminPondok\SantriController::class, 'exportPdfPerMustawa'])->name('santri.export-pdf-mustawa');
+
     Route::resource('santris', SantriController::class);
     Route::resource('orang-tuas', OrangTuaController::class);
     Route::resource('keringanans', KeringananController::class);
