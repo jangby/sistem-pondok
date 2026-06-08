@@ -62,6 +62,8 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-pendidikan'
         Route::get('rapor', [RaporController::class, 'index'])->name('rapor.index');
         Route::post('rapor/generate', [RaporController::class, 'generate'])->name('rapor.generate');
 
+        Route::get('/rapor/export-biodata', [\App\Http\Controllers\Pendidikan\RaporController::class, 'exportBiodata'])->name('rapor.export_biodata');
+
         Route::resource('jadwal', JadwalDiniyahController::class);
 
         Route::get('anggota-kelas', [AnggotaKelasController::class, 'index'])->name('anggota-kelas.index');

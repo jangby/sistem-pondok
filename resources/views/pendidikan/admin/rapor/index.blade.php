@@ -3,6 +3,9 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Cetak Rapor Santri') }}
         </h2>
+        <a href="{{ route('pendidikan.admin.rapor.export_biodata') }}" class="btn btn-success" style="background-color: #28a745; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none;">
+    <i class="fa fa-file-excel"></i> Download Biodata Rapor
+</a>
     </x-slot>
 
     <div class="py-12">

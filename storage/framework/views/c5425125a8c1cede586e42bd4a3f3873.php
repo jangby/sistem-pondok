@@ -13,6 +13,9 @@
             <?php echo e(__('Cetak Rapor Santri')); ?>
 
         </h2>
+        <a href="<?php echo e(route('pendidikan.admin.rapor.export_biodata')); ?>" class="btn btn-success" style="background-color: #28a745; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none;">
+    <i class="fa fa-file-excel"></i> Download Biodata Rapor
+</a>
      <?php $__env->endSlot(); ?>
 
     <div class="py-12">

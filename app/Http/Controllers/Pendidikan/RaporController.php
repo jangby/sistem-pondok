@@ -12,6 +12,8 @@ use App\Models\MapelDiniyah;
 use App\Models\Pondok;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use App\Exports\Pendidikan\BiodataRaporExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class RaporController extends Controller
 {
@@ -406,4 +408,12 @@ class RaporController extends Controller
         if ($nilai >= 60) return 'Maqbul (Cukup)';
         return 'Rasib (Kurang)';
     }
+
+    public function exportBiodata()
+{
+    // Nama file Excel yang akan didownload
+    $nama_file = 'Biodata_Santri_Untuk_Rapor.xlsx';
+
+    return Excel::download(new BiodataRaporExport, $nama_file);
+}
 }
