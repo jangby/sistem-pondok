@@ -28,10 +28,10 @@ class BiodataRaporSheet implements FromCollection, WithHeadings, WithMapping, Wi
         $this->label_jk = $label_jk;
     }
 
-    // Mengambil data Santri dengan relasi Orang Tua dan Kelas
+    // Mengambil data Santri dan relasi Kelas (mustawa)
     public function collection()
     {
-        return Santri::with(['orangTua', 'mustawa'])
+        return Santri::with(['mustawa'])
             ->where('mustawa_id', $this->mustawa_id)
             ->where('jenis_kelamin', $this->jenis_kelamin)
             ->get();
@@ -53,46 +53,41 @@ class BiodataRaporSheet implements FromCollection, WithHeadings, WithMapping, Wi
             'Nama Ayah',
             'Nama Ibu',
             'Pekerjaan Ayah',
-            'Pekerjaan Ibu/Wali',
+            'Pekerjaan Ibu',
         ];
     }
 
     // Memasukkan data dari database ke kolom-kolom Excel
     public function map($santri): array
     {
-        // Format Tempat & Tanggal Lahir dengan aman
+        // Format Tempat & Tanggal Lahir
         $tempat_lahir = $santri->tempat_lahir ?? '-';
         $tanggal_lahir = $santri->tanggal_lahir ? Carbon::parse($santri->tanggal_lahir)->translatedFormat('d F Y') : '-';
         $ttl = $tempat_lahir . ', ' . $tanggal_lahir;
 
-        // Amankan data orang tua jika belum diisi di sistem (agar tidak error null)
-        $alamat = $santri->orangTua->alamat ?? $santri->alamat ?? '-';
-        $nama_ayah = $santri->orangTua->nama_ayah ?? '-';
-        $nama_ibu = $santri->orangTua->nama_ibu ?? '-';
-        $pekerjaan_ayah = $santri->orangTua->pekerjaan_ayah ?? '-';
-        $pekerjaan_ibu = $santri->orangTua->pekerjaan_ibu ?? $santri->orangTua->pekerjaan_wali ?? '-';
-
         return [
-            $santri->full_name ?? '-',     // Sudah diubah ke full_name
+            $santri->full_name ?? '-',     
             $santri->nis ?? '-',
             $santri->nisn ?? '-',
             $ttl,
             $santri->jenis_kelamin ?? '-',
             'Islam',
-            $alamat,
-            $santri->mustawa->nama ?? '-', // Sudah diubah ke ->nama
+            
+            // Sekarang datanya diambil langsung dari tabel Santri, bukan relasi
+            $santri->alamat ?? '-', 
+            $santri->mustawa->nama ?? '-', 
             $santri->tahun_masuk ?? '-',
-            $nama_ayah,
-            $nama_ibu,
-            $pekerjaan_ayah,
-            $pekerjaan_ibu,
+            $santri->nama_ayah ?? '-', 
+            $santri->nama_ibu ?? '-', 
+            $santri->pekerjaan_ayah ?? '-', 
+            $santri->pekerjaan_ibu ?? '-', 
         ];
     }
 
     // Nama Tab/Sheet di bawah Excel
     public function title(): string
     {
-        // Max 31 Karakter, contoh: "1 A - Putra"
+        // Max 31 Karakter (Aturan Excel)
         $title = ($this->nama_mustawa ?? 'Kelas') . ' - ' . $this->label_jk;
         return substr($title, 0, 31);
     }
