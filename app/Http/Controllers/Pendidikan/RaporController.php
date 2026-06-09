@@ -14,6 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use App\Exports\Pendidikan\BiodataRaporExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\Pendidikan\NilaiRaporExport;
 
 class RaporController extends Controller
 {
@@ -415,5 +416,16 @@ class RaporController extends Controller
     $nama_file = 'Biodata_Santri_Untuk_Rapor.xlsx';
 
     return Excel::download(new BiodataRaporExport, $nama_file);
+}
+
+public function exportNilai(Request $request)
+{
+    // Anda bisa mengganti parameter default ini jika mau
+    $jenis_ujian = $request->jenis_ujian ?? 'uas'; 
+    $semester = $request->semester ?? 'genap';
+
+    $nama_file = 'Rekap_Nilai_' . strtoupper($jenis_ujian) . '_' . ucfirst($semester) . '.xlsx';
+    
+    return Excel::download(new NilaiRaporExport($jenis_ujian, $semester), $nama_file);
 }
 }
