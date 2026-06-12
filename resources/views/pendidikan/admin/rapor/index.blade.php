@@ -9,9 +9,15 @@
                     <i class="fa fa-file-excel"></i> 
                     <span>Download Biodata Rapor</span>
                 </a>
+                
                 <a href="{{ route('pendidikan.admin.rapor.export_nilai', ['jenis_ujian' => 'uas', 'semester' => 'genap']) }}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-md shadow-sm transition duration-150 ease-in-out">
                     <i class="fa fa-file-excel"></i> 
                     <span>Download Nilai (UAS Genap)</span>
+                </a>
+
+                <a href="{{ route('pendidikan.admin.rapor.export_lengkap', ['jenis_ujian' => 'uas', 'semester' => 'genap']) }}" class="inline-flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-sm font-bold px-4 py-2 rounded-md shadow-sm transition duration-150 ease-in-out">
+                    <i class="fa fa-file-excel"></i> 
+                    <span>Download Master Rapor (Bio + Nilai)</span>
                 </a>
             </div>
         </div>

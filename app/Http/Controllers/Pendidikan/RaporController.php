@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use App\Exports\Pendidikan\BiodataRaporExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\Pendidikan\NilaiRaporExport;
+use App\Exports\Pendidikan\RaporLengkapExport;
 
 class RaporController extends Controller
 {
@@ -427,5 +428,15 @@ public function exportNilai(Request $request)
     $nama_file = 'Rekap_Nilai_' . strtoupper($jenis_ujian) . '_' . ucfirst($semester) . '.xlsx';
     
     return Excel::download(new NilaiRaporExport($jenis_ujian, $semester), $nama_file);
+}
+
+public function exportRaporLengkap(Request $request)
+{
+    $jenis_ujian = $request->jenis_ujian ?? 'uas'; 
+    $semester = $request->semester ?? 'genap';
+
+    $nama_file = 'Rapor_Lengkap_Sistem_Pondok_' . strtoupper($jenis_ujian) . '.xlsx';
+    
+    return Excel::download(new RaporLengkapExport($jenis_ujian, $semester), $nama_file);
 }
 }
