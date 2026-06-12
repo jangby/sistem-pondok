@@ -92,7 +92,7 @@ class RaporLengkapSheet implements FromCollection, WithHeadings, WithMapping, Wi
     {
         // 1. Olah data biodata santri
         $tempat_lahir = $santri->tempat_lahir ?? '-';
-        $tanggal_lahir = $santri->tanggal_lahir ? Carbon::parse($santri->tanggal_lahir)->translatedFormat('d F Y') : '-';
+        $tanggal_lahir = $santri->tanggal_lahir ? Carbon::parse($santri->tanggal_lahir)->locale('id')->translatedFormat('d F Y') : '-';
         $ttl = $tempat_lahir . ', ' . $tanggal_lahir;
 
         // 2. Olah data nilai santri
