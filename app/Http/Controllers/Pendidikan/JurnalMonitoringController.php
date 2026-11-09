@@ -26,6 +26,9 @@ class JurnalMonitoringController extends Controller
         $query = JurnalMengajar::whereHas('ustadz', function($q) use ($pondokId) {
                 $q->where('pondok_id', $pondokId);
             })
+            ->whereHas('jadwal', function ($q) use ($pondokId) {
+                $q->where('pondok_id', $pondokId);
+            })
             ->with(['ustadz', 'jadwal.mapel', 'jadwal.mustawa'])
             ->whereBetween('tanggal', [$tanggalAwal, $tanggalAkhir]);
 

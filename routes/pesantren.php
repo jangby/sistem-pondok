@@ -88,6 +88,7 @@ Route::middleware(['auth', 'cek.langganan', 'isPremium', 'role:admin-pendidikan'
         Route::get('ujian/{ujian}/excel', [JadwalUjianController::class, 'exportExcel'])->name('ujian.excel');
         
         Route::get('absensi/rekap', [AbsensiController::class, 'rekap'])->name('absensi.rekap');
+        Route::get('absensi/rekap/pdf', [AbsensiController::class, 'exportPdf'])->name('absensi.export-pdf');
         Route::get('monitoring-jurnal', [JurnalMonitoringController::class, 'index'])->name('monitoring.jurnal');
         Route::get('monitoring-hafalan', [JurnalHafalanMonitoringController::class, 'index'])->name('monitoring.hafalan');
 

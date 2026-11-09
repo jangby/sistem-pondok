@@ -24,7 +24,7 @@ return new class extends Migration
             $table->date('tanggal');
             $table->time('jam_mulai');
             $table->time('jam_selesai');
-            $table->enum('kategori_tes', ['tulis', 'lisan', 'praktek'])->default('tulis');
+            $table->enum('kategori_tes', ['tulis', 'lisan', 'praktek', 'hafalan'])->default('tulis');
             
             $table->string('ruangan')->nullable(); // Opsional
             $table->timestamps();

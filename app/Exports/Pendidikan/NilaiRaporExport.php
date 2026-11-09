@@ -10,12 +10,13 @@ class NilaiRaporExport implements WithMultipleSheets
 {
     use Exportable;
 
+    protected int $pondokId;
     protected $jenis_ujian;
     protected $semester;
 
-    // Menerima parameter dari Controller
-    public function __construct($jenis_ujian, $semester)
+    public function __construct(int $pondokId, $jenis_ujian, $semester)
     {
+        $this->pondokId = $pondokId;
         $this->jenis_ujian = $jenis_ujian;
         $this->semester = $semester;
     }
@@ -23,11 +24,11 @@ class NilaiRaporExport implements WithMultipleSheets
     public function sheets(): array
     {
         $sheets = [];
-        $mustawas = Mustawa::all();
+        $mustawas = Mustawa::where('pondok_id', $this->pondokId)->get();
 
         foreach ($mustawas as $mustawa) {
             // Lempar data ke masing-masing Sheet kelas
-            $sheets[] = new NilaiRaporSheet($mustawa->id, $mustawa->nama, $this->jenis_ujian, $this->semester);
+            $sheets[] = new NilaiRaporSheet($mustawa->id, $mustawa->nama, $this->jenis_ujian, $this->semester, $this->pondokId);
         }
 
         return $sheets;

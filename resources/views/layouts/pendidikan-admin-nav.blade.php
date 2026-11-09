@@ -195,6 +195,9 @@
             <x-responsive-nav-link :href="route('pendidikan.admin.absensi.rekap')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Rekap Absensi') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('pendidikan.admin.monitoring.ujian.index')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Monitoring Nilai Ujian') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('pendidikan.admin.monitoring.remedial.index')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Data Remedial') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('pendidikan.admin.ranking.index')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Ranking Santri') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('pendidikan.admin.monitoring.jurnal')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Jurnal Mengajar') }}</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('pendidikan.admin.monitoring.hafalan')" class="text-emerald-100 border-transparent hover:bg-emerald-600">{{ __('Jurnal Hafalan') }}</x-responsive-nav-link>
 
         </div>
 

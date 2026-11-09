@@ -49,7 +49,10 @@ class MustawaController extends Controller
             'nama' => 'required|string|max:255',
             'tingkat' => 'required|integer|min:1|max:12', // Asumsi tingkat 1-12
             'gender' => 'required|in:putra,putri,campuran',
-            'wali_ustadz_id' => 'nullable|exists:ustadzs,id',
+            'wali_ustadz_id' => [
+                'nullable',
+                Rule::exists('ustadzs', 'id')->where('pondok_id', $pondokId),
+            ],
             'tahun_ajaran' => 'required|string|max:20',
         ]);
 
@@ -86,9 +89,12 @@ class MustawaController extends Controller
 
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
-            'tingkat' => 'required|integer',
+            'tingkat' => 'required|integer|min:1|max:12',
             'gender' => 'required|in:putra,putri,campuran',
-            'wali_ustadz_id' => 'nullable|exists:ustadzs,id',
+            'wali_ustadz_id' => [
+                'nullable',
+                Rule::exists('ustadzs', 'id')->where('pondok_id', $this->getPondokId()),
+            ],
             'tahun_ajaran' => 'required|string|max:20',
             'is_active' => 'boolean'
         ]);

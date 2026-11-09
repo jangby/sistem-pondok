@@ -20,20 +20,23 @@ class RaporLengkapSheet implements FromCollection, WithHeadings, WithMapping, Wi
     protected $nama_mustawa;
     protected $jenis_ujian;
     protected $semester;
+    protected int $pondokId;
     
     protected $jadwals;
     protected $dataNilai;
     protected $nomor = 1;
 
-    public function __construct($mustawa_id, $nama_mustawa, $jenis_ujian, $semester)
+    public function __construct($mustawa_id, $nama_mustawa, $jenis_ujian, $semester, int $pondokId)
     {
         $this->mustawa_id = $mustawa_id;
         $this->nama_mustawa = $nama_mustawa;
         $this->jenis_ujian = $jenis_ujian;
         $this->semester = $semester;
+        $this->pondokId = $pondokId;
 
         // Mengambil jadwal ujian aktif untuk dijadikan kolom dinamis mapel di sebelah kanan
         $this->jadwals = JadwalUjianDiniyah::with('mapel')
+            ->where('pondok_id', $this->pondokId)
             ->where('mustawa_id', $this->mustawa_id)
             ->where('jenis_ujian', $this->jenis_ujian)
             ->where('semester', $this->semester)
@@ -50,6 +53,7 @@ class RaporLengkapSheet implements FromCollection, WithHeadings, WithMapping, Wi
 
         // Mengambil daftar santri di kelas ini
         return Santri::with('mustawa')
+            ->where('pondok_id', $this->pondokId)
             ->where('mustawa_id', $this->mustawa_id)
             ->get();
     }

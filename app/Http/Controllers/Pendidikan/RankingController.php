@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Mustawa;
 use App\Models\Santri;
 use App\Models\NilaiPesantren;
+use Illuminate\Validation\Rule;
 
 class RankingController extends Controller
 {
@@ -14,7 +15,9 @@ class RankingController extends Controller
     public function index()
     {
         // Ambil pondok ID dari user login (sesuaikan dengan helper Anda)
-        $pondokId = auth()->user()->pondokStaff->pondok_id ?? auth()->user()->pondok_id;
+        $user = auth()->user();
+        $pondokId = $user->pondokStaff?->pondok_id ?? $user->pondok_id;
+        abort_unless($pondokId, 403, 'Akun pendidikan tidak terhubung dengan pondok.');
         
         $mustawas = Mustawa::where('pondok_id', $pondokId)
             ->where('is_active', true)
@@ -27,9 +30,21 @@ class RankingController extends Controller
     // Halaman Tampil Ranking
     public function show(Request $request)
     {
-        $request->validate(['mustawa_id' => 'required']);
+        $pondokId = auth()->user()->pondokStaff?->pondok_id ?? auth()->user()->pondok_id;
+        abort_unless($pondokId, 403, 'Akun pendidikan tidak terhubung dengan pondok.');
+
+        $validated = $request->validate([
+            'mustawa_id' => [
+                'required',
+                Rule::exists('mustawas', 'id')->where(function ($query) use ($pondokId) {
+                    $query->where('pondok_id', $pondokId)
+                        ->where('is_active', true);
+                }),
+            ],
+        ]);
         
-        $santris = Santri::where('mustawa_id', $request->mustawa_id)
+        $santris = Santri::where('pondok_id', $pondokId)
+            ->where('mustawa_id', $validated['mustawa_id'])
             ->where('status', 'active')
             ->get();
 
@@ -38,20 +53,20 @@ class RankingController extends Controller
         foreach ($santris as $santri) {
             // 1. Hitung Akademik (Rata-rata Nilai Akhir Mapel)
             $akademik = NilaiPesantren::where('santri_id', $santri->id)
-                ->where('mustawa_id', $request->mustawa_id)
+                ->where('mustawa_id', $validated['mustawa_id'])
                 ->avg('nilai_akhir') ?? 0;
 
             // 2. Hitung Disiplin (Ambil Nilai Kehadiran Tertinggi/Rata-rata)
             // Menggunakan logika yang sama dengan RaporController
             $disiplin = NilaiPesantren::where('santri_id', $santri->id)
-                ->where('mustawa_id', $request->mustawa_id)
+                ->where('mustawa_id', $validated['mustawa_id'])
                 ->where('nilai_kehadiran', '>', 0)
                 ->max('nilai_kehadiran') ?? 0;
 
             // 3. Hitung Keterampilan (Rata-rata Nilai Praktek & Hafalan)
             // Kita ambil rata-rata dari kolom nilai_praktek dan nilai_hafalan
             $keterampilanQuery = NilaiPesantren::where('santri_id', $santri->id)
-                ->where('mustawa_id', $request->mustawa_id);
+                ->where('mustawa_id', $validated['mustawa_id']);
             
             $avgPraktek = (clone $keterampilanQuery)->whereNotNull('nilai_praktek')->avg('nilai_praktek') ?? 0;
             $avgHafalan = (clone $keterampilanQuery)->whereNotNull('nilai_hafalan')->avg('nilai_hafalan') ?? 0;
@@ -88,7 +103,8 @@ class RankingController extends Controller
         // Urutkan dari nilai tertinggi ke terendah
         $rankingData = collect($rankingData)->sortByDesc('total')->values();
 
-        $mustawa = Mustawa::find($request->mustawa_id);
+        $mustawa = Mustawa::where('pondok_id', $pondokId)
+            ->findOrFail($validated['mustawa_id']);
 
         return view('pendidikan.admin.ranking.show', compact('rankingData', 'mustawa'));
     }

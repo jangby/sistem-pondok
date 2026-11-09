@@ -133,7 +133,7 @@ public function update(Request $request, Santri $santri)
         'full_name'     => 'required|string|max:255',
         'nis'           => 'required|numeric|unique:santris,nis,' . $santri->id,
         'nik'           => 'nullable|numeric|unique:santris,nik,' . $santri->id,
-        'status'        => 'required',
+        'status'        => ['required', Rule::in(['active', 'graduated', 'moved'])],
         // Validasi relasi (tidak wajib diisi)
         'nama_ayah'     => 'nullable|string', 
         'no_hp_ayah'    => 'nullable|string',
@@ -204,6 +204,28 @@ public function update(Request $request, Santri $santri)
     {
         if ($santri->pondok_id != $this->getPondokId()) abort(404);
         return view('pengurus.santri.show', compact('santri'));
+    }
+
+    public function updateStatus(Request $request, Santri $santri)
+    {
+        if ($santri->pondok_id != $this->getPondokId()) abort(404);
+
+        $validated = $request->validate([
+            'status' => ['required', Rule::in(['active', 'graduated', 'moved'])],
+        ]);
+
+        $santri->update($validated);
+
+        return back()->with('success', 'Status santri berhasil diperbarui.');
+    }
+
+    public function destroy(Santri $santri)
+    {
+        if ($santri->pondok_id != $this->getPondokId()) abort(404);
+
+        $santri->delete();
+
+        return back()->with('success', 'Data santri berhasil dihapus.');
     }
 
     public function edit(Santri $santri)

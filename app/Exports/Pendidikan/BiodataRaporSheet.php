@@ -16,18 +16,20 @@ class BiodataRaporSheet implements FromCollection, WithHeadings, WithMapping, Wi
 {
     protected $mustawa_id;
     protected $nama_mustawa;
+    protected int $pondok_id;
 
-    // Sekarang hanya menerima 2 parameter utama
-    public function __construct($mustawa_id, $nama_mustawa)
+    public function __construct($mustawa_id, $nama_mustawa, int $pondok_id)
     {
         $this->mustawa_id = $mustawa_id;
         $this->nama_mustawa = $nama_mustawa;
+        $this->pondok_id = $pondok_id;
     }
 
     // Mengambil data Santri berdasarkan Kelas tanpa memisahkan Putra/Putri lagi
     public function collection()
     {
         return Santri::with(['mustawa'])
+            ->whereHas('mustawa', fn ($query) => $query->where('pondok_id', $this->pondok_id))
             ->where('mustawa_id', $this->mustawa_id)
             ->get();
     }

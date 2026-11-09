@@ -9,6 +9,7 @@ use App\Models\MapelDiniyah;
 use App\Models\Ustadz;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
 class JadwalDiniyahController extends Controller
 {
@@ -65,9 +66,9 @@ class JadwalDiniyahController extends Controller
         $pondokId = $this->getPondokId();
 
         $request->validate([
-            'mustawa_id' => 'required|exists:mustawas,id',
-            'mapel_diniyah_id' => 'required|exists:mapel_diniyahs,id',
-            'ustadz_id' => 'required|exists:ustadzs,id',
+            'mustawa_id' => ['required', Rule::exists('mustawas', 'id')->where('pondok_id', $pondokId)],
+            'mapel_diniyah_id' => ['required', Rule::exists('mapel_diniyahs', 'id')->where('pondok_id', $pondokId)],
+            'ustadz_id' => ['required', Rule::exists('ustadzs', 'id')->where('pondok_id', $pondokId)],
             'hari' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Ahad',
             'jam_mulai' => 'required|date_format:H:i',
             'jam_selesai' => 'required|date_format:H:i|after:jam_mulai',
@@ -77,14 +78,9 @@ class JadwalDiniyahController extends Controller
         $bentrok = JadwalDiniyah::where('pondok_id', $pondokId)
             ->where('ustadz_id', $request->ustadz_id)
             ->where('hari', $request->hari)
-            ->where(function ($query) use ($request) {
-                $query->whereBetween('jam_mulai', [$request->jam_mulai, $request->jam_selesai])
-                      ->orWhereBetween('jam_selesai', [$request->jam_mulai, $request->jam_selesai])
-                      ->orWhere(function ($q) use ($request) {
-                          $q->where('jam_mulai', '<=', $request->jam_mulai)
-                            ->where('jam_selesai', '>=', $request->jam_selesai);
-                      });
-            })->exists();
+            ->where('jam_mulai', '<', $request->jam_selesai)
+            ->where('jam_selesai', '>', $request->jam_mulai)
+            ->exists();
 
         if ($bentrok) {
             throw ValidationException::withMessages([
@@ -126,24 +122,24 @@ class JadwalDiniyahController extends Controller
     {
         if ($jadwal->pondok_id != $this->getPondokId()) abort(403);
 
+        $pondokId = $this->getPondokId();
         $request->validate([
-            'mustawa_id' => 'required|exists:mustawas,id',
-            'mapel_diniyah_id' => 'required|exists:mapel_diniyahs,id',
-            'ustadz_id' => 'required|exists:ustadzs,id',
+            'mustawa_id' => ['required', Rule::exists('mustawas', 'id')->where('pondok_id', $pondokId)],
+            'mapel_diniyah_id' => ['required', Rule::exists('mapel_diniyahs', 'id')->where('pondok_id', $pondokId)],
+            'ustadz_id' => ['required', Rule::exists('ustadzs', 'id')->where('pondok_id', $pondokId)],
             'hari' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Ahad',
             'jam_mulai' => 'required|date_format:H:i',
             'jam_selesai' => 'required|date_format:H:i|after:jam_mulai',
         ]);
 
         // Cek Bentrok (Kecuali jadwal ini sendiri)
-        $bentrok = JadwalDiniyah::where('pondok_id', $this->getPondokId())
+        $bentrok = JadwalDiniyah::where('pondok_id', $pondokId)
             ->where('id', '!=', $jadwal->id)
             ->where('ustadz_id', $request->ustadz_id)
             ->where('hari', $request->hari)
-            ->where(function ($query) use ($request) {
-                $query->whereBetween('jam_mulai', [$request->jam_mulai, $request->jam_selesai])
-                      ->orWhereBetween('jam_selesai', [$request->jam_mulai, $request->jam_selesai]);
-            })->exists();
+            ->where('jam_mulai', '<', $request->jam_selesai)
+            ->where('jam_selesai', '>', $request->jam_mulai)
+            ->exists();
 
         if ($bentrok) {
             throw ValidationException::withMessages([
@@ -151,7 +147,14 @@ class JadwalDiniyahController extends Controller
             ]);
         }
 
-        $jadwal->update($request->all());
+        $jadwal->update($request->only([
+            'mustawa_id',
+            'mapel_diniyah_id',
+            'ustadz_id',
+            'hari',
+            'jam_mulai',
+            'jam_selesai',
+        ]));
 
         return redirect()->route('pendidikan.admin.jadwal.index')
             ->with('success', 'Jadwal berhasil diperbarui.');

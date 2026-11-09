@@ -16,7 +16,10 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-        RoleAndAdminSeeder::class, // <-- TAMBAHKAN BARIS INI
-    ]);
+        //RoleAndAdminSeeder::class, // <-- TAMBAHKAN BARIS INI
+        PetugasLabSeeder::class, // <-- TAMBAHKAN BARIS INI
+        PetugasPerpusSeeder::class, // <-- TAMBAHKAN BARIS INI
+        PetugasPpdbSeeder::class, // <-- TAMBAHKAN BARIS INI
+        ]);
     }
 }

@@ -10,17 +10,20 @@ class BiodataRaporExport implements WithMultipleSheets
 {
     use Exportable;
 
+    public function __construct(private int $pondokId)
+    {
+    }
+
     public function sheets(): array
     {
         $sheets = [];
 
-        // Ambil semua data Kelas (Mustawa)
-        $mustawas = Mustawa::all();
+        $mustawas = Mustawa::where('pondok_id', $this->pondokId)->get();
 
         foreach ($mustawas as $mustawa) {
             // CUKUP SATU SHEET PER KELAS
             // Hanya mengirim parameter: ID Kelas dan Nama Kelas saja
-            $sheets[] = new BiodataRaporSheet($mustawa->id, $mustawa->nama);
+            $sheets[] = new BiodataRaporSheet($mustawa->id, $mustawa->nama, $this->pondokId);
         }
 
         return $sheets;

@@ -102,7 +102,7 @@
                             <select name="status" class="mt-1 w-full bg-gray-50 border-gray-200 rounded-xl focus:ring-blue-500 p-3">
                                 <option value="active" selected>Aktif</option>
                                 <option value="graduated">Lulus</option>
-                                <option value="dropped_out">Keluar</option>
+                                <option value="moved">Pindah</option>
                             </select>
                         </div>
                         <div>

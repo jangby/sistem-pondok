@@ -19,20 +19,23 @@ class NilaiRaporSheet implements FromCollection, WithHeadings, WithMapping, With
     protected $nama_mustawa;
     protected $jenis_ujian;
     protected $semester;
+    protected int $pondokId;
     
     protected $jadwals;    // Menyimpan jadwal ujian untuk kolom
     protected $dataNilai;  // Menyimpan koleksi seluruh nilai di kelas ini
     protected $nomor = 1;  // Nomor Urut
 
-    public function __construct($mustawa_id, $nama_mustawa, $jenis_ujian, $semester)
+    public function __construct($mustawa_id, $nama_mustawa, $jenis_ujian, $semester, int $pondokId)
     {
         $this->mustawa_id = $mustawa_id;
         $this->nama_mustawa = $nama_mustawa;
         $this->jenis_ujian = $jenis_ujian;
         $this->semester = $semester;
+        $this->pondokId = $pondokId;
 
         // 1. Tarik Jadwal Ujian khusus kelas ini sebagai Header Kolom Nanti
         $this->jadwals = JadwalUjianDiniyah::with('mapel')
+            ->where('pondok_id', $this->pondokId)
             ->where('mustawa_id', $this->mustawa_id)
             ->where('jenis_ujian', $this->jenis_ujian)
             ->where('semester', $this->semester)
@@ -48,7 +51,9 @@ class NilaiRaporSheet implements FromCollection, WithHeadings, WithMapping, With
             ->get();
 
         // 3. Tarik data Santri di kelas ini
-        return Santri::where('mustawa_id', $this->mustawa_id)->get();
+        return Santri::where('pondok_id', $this->pondokId)
+            ->where('mustawa_id', $this->mustawa_id)
+            ->get();
     }
 
     // MEMBUAT HEADER KOLOM ATAS

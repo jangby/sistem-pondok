@@ -28,14 +28,15 @@
      crossorigin="anonymous"></script>
 
     </head>
-    <body class="font-sans antialiased">
+    <body class="font-sans antialiased {{ Auth::check() && Auth::user()->hasRole('pengurus_pondok') ? 'pengurus-app' : '' }}">
         <div class="min-h-screen bg-gray-100">
             
-            {{-- Cek atribut 'hide-nav' sebelum menampilkan navigasi --}}
-            @if(!isset($attributes) || !$attributes->has('hide-nav'))
-                {{-- LOGIKA PEMILIHAN NAVIGASI BERDASARKAN ROLE --}}
-            @if(!isset($attributes) || !$attributes->has('hide-nav'))
-                
+            @if(Auth::check() && Auth::user()->hasRole('pengurus_pondok'))
+                @include('layouts.pengurus-sidebar')
+                @if(!isset($attributes) || !$attributes->has('hide-nav'))
+                    @include('layouts.pengurus-nav')
+                @endif
+            @elseif(!isset($attributes) || !$attributes->has('hide-nav'))
                 @if(Auth::user()->hasRole('super-admin'))
                     @include('layouts.navigation') {{-- Super Admin pakai Nav Default --}}
                 
@@ -47,9 +48,6 @@
                 
                 @elseif(Auth::user()->hasRole('pos_warung'))
                     @include('layouts.pos-nav')
-                
-                @elseif(Auth::user()->hasRole('pengurus_pondok'))
-                    @include('layouts.pengurus-nav') {{-- INI NAV BARU KITA --}}
                 
                 @elseif(Auth::user()->hasRole('orang-tua'))
                     {{-- Orang tua biasanya punya layout sendiri, tapi jika pakai app.blade: --}}
@@ -63,19 +61,37 @@
                 @endif
 
             @endif
+
+            @if(Auth::check() && Auth::user()->hasRole('pengurus_pondok'))
+                <header class="pengurus-topbar">
+                    <div class="pengurus-topbar-context">
+                        <span class="pengurus-topbar-eyebrow">SISTEM PONDOK</span>
+                        <h1>Panel Pengurus</h1>
+                    </div>
+                    <div class="pengurus-topbar-actions">
+                        <span class="pengurus-topbar-date">{{ now()->format('d/m/Y') }}</span>
+                        <a href="{{ route('profile.edit') }}" class="pengurus-topbar-profile">
+                            <span class="pengurus-topbar-avatar">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</span>
+                            <span class="pengurus-topbar-user">
+                                <strong>{{ Auth::user()->name }}</strong>
+                                <small>Pengurus Pondok</small>
+                            </span>
+                        </a>
+                    </div>
+                </header>
             @endif
 
             {{-- Page Heading --}}
             @if (isset($header) && $header->isNotEmpty())
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                <header class="{{ Auth::check() && Auth::user()->hasRole('pengurus_pondok') ? 'pengurus-page-heading' : 'bg-white shadow' }}">
+                    <div class="{{ Auth::check() && Auth::user()->hasRole('pengurus_pondok') ? 'pengurus-page-heading-inner' : 'max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8' }}">
                         {{ $header }}
                     </div>
                 </header>
             @endif
 
             {{-- Page Content --}}
-            <main>
+            <main class="{{ Auth::check() && Auth::user()->hasRole('pengurus_pondok') ? 'pengurus-main' : '' }}">
                 {{ $slot }}
             </main>
         </div>

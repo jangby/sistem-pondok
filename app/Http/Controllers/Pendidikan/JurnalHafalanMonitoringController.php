@@ -31,6 +31,9 @@ class JurnalHafalanMonitoringController extends Controller
             ->whereHas('ustadz', function($q) use ($pondokId) {
                 $q->where('pondok_id', $pondokId);
             })
+            ->whereHas('santri', function ($q) use ($pondokId) {
+                $q->where('pondok_id', $pondokId);
+            })
             ->with(['ustadz', 'santri', 'santri.mustawa'])
             ->whereBetween('tanggal', [$tanggalAwal, $tanggalAkhir]);
 
@@ -47,8 +50,7 @@ class JurnalHafalanMonitoringController extends Controller
 
         if ($namaSantri) {
             $query->whereHas('santri', function($q) use ($namaSantri) {
-                $q->where('nama_lengkap', 'like', '%' . $namaSantri . '%')
-                  ->orWhere('full_name', 'like', '%' . $namaSantri . '%');
+                $q->where('full_name', 'like', '%' . $namaSantri . '%');
             });
         }
 

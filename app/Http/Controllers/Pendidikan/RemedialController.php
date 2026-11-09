@@ -8,18 +8,39 @@ use App\Models\Mustawa;
 use App\Models\MapelDiniyah;
 use App\Models\NilaiPesantren;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
+use App\Models\Pondok;
 
 class RemedialController extends Controller
 {
     private function getPondokId()
     {
-        return auth()->user()->pondokStaff->pondok_id;
+        $user = auth()->user();
+        $pondokId = $user->pondokStaff?->pondok_id ?? $user->pondok_id;
+        abort_unless($pondokId, 403, 'Akun pendidikan tidak terhubung dengan pondok.');
+
+        return $pondokId;
     }
 
     public function index(Request $request)
     {
         $pondokId = $this->getPondokId();
+        $validated = $request->validate([
+            'mustawa_id' => [
+                'nullable',
+                Rule::exists('mustawas', 'id')->where(function ($query) use ($pondokId) {
+                    $query->where('pondok_id', $pondokId)
+                        ->where('is_active', true);
+                }),
+            ],
+            'mapel_diniyah_id' => [
+                'nullable',
+                Rule::exists('mapel_diniyahs', 'id')->where('pondok_id', $pondokId),
+            ],
+            'kategori' => 'nullable|in:tulis,lisan,praktek,hafalan',
+            'semester' => 'nullable|in:ganjil,genap',
+            'tahun_ajaran' => 'nullable|string|max:20',
+        ]);
         
         // Data Filter
         $mustawas = Mustawa::where('pondok_id', $pondokId)->where('is_active', true)->orderBy('tingkat')->get();
@@ -32,23 +53,26 @@ class RemedialController extends Controller
 
         if ($request->filled('mustawa_id')) {
             $mapels = MapelDiniyah::where('pondok_id', $pondokId)->orderBy('nama_mapel')->get();
-            $selectedMustawa = Mustawa::find($request->mustawa_id);
+            $selectedMustawa = Mustawa::where('pondok_id', $pondokId)
+                ->findOrFail($validated['mustawa_id']);
         }
 
         if ($request->filled(['mustawa_id', 'mapel_diniyah_id', 'kategori', 'semester'])) {
-            $selectedMapel = MapelDiniyah::find($request->mapel_diniyah_id);
+            $selectedMapel = MapelDiniyah::where('pondok_id', $pondokId)
+                ->findOrFail($validated['mapel_diniyah_id']);
             $kkm = $selectedMapel->kkm ?? 60;
             
-            $colName = 'nilai_' . strtolower($request->kategori); // misal: nilai_hafalan
+            $colName = 'nilai_' . $validated['kategori'];
             
-            // Query Santri Remedial
             $remedialList = NilaiPesantren::with('santri')
-                ->where('mustawa_id', $request->mustawa_id)
-                ->where('mapel_diniyah_id', $request->mapel_diniyah_id)
-                ->where('semester', $request->semester)
-                ->where('tahun_ajaran', $request->tahun_ajaran)
-                ->whereNotNull($colName)    // Pastikan sudah dinilai
-                ->where($colName, '<', $kkm) // Cari yang dibawah KKM
+                ->whereHas('mustawa', fn ($query) => $query->where('pondok_id', $pondokId))
+                ->whereHas('santri', fn ($query) => $query->where('pondok_id', $pondokId))
+                ->where('mustawa_id', $validated['mustawa_id'])
+                ->where('mapel_diniyah_id', $validated['mapel_diniyah_id'])
+                ->where('semester', $validated['semester'])
+                ->where('tahun_ajaran', $validated['tahun_ajaran'] ?? '')
+                ->whereNotNull($colName)
+                ->where($colName, '<', $kkm)
                 ->get()
                 ->sortBy(function($query) {
                     return $query->santri->full_name;
@@ -62,19 +86,33 @@ class RemedialController extends Controller
 
     public function downloadPdf(Request $request)
     {
-        // Logika query sama persis dengan index, kita ambil datanya
         $pondokId = $this->getPondokId();
-        $selectedMustawa = Mustawa::findOrFail($request->mustawa_id);
-        $selectedMapel = MapelDiniyah::findOrFail($request->mapel_diniyah_id);
+        $validated = $request->validate([
+            'mustawa_id' => [
+                'required',
+                Rule::exists('mustawas', 'id')->where('pondok_id', $pondokId),
+            ],
+            'mapel_diniyah_id' => [
+                'required',
+                Rule::exists('mapel_diniyahs', 'id')->where('pondok_id', $pondokId),
+            ],
+            'kategori' => 'required|in:tulis,lisan,praktek,hafalan',
+            'semester' => 'required|in:ganjil,genap',
+            'tahun_ajaran' => 'required|string|max:20',
+        ]);
+        $selectedMustawa = Mustawa::where('pondok_id', $pondokId)->findOrFail($validated['mustawa_id']);
+        $selectedMapel = MapelDiniyah::where('pondok_id', $pondokId)->findOrFail($validated['mapel_diniyah_id']);
         $kkm = $selectedMapel->kkm ?? 60;
         
-        $colName = 'nilai_' . strtolower($request->kategori);
+        $colName = 'nilai_' . $validated['kategori'];
         
         $remedialList = NilaiPesantren::with('santri')
-            ->where('mustawa_id', $request->mustawa_id)
-            ->where('mapel_diniyah_id', $request->mapel_diniyah_id)
-            ->where('semester', $request->semester)
-            ->where('tahun_ajaran', $request->tahun_ajaran)
+            ->whereHas('mustawa', fn ($query) => $query->where('pondok_id', $pondokId))
+            ->whereHas('santri', fn ($query) => $query->where('pondok_id', $pondokId))
+            ->where('mustawa_id', $selectedMustawa->id)
+            ->where('mapel_diniyah_id', $selectedMapel->id)
+            ->where('semester', $validated['semester'])
+            ->where('tahun_ajaran', $validated['tahun_ajaran'])
             ->whereNotNull($colName)
             ->where($colName, '<', $kkm)
             ->get()
@@ -82,8 +120,8 @@ class RemedialController extends Controller
                 return $query->santri->full_name;
             });
 
-        $pondok = auth()->user()->pondokStaff->pondok;
-        $judul = "DAFTAR REMEDIAL - " . strtoupper($request->kategori);
+        $pondok = Pondok::findOrFail($pondokId);
+        $judul = "DAFTAR REMEDIAL - " . strtoupper($validated['kategori']);
         
         $pdf = Pdf::loadView('pendidikan.admin.remedial.pdf', compact(
             'remedialList', 'selectedMustawa', 'selectedMapel', 'kkm', 'pondok', 'judul', 'request'
@@ -94,11 +132,13 @@ class RemedialController extends Controller
 
     public function edit(Request $request, $id)
     {
-        // Ambil data nilai berdasarkan ID
-        $nilai = NilaiPesantren::with(['santri', 'mapel', 'mustawa'])->findOrFail($id);
-        
-        // Tentukan kategori dari request (default tulis jika tidak ada)
-        $kategori = $request->query('kategori', 'tulis');
+        $pondokId = $this->getPondokId();
+        $kategori = $request->validate(['kategori' => 'nullable|in:tulis,lisan,praktek,hafalan'])['kategori'] ?? 'tulis';
+        $nilai = NilaiPesantren::with(['santri', 'mapel', 'mustawa'])
+            ->whereHas('mustawa', fn ($query) => $query->where('pondok_id', $pondokId))
+            ->whereHas('mapel', fn ($query) => $query->where('pondok_id', $pondokId))
+            ->whereHas('santri', fn ($query) => $query->where('pondok_id', $pondokId))
+            ->findOrFail($id);
         $colName = 'nilai_' . strtolower($kategori);
         
         // Nilai saat ini (sebelum remedial)
@@ -115,7 +155,12 @@ class RemedialController extends Controller
             'kategori' => 'required|in:tulis,lisan,praktek,hafalan',
         ]);
 
-        $nilaiRecord = NilaiPesantren::findOrFail($id);
+        $pondokId = $this->getPondokId();
+        $nilaiRecord = NilaiPesantren::whereHas('mustawa', fn ($query) => $query->where('pondok_id', $pondokId))
+            ->whereHas('mapel', fn ($query) => $query->where('pondok_id', $pondokId))
+            ->whereHas('santri', fn ($query) => $query->where('pondok_id', $pondokId))
+            ->with(['mapel', 'mustawa'])
+            ->findOrFail($id);
         $kategori = strtolower($request->kategori);
         $kkm = $nilaiRecord->mapel->kkm ?? 60;
         

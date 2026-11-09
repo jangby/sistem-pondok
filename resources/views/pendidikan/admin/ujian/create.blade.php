@@ -21,20 +21,20 @@
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Jenis Ujian</label>
                                 <select name="jenis_ujian" class="w-full rounded-lg border-gray-300 text-sm">
-                                    <option value="uts">UTS (Tengah Semester)</option>
-                                    <option value="uas">UAS (Akhir Semester)</option>
+                                    <option value="uts" @selected(old('jenis_ujian', 'uts') === 'uts')>UTS (Tengah Semester)</option>
+                                    <option value="uas" @selected(old('jenis_ujian') === 'uas')>UAS (Akhir Semester)</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Semester</label>
                                 <select name="semester" class="w-full rounded-lg border-gray-300 text-sm">
-                                    <option value="ganjil">Ganjil</option>
-                                    <option value="genap">Genap</option>
+                                    <option value="ganjil" @selected(old('semester', 'ganjil') === 'ganjil')>Ganjil</option>
+                                    <option value="genap" @selected(old('semester') === 'genap')>Genap</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tahun Ajaran</label>
-                                <input type="text" name="tahun_ajaran" value="{{ date('Y') }}/{{ date('Y')+1 }}" class="w-full rounded-lg border-gray-300 text-sm">
+                                <input type="text" name="tahun_ajaran" value="{{ old('tahun_ajaran', date('Y') . '/' . (date('Y') + 1)) }}" class="w-full rounded-lg border-gray-300 text-sm">
                             </div>
                         </div>
 
@@ -48,7 +48,7 @@
                                     <select name="mustawa_id" class="w-full rounded-lg border-gray-300 text-sm" required>
                                         <option value="">-- Pilih Kelas --</option>
                                         @foreach($mustawas as $m)
-                                            <option value="{{ $m->id }}">{{ $m->nama }}</option>
+                                            <option value="{{ $m->id }}" @selected(old('mustawa_id') == $m->id)>{{ $m->nama }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -57,18 +57,24 @@
                                     <select name="mapel_diniyah_id" class="w-full rounded-lg border-gray-300 text-sm" required>
                                         <option value="">-- Pilih Mapel --</option>
                                         @foreach($mapels as $mp)
-                                            <option value="{{ $mp->id }}">{{ $mp->nama_mapel }}</option>
+                                            <option value="{{ $mp->id }}" @selected(old('mapel_diniyah_id') == $mp->id)>{{ $mp->nama_mapel }}</option>
                                         @endforeach
                                     </select>
                                 </div>
                                 <div>
                                     <x-input-label>Kategori Tes</x-input-label>
                                     <div class="flex gap-4 mt-2">
-                                        <label class="flex items-center text-sm"><input type="radio" name="kategori_tes" value="tulis" checked class="mr-2 text-emerald-600"> Tulis</label>
-                                        <label class="flex items-center text-sm"><input type="radio" name="kategori_tes" value="lisan" class="mr-2 text-emerald-600"> Lisan</label>
-                                        <label class="flex items-center text-sm"><input type="radio" name="kategori_tes" value="praktek" class="mr-2 text-emerald-600"> Praktek</label>
-                                        <label class="flex items-center text-sm"><input type="radio" name="kategori_tes" value="hafalan" class="mr-2 text-emerald-600"> Hafalan</label>
+                                        <label class="flex items-center text-sm"><input type="radio" name="kategori_tes" value="tulis" @checked(old('kategori_tes', 'tulis') === 'tulis') class="mr-2 text-emerald-600"> Tulis</label>
+                                        <label class="flex items-center text-sm"><input type="radio" name="kategori_tes" value="lisan" @checked(old('kategori_tes') === 'lisan') class="mr-2 text-emerald-600"> Lisan</label>
+                                        <label class="flex items-center text-sm"><input type="radio" name="kategori_tes" value="praktek" @checked(old('kategori_tes') === 'praktek') class="mr-2 text-emerald-600"> Praktek</label>
+                                        <label class="flex items-center text-sm"><input type="radio" name="kategori_tes" value="hafalan" @checked(old('kategori_tes') === 'hafalan') class="mr-2 text-emerald-600"> Hafalan</label>
                                     </div>
+                                    <x-input-error :messages="$errors->get('kategori_tes')" class="mt-1" />
+                                </div>
+                                <div>
+                                    <x-input-label for="ruangan" value="Ruangan (opsional)" />
+                                    <input type="text" name="ruangan" id="ruangan" value="{{ old('ruangan') }}" maxlength="255" class="w-full rounded-lg border-gray-300 text-sm">
+                                    <x-input-error :messages="$errors->get('ruangan')" class="mt-1" />
                                 </div>
                             </div>
 
@@ -76,16 +82,17 @@
                             <div class="space-y-4">
                                 <div>
                                     <x-input-label>Tanggal Ujian</x-input-label>
-                                    <input type="date" name="tanggal" class="w-full rounded-lg border-gray-300 text-sm" required>
+                                    <input type="date" name="tanggal" value="{{ old('tanggal') }}" class="w-full rounded-lg border-gray-300 text-sm" required>
+                                    <x-input-error :messages="$errors->get('tanggal')" class="mt-1" />
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
                                         <x-input-label>Jam Mulai</x-input-label>
-                                        <input type="time" name="jam_mulai" class="w-full rounded-lg border-gray-300 text-sm" required>
+                                        <input type="time" name="jam_mulai" value="{{ old('jam_mulai') }}" class="w-full rounded-lg border-gray-300 text-sm" required>
                                     </div>
                                     <div>
                                         <x-input-label>Jam Selesai</x-input-label>
-                                        <input type="time" name="jam_selesai" class="w-full rounded-lg border-gray-300 text-sm" required>
+                                        <input type="time" name="jam_selesai" value="{{ old('jam_selesai') }}" class="w-full rounded-lg border-gray-300 text-sm" required>
                                     </div>
                                 </div>
                                 <div>
@@ -93,7 +100,7 @@
                                     <select name="pengawas_id" class="w-full rounded-lg border-gray-300 text-sm" required>
                                         <option value="">-- Pilih Ustadz --</option>
                                         @foreach($ustadzs as $us)
-                                            <option value="{{ $us->id }}">{{ $us->nama_lengkap }}</option>
+                                            <option value="{{ $us->id }}" @selected(old('pengawas_id') == $us->id)>{{ $us->nama_lengkap }}</option>
                                         @endforeach
                                     </select>
                                     <x-input-error :messages="$errors->get('pengawas_id')" class="mt-1" />

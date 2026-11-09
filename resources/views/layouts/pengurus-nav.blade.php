@@ -1,5 +1,5 @@
 {{-- INI MENU NAVIGASI BAWAH (BOTTOM BAR) --}}
-<div class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 pb-safe pt-2 px-6 shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)] z-50">
+<div class="pengurus-bottom-nav fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 pb-safe pt-2 px-6 shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)] z-50">
     <div class="flex justify-around items-end pb-3">
         
         {{-- Nav Home --}}
@@ -13,10 +13,11 @@
         </a>
 
         {{-- Nav Scan Tengah (Floating) --}}
-        <a href="#" class="-mt-10 group">
+        <a href="{{ route('pengurus.absensi.gerbang') }}" class="-mt-10 group">
             <div class="bg-emerald-600 text-white p-4 rounded-2xl shadow-emerald-300/50 shadow-lg border-[6px] border-gray-50 flex items-center justify-center transform group-active:scale-95 transition hover:bg-emerald-700">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 17h.01M19 19h-5m-9-6h5a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v5a2 2 0 002 2zM6 21v-2a1 1 0 011-1h10V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16z"></path></svg>
             </div>
+            <span class="text-[10px] font-bold text-emerald-700">Gerbang</span>
         </a>
 
         {{-- Nav Profile --}}

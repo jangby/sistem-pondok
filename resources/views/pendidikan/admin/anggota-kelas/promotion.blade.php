@@ -28,10 +28,22 @@
                 </form>
             </div>
 
+            @if($errors->any())
+                <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-sm text-red-700">
+                    <p class="font-semibold mb-1">Kenaikan kelas belum dapat diproses:</p>
+                    <ul class="list-disc list-inside space-y-1">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             {{-- LANGKAH 2: PILIH SANTRI & KELAS TUJUAN --}}
             @if(isset($santris) && isset($sourceMustawa))
                 <form action="{{ route('pendidikan.admin.kenaikan-kelas.store') }}" method="POST">
                     @csrf
+                    <input type="hidden" name="source_mustawa_id" value="{{ $sourceMustawa->id }}">
                     
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-100">
                         <div class="p-6">
@@ -44,13 +56,15 @@
                                     <label class="block text-sm font-bold text-emerald-700 mb-1">Naikkan Ke Kelas (Tujuan):</label>
                                     <select name="target_mustawa_id" class="block w-full border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500 rounded-md shadow-sm" required>
                                         <option value="">-- Pilih Kelas Tujuan --</option>
-                                        @foreach($mustawas as $m)
-                                            {{-- Disable kelas yang sama atau lebih rendah (opsional, tapi baik untuk UX) --}}
-                                            <option value="{{ $m->id }}" {{ $m->tingkat <= $sourceMustawa->tingkat ? 'class=text-gray-400' : 'font-bold' }}>
-                                                {{ $m->nama }}
+                                        @foreach($targetMustawas as $targetMustawa)
+                                            <option value="{{ $targetMustawa->id }}" {{ old('target_mustawa_id') == $targetMustawa->id ? 'selected' : '' }}>
+                                                {{ $targetMustawa->nama }} (Level {{ $targetMustawa->tingkat }})
                                             </option>
                                         @endforeach
                                     </select>
+                                    @if($targetMustawas->isEmpty())
+                                        <p class="mt-2 text-xs text-amber-700">Belum ada kelas aktif dengan tingkat lebih tinggi dan gender yang sesuai.</p>
+                                    @endif
                                 </div>
                             </div>
 
@@ -70,7 +84,7 @@
                                         @forelse($santris as $santri)
                                             <tr class="hover:bg-gray-50">
                                                 <td class="px-4 py-3 text-center">
-                                                    <input type="checkbox" name="santri_ids[]" value="{{ $santri->id }}" class="santri-checkbox rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                                                    <input type="checkbox" name="santri_ids[]" value="{{ $santri->id }}" class="santri-checkbox rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" {{ in_array($santri->id, old('santri_ids', [])) ? 'checked' : '' }}>
                                                 </td>
                                                 <td class="px-4 py-3 font-medium text-gray-900">{{ $santri->full_name }}</td>
                                                 <td class="px-4 py-3 text-gray-500">{{ $santri->nis }}</td>
@@ -83,7 +97,7 @@
                             </div>
 
                             <div class="mt-6 flex justify-end">
-                                <button type="submit" onclick="return confirm('Yakin ingin memindahkan santri yang dipilih?')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition">
+                                <button type="submit" {{ $santris->isEmpty() || $targetMustawas->isEmpty() ? 'disabled' : '' }} onclick="return confirm('Yakin ingin menaikkan santri terpilih ke kelas tujuan?')" class="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-lg shadow-lg transition">
                                     Proses Kenaikan Kelas
                                 </button>
                             </div>
@@ -93,7 +107,7 @@
 
                 <script>
                     function toggleAll(source) {
-                        checkboxes = document.getElementsByClassName('santri-checkbox');
+                        const checkboxes = document.getElementsByClassName('santri-checkbox');
                         for(var i=0, n=checkboxes.length;i<n;i++) {
                             checkboxes[i].checked = source.checked;
                         }

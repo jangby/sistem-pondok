@@ -102,6 +102,10 @@
     <a href="{{ route('pendidikan.admin.ujian.show', $jadwal->id) }}" class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-md text-xs font-bold hover:bg-emerald-200 transition">
         Kelola
     </a>
+
+    <a href="{{ route('pendidikan.admin.ujian.edit', $jadwal->id) }}" class="bg-blue-100 text-blue-700 px-3 py-1 rounded-md text-xs font-bold hover:bg-blue-200 transition">
+        Edit
+    </a>
     
     {{-- Tombol Hapus --}}
     <form action="{{ route('pendidikan.admin.ujian.destroy', $jadwal->id) }}" method="POST" onsubmit="return confirm('Hapus jadwal ujian ini?');">

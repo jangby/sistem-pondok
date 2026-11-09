@@ -28,12 +28,19 @@
                     </div>
                 </div>
             </form>
+
+            @if(session('success') || session('error'))
+                <div class="mt-4 rounded-xl px-4 py-3 text-sm font-medium {{ session('success') ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800' }}">
+                    {{ session('success') ?? session('error') }}
+                </div>
+            @endif
         </div>
 
         {{-- LIST SANTRI (CARDS) --}}
         <div class="px-4 -mt-6 space-y-3 relative z-20">
             @forelse($santris as $santri)
-                <a href="{{ route('pengurus.santri.show', $santri->id) }}" class="block bg-white p-4 rounded-2xl shadow-sm border border-gray-100 active:scale-98 transition duration-150">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                    <a href="{{ route('pengurus.santri.show', $santri->id) }}" class="block active:scale-98 transition duration-150">
                     <div class="flex items-center gap-4">
                         {{-- Avatar Inisial --}}
                         <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-700 font-bold text-lg shadow-inner">
@@ -50,13 +57,36 @@
                         </div>
 
                         {{-- Status Badge --}}
-                        @if($santri->status == 'active')
-                            <div class="w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-200"></div>
-                        @else
-                            <div class="w-3 h-3 rounded-full bg-gray-400"></div>
-                        @endif
+                        <span class="text-xs font-bold px-2 py-1 rounded-full {{ $santri->status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
+                            {{ ['active' => 'Aktif', 'graduated' => 'Lulus', 'moved' => 'Pindah'][$santri->status] ?? $santri->status }}
+                        </span>
                     </div>
-                </a>
+                    </a>
+
+                    <div class="mt-3 flex items-center gap-2 border-t border-gray-100 pt-3">
+                        <form action="{{ route('pengurus.santri.status', $santri->id) }}" method="POST" class="flex flex-1 items-center gap-2">
+                            @csrf
+                            @method('PATCH')
+                            <label for="status-{{ $santri->id }}" class="sr-only">Ubah status {{ $santri->full_name }}</label>
+                            <select id="status-{{ $santri->id }}" name="status" class="min-w-0 flex-1 rounded-lg border-gray-300 py-2 text-xs focus:border-emerald-500 focus:ring-emerald-500">
+                                <option value="active" {{ $santri->status === 'active' ? 'selected' : '' }}>Aktif</option>
+                                <option value="graduated" {{ $santri->status === 'graduated' ? 'selected' : '' }}>Lulus</option>
+                                <option value="moved" {{ $santri->status === 'moved' ? 'selected' : '' }}>Pindah</option>
+                            </select>
+                            <button type="submit" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700">
+                                Simpan
+                            </button>
+                        </form>
+
+                        <form action="{{ route('pengurus.santri.destroy', $santri->id) }}" method="POST" onsubmit="return confirm('Yakin menghapus data santri ini? Data hanya akan dihapus sementara.');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">
+                                Hapus
+                            </button>
+                        </form>
+                    </div>
+                </div>
             @empty
                 <div class="text-center py-10">
                     <div class="inline-block p-4 rounded-full bg-gray-100 mb-3">

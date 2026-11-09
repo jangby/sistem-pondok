@@ -13,15 +13,18 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $pondokId = auth()->user()->pondok_id;
+        $user = auth()->user();
+        $pondokId = $user->pondokStaff?->pondok_id ?? $user->pondok_id;
 
-        // Hitung Ringkasan Data
-        $totalMustawa = Mustawa::count();
-        $totalUstadz = Ustadz::count();
-        $totalJadwal = JadwalDiniyah::count();
+        abort_unless($pondokId, 403, 'Akun pendidikan tidak terhubung dengan pondok.');
+
+        $totalMustawa = Mustawa::where('pondok_id', $pondokId)->count();
+        $totalUstadz = Ustadz::where('pondok_id', $pondokId)->count();
+        $totalJadwal = JadwalDiniyah::where('pondok_id', $pondokId)->count();
         
-        // Ambil santri yang aktif pondok (asumsi semua santri wajib diniyah)
-        $totalSantri = Santri::where('status', 'active')->count();
+        $totalSantri = Santri::where('pondok_id', $pondokId)
+            ->where('status', 'active')
+            ->count();
 
         return view('pendidikan.admin.dashboard', compact(
             'totalMustawa', 'totalUstadz', 'totalJadwal', 'totalSantri'

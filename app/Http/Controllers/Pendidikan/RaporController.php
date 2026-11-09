@@ -16,16 +16,17 @@ use App\Exports\Pendidikan\BiodataRaporExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\Pendidikan\NilaiRaporExport;
 use App\Exports\Pendidikan\RaporLengkapExport;
+use Illuminate\Validation\Rule;
 
 class RaporController extends Controller
 {
     private function getPondokId()
     {
         $user = auth()->user();
-        if ($user->pondokStaff) {
-            return $user->pondokStaff->pondok_id;
-        }
-        return $user->pondok_id; 
+        $pondokId = $user->pondokStaff?->pondok_id ?? $user->pondok_id;
+        abort_unless($pondokId, 403, 'Akun pendidikan tidak terhubung dengan pondok.');
+
+        return $pondokId;
     }
 
     public function index()
@@ -41,16 +42,26 @@ class RaporController extends Controller
 
     public function generate(Request $request)
     {
+        $pondokId = $this->getPondokId();
         $request->validate([
-            'mustawa_id' => 'required',
-            'template_id' => 'required',
+            'mustawa_id' => [
+                'required',
+                Rule::exists('mustawas', 'id')->where(function ($query) use ($pondokId) {
+                    $query->where('pondok_id', $pondokId)
+                        ->where('is_active', true);
+                }),
+            ],
+            'template_id' => [
+                'required',
+                Rule::exists('rapor_templates', 'id')->where('pondok_id', $pondokId),
+            ],
         ]);
 
-        $pondokId = $this->getPondokId();
-        $pondok = Pondok::find($pondokId);
-        $template = RaporTemplate::findOrFail($request->template_id);
+        $pondok = Pondok::findOrFail($pondokId);
+        $template = RaporTemplate::where('pondok_id', $pondokId)->findOrFail($request->template_id);
         
-        $santris = Santri::where('mustawa_id', $request->mustawa_id)
+        $santris = Santri::where('pondok_id', $pondokId)
+                          ->where('mustawa_id', $request->mustawa_id)
                           ->where('status', 'active')
                           ->with(['orangTua', 'mustawa']) 
                           ->orderBy('full_name')
@@ -413,30 +424,39 @@ class RaporController extends Controller
 
     public function exportBiodata()
 {
-    // Nama file Excel yang akan didownload
+        $pondokId = $this->getPondokId();
     $nama_file = 'Biodata_Santri_Untuk_Rapor.xlsx';
 
-    return Excel::download(new BiodataRaporExport, $nama_file);
+        return Excel::download(new BiodataRaporExport($pondokId), $nama_file);
 }
 
 public function exportNilai(Request $request)
 {
-    // Anda bisa mengganti parameter default ini jika mau
-    $jenis_ujian = $request->jenis_ujian ?? 'uas'; 
-    $semester = $request->semester ?? 'genap';
+        $validated = $request->validate([
+            'jenis_ujian' => 'nullable|in:uts,uas',
+            'semester' => 'nullable|in:ganjil,genap',
+        ]);
+        $pondokId = $this->getPondokId();
+        $jenis_ujian = $validated['jenis_ujian'] ?? 'uas';
+        $semester = $validated['semester'] ?? 'genap';
 
-    $nama_file = 'Rekap_Nilai_' . strtoupper($jenis_ujian) . '_' . ucfirst($semester) . '.xlsx';
+        $nama_file = 'Rekap_Nilai_' . strtoupper($jenis_ujian) . '_' . ucfirst($semester) . '.xlsx';
     
-    return Excel::download(new NilaiRaporExport($jenis_ujian, $semester), $nama_file);
-}
+        return Excel::download(new NilaiRaporExport($pondokId, $jenis_ujian, $semester), $nama_file);
+    }
 
-public function exportRaporLengkap(Request $request)
-{
-    $jenis_ujian = $request->jenis_ujian ?? 'uas'; 
-    $semester = $request->semester ?? 'genap';
+    public function exportRaporLengkap(Request $request)
+    {
+        $validated = $request->validate([
+            'jenis_ujian' => 'nullable|in:uts,uas',
+            'semester' => 'nullable|in:ganjil,genap',
+        ]);
+        $pondokId = $this->getPondokId();
+        $jenis_ujian = $validated['jenis_ujian'] ?? 'uas';
+        $semester = $validated['semester'] ?? 'genap';
 
-    $nama_file = 'Rapor_Lengkap_Sistem_Pondok_' . strtoupper($jenis_ujian) . '.xlsx';
+        $nama_file = 'Rapor_Lengkap_Sistem_Pondok_' . strtoupper($jenis_ujian) . '.xlsx';
     
-    return Excel::download(new RaporLengkapExport($jenis_ujian, $semester), $nama_file);
-}
+        return Excel::download(new RaporLengkapExport($pondokId, $jenis_ujian, $semester), $nama_file);
+    }
 }

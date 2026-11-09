@@ -14,7 +14,11 @@ class UstadzController extends Controller
 {
     private function getPondokId()
     {
-        return auth()->user()->pondokStaff->pondok_id;
+        $user = auth()->user();
+        $pondokId = $user->pondokStaff?->pondok_id ?? $user->pondok_id;
+        abort_unless($pondokId, 403, 'Akun pendidikan tidak terhubung dengan pondok.');
+
+        return $pondokId;
     }
 
     public function index(Request $request)
@@ -25,8 +29,10 @@ class UstadzController extends Controller
 
         if ($request->has('search')) {
             $search = $request->search;
-            $query->where('nama_lengkap', 'like', "%{$search}%")
-                  ->orWhere('nip', 'like', "%{$search}%");
+            $query->where(function ($query) use ($search) {
+                $query->where('nama_lengkap', 'like', "%{$search}%")
+                    ->orWhere('nip', 'like', "%{$search}%");
+            });
         }
 
         $ustadzs = $query->orderBy('nama_lengkap')->paginate(10);
